@@ -35,7 +35,7 @@ function AppContent() {
   const { user } = useAuth();
 
   return (
-    <Router>
+    <Router basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         {user && <Navigation />}
 

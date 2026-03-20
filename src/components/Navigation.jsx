@@ -4,12 +4,12 @@ import { useAuth } from '../context/AuthContext';
 import { LayoutDashboard, Play, Users, PlusCircle, LogOut, Download } from 'lucide-react';
 import { items } from '../api/client';
 
-// Bullish bracket icon — matches the official logo mark
+// Bullish logo mark — square border + two parallelogram bars
 const BullishIcon = ({ className = 'w-7 h-7' }) => (
   <svg className={className} viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="2" y="2" width="32" height="32" stroke="currentColor" strokeWidth="3.5" />
-    <line x1="9" y1="14" x2="27" y2="14" stroke="currentColor" strokeWidth="3" />
-    <line x1="9" y1="22" x2="27" y2="22" stroke="currentColor" strokeWidth="3" />
+    <rect x="1.5" y="1.5" width="33" height="33" stroke="currentColor" strokeWidth="3" />
+    <polygon points="8.5,10.5 18,10.5 17,13 8.5,13" fill="currentColor" />
+    <polygon points="8.5,22 27,22 26,25 8.5,25" fill="currentColor" />
   </svg>
 );
 

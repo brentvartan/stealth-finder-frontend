@@ -66,39 +66,29 @@ export default function Login() {
         background: 'radial-gradient(ellipse at 50% 35%, #052EF0 0%, #020A52 45%, #010525 100%)',
       }}
     >
-      {/* ── Brand badge (Remarkability Index style) ── */}
-      <div className="mb-10 flex flex-col items-center gap-5">
+      {/* ── Brand badge ── */}
+      <div className="mb-10 flex flex-col items-center gap-4">
+        <BullishIcon className="w-6 h-6 text-white/40" />
         <div
           className="flex items-center justify-center"
           style={{
             border: '1.5px solid rgba(255,255,255,0.45)',
             borderRadius: '50%',
-            width: 224,
-            height: 120,
+            width: 210,
+            height: 210,
           }}
         >
-          <div className="text-center leading-snug px-6">
-            <span className="block font-editorial italic text-white/70 text-sm tracking-wide">
+          <div className="text-center leading-tight">
+            <span className="block font-editorial italic text-white text-[1.45rem] tracking-wide">
               Stealth
             </span>
-            <span className="block font-editorial italic text-white text-[1.6rem] tracking-wide leading-tight">
-              Startup Finder
+            <span className="block font-editorial italic text-white text-[1.45rem] tracking-wide">
+              Startup
             </span>
-            <span className="block font-editorial text-white/50 text-xs tracking-wide mt-0.5">
-              ™
+            <span className="block font-editorial italic text-white text-[1.45rem] tracking-wide">
+              Finder
             </span>
           </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <BullishIcon className="w-4 h-4 text-white/30" />
-          <span
-            className="font-display font-semibold text-white/50 text-[10px]"
-            style={{ letterSpacing: '0.4em' }}
-          >
-            BULLISH INTELLIGENCE
-          </span>
-          <BullishIcon className="w-4 h-4 text-white/30" />
         </div>
       </div>
 

@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { items } from '../api/client';
 import MatchCard from './MatchCard';
-import {
-  Search, RefreshCw, Award, ShoppingBag, CheckCircle, TrendingUp
-} from 'lucide-react';
+import { Search, RefreshCw, Award, ShoppingBag, CheckCircle, TrendingUp } from 'lucide-react';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -39,10 +37,7 @@ function buildMatches(signals, filters) {
   filtered.forEach(signal => {
     const key = normalizeCompanyName(signal.companyName);
     if (!key) return;
-
-    if (!groups[key]) {
-      groups[key] = { name: signal.companyName, signals: [], category: signal.category };
-    }
+    if (!groups[key]) groups[key] = { name: signal.companyName, signals: [], category: signal.category };
     groups[key].signals.push(signal);
   });
 
@@ -55,18 +50,14 @@ function buildMatches(signals, filters) {
       const hasShopify   = group.signals.some(s => s.signal_type === 'shopify');
       const hasSocial    = group.signals.some(s => s.signal_type === 'social');
 
-      let score = group.signals.reduce(
-        (sum, s) => sum + (SCORE_BOOSTS[s.signal_type] || 5), 0
-      );
+      let score = group.signals.reduce((sum, s) => sum + (SCORE_BOOSTS[s.signal_type] || 5), 0);
       if (hasTrademark && (hasDelaware || hasDomain)) score += 20;
       if (hasDelaware && hasDomain && hasSocial)       score += 10;
       if (hasShopify && hasInstagram)                  score += 15;
 
       return {
-        ...group,
-        score,
-        hasTrademark, hasDelaware, hasDomain,
-        hasInstagram, hasShopify, hasSocial,
+        ...group, score,
+        hasTrademark, hasDelaware, hasDomain, hasInstagram, hasShopify, hasSocial,
         latestSignal: new Date(Math.max(...group.signals.map(s => new Date(s.timestamp)))),
       };
     })
@@ -74,45 +65,42 @@ function buildMatches(signals, filters) {
     .sort((a, b) => b.score - a.score);
 }
 
-// ─── Parse items from backend ─────────────────────────────────────────────────
-
 function parseSignalsFromItems(allItems) {
   return allItems.flatMap(item => {
     try {
       const meta = JSON.parse(item.description || '{}');
       if (meta._type === 'signal') {
         return [{
-          id: item.id,
+          id:          item.id,
           companyName: meta.company_name || item.title,
           signal_type: meta.signal_type || 'manual',
-          category: meta.category || 'Consumer AI',
+          category:    meta.category || 'Consumer AI',
           description: meta.description || '',
-          url: meta.url || '',
-          notes: meta.notes || '',
-          timestamp: meta.timestamp || item.created_at,
+          url:         meta.url || '',
+          notes:       meta.notes || '',
+          timestamp:   meta.timestamp || item.created_at,
         }];
       }
-    } catch (e) { /* not a signal item */ }
+    } catch (e) {}
     return [];
   });
 }
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 
-function StatCard({ icon: Icon, label, value, color }) {
-  const colors = {
-    green:  'bg-green-50 text-green-600 border-green-200',
-    yellow: 'bg-yellow-50 text-yellow-600 border-yellow-200',
-    blue:   'bg-blue-50 text-blue-600 border-blue-200',
-    purple: 'bg-purple-50 text-purple-600 border-purple-200',
-  };
+function StatCard({ label, value, accent = false }) {
   return (
-    <div className={`rounded-xl border p-4 ${colors[color]}`}>
-      <div className="flex items-center gap-2 mb-2">
-        <Icon className="w-5 h-5" />
-        <span className="text-sm font-medium">{label}</span>
-      </div>
-      <div className="text-3xl font-bold">{value}</div>
+    <div
+      className="bg-white rounded-lg p-5 flex flex-col gap-2"
+      style={{ borderTop: `3px solid ${accent ? '#052EF0' : '#E5E5E0'}` }}
+    >
+      <span className="text-xs font-medium text-neutral-400 uppercase tracking-wider">{label}</span>
+      <span
+        className="font-display font-bold text-4xl leading-none"
+        style={{ color: accent ? '#052EF0' : '#000000' }}
+      >
+        {value}
+      </span>
     </div>
   );
 }
@@ -120,18 +108,17 @@ function StatCard({ icon: Icon, label, value, color }) {
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const [signals, setSignals] = useState([]);
-  const [matches, setMatches] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [filters, setFilters] = useState({
+  const [signals,  setSignals]  = useState([]);
+  const [matches,  setMatches]  = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [error,    setError]    = useState('');
+  const [filters,  setFilters]  = useState({
     minSignals: 1,
-    dateRange: 90,
+    dateRange:  90,
     categories: CONSUMER_CATEGORIES,
-    search: '',
+    search:     '',
   });
 
-  // Load signals from backend
   const loadSignals = useCallback(async () => {
     try {
       setLoading(true);
@@ -147,13 +134,8 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => { loadSignals(); }, [loadSignals]);
+  useEffect(() => { setMatches(buildMatches(signals, filters)); }, [signals, filters]);
 
-  // Recompute matches whenever signals or filters change
-  useEffect(() => {
-    setMatches(buildMatches(signals, filters));
-  }, [signals, filters]);
-
-  // Apply search filter on top of matches
   const displayMatches = filters.search.trim()
     ? matches.filter(m =>
         m.name.toLowerCase().includes(filters.search.toLowerCase()) ||
@@ -162,50 +144,52 @@ export default function Dashboard() {
     : matches;
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+    <div className="max-w-7xl mx-auto px-6 py-7 space-y-6">
+
+      {/* ── Page header ── */}
+      <div className="flex items-baseline justify-between">
+        <h1 className="font-display font-bold text-3xl uppercase tracking-wide text-black">
+          Matches
+        </h1>
+        <button
+          onClick={loadSignals}
+          disabled={loading}
+          className="flex items-center gap-1.5 text-xs font-medium text-neutral-400 hover:text-black disabled:opacity-40 transition-colors"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
+      </div>
 
       {/* ── Stats ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard icon={Award}        label="With Trademark" value={matches.filter(m => m.hasTrademark).length}                          color="purple" />
-        <StatCard icon={ShoppingBag}  label="DTC Ready"      value={matches.filter(m => m.hasShopify && m.hasInstagram).length}         color="green"  />
-        <StatCard icon={CheckCircle}  label="Perfect Match"  value={matches.filter(m => m.hasTrademark && m.hasDelaware && m.hasDomain).length} color="blue"   />
-        <StatCard icon={TrendingUp}   label="High Score 50+" value={matches.filter(m => m.score >= 50).length}                          color="yellow" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard label="With Trademark"  value={matches.filter(m => m.hasTrademark).length}                                   accent />
+        <StatCard label="DTC Ready"       value={matches.filter(m => m.hasShopify && m.hasInstagram).length} />
+        <StatCard label="Perfect Match"   value={matches.filter(m => m.hasTrademark && m.hasDelaware && m.hasDomain).length}  accent />
+        <StatCard label="High Score 50+"  value={matches.filter(m => m.score >= 50).length} />
       </div>
 
       {/* ── Filters ── */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-slate-900">Filters</h3>
-          <button
-            onClick={loadSignals}
-            disabled={loading}
-            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
-        </div>
-
+      <div className="bg-white rounded-lg p-5">
         <div className="flex flex-wrap gap-3 items-center">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-300" />
             <input
               type="text"
               placeholder="Search companies..."
               value={filters.search}
               onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
-              className="pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="pl-9 pr-3 py-2 border border-neutral-200 rounded text-sm focus:outline-none focus:border-[#052EF0] transition-colors"
             />
           </div>
 
-          {/* Min signals */}
           <label className="flex items-center gap-2 text-sm">
-            <span className="text-slate-600 whitespace-nowrap">Min Signals:</span>
+            <span className="text-neutral-400 whitespace-nowrap text-xs uppercase tracking-wide font-medium">Min Signals</span>
             <select
               value={filters.minSignals}
               onChange={e => setFilters(f => ({ ...f, minSignals: parseInt(e.target.value) }))}
-              className="border border-slate-300 rounded-lg px-2 py-2 text-sm"
+              className="border border-neutral-200 rounded px-2 py-2 text-sm focus:outline-none focus:border-[#052EF0]"
             >
               <option value="1">1+</option>
               <option value="2">2+</option>
@@ -214,13 +198,12 @@ export default function Dashboard() {
             </select>
           </label>
 
-          {/* Date range */}
           <label className="flex items-center gap-2 text-sm">
-            <span className="text-slate-600 whitespace-nowrap">Time Range:</span>
+            <span className="text-neutral-400 whitespace-nowrap text-xs uppercase tracking-wide font-medium">Time Range</span>
             <select
               value={filters.dateRange}
               onChange={e => setFilters(f => ({ ...f, dateRange: parseInt(e.target.value) }))}
-              className="border border-slate-300 rounded-lg px-2 py-2 text-sm"
+              className="border border-neutral-200 rounded px-2 py-2 text-sm focus:outline-none focus:border-[#052EF0]"
             >
               <option value="7">Last 7 days</option>
               <option value="30">Last 30 days</option>
@@ -230,17 +213,17 @@ export default function Dashboard() {
           </label>
         </div>
 
-        {/* Category toggles */}
+        {/* Category pills */}
         <div className="flex flex-wrap gap-1.5 mt-3 items-center">
           <button
             onClick={() => setFilters(f => ({ ...f, categories: CONSUMER_CATEGORIES }))}
-            className="text-xs px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full font-medium"
+            className="text-xs px-3 py-1 font-medium text-neutral-500 bg-neutral-100 hover:bg-neutral-200 rounded-full transition-colors"
           >
             All
           </button>
           <button
             onClick={() => setFilters(f => ({ ...f, categories: [] }))}
-            className="text-xs px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full"
+            className="text-xs px-3 py-1 text-neutral-400 bg-neutral-100 hover:bg-neutral-200 rounded-full transition-colors"
           >
             None
           </button>
@@ -253,11 +236,12 @@ export default function Dashboard() {
                   ? f.categories.filter(c => c !== cat)
                   : [...f.categories, cat],
               }))}
-              className={`text-xs px-2.5 py-1 rounded-full transition-colors ${
+              className="text-xs px-3 py-1 rounded-full transition-colors font-medium"
+              style={
                 filters.categories.includes(cat)
-                  ? 'bg-blue-100 text-blue-700 font-medium'
-                  : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-              }`}
+                  ? { backgroundColor: '#052EF0', color: '#fff' }
+                  : { backgroundColor: '#EEEEEE', color: '#666' }
+              }
             >
               {cat}
             </button>
@@ -268,34 +252,40 @@ export default function Dashboard() {
       {/* ── Match List ── */}
       {loading ? (
         <div className="text-center py-16">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3" />
-          <p className="text-slate-500">Loading signals...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-3" style={{ borderColor: '#052EF0' }} />
+          <p className="text-neutral-400 text-sm">Loading signals...</p>
         </div>
       ) : error ? (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-5 text-red-700 flex items-center gap-3">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-5 text-red-700 flex items-center gap-3 text-sm">
           <span>{error}</span>
-          <button onClick={loadSignals} className="underline text-sm ml-auto">Retry</button>
+          <button onClick={loadSignals} className="underline ml-auto">Retry</button>
         </div>
       ) : displayMatches.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-16 text-center">
-          <TrendingUp className="w-14 h-14 text-slate-200 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-slate-800 mb-2">
+        <div className="bg-white rounded-lg p-16 text-center">
+          <div className="w-14 h-14 mx-auto mb-4 opacity-10">
+            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="2" width="32" height="32" stroke="#000" strokeWidth="3.5" />
+              <line x1="9" y1="14" x2="27" y2="14" stroke="#000" strokeWidth="3" />
+              <line x1="9" y1="22" x2="27" y2="22" stroke="#000" strokeWidth="3" />
+            </svg>
+          </div>
+          <h3 className="font-display font-bold text-xl uppercase tracking-wide text-black mb-2">
             {signals.length === 0 ? 'No Signals Yet' : 'No Matches Found'}
           </h3>
-          <p className="text-slate-500 mb-5">
+          <p className="text-neutral-400 text-sm mb-4">
             {signals.length === 0
               ? 'Run a scan or manually add a signal to get started'
               : 'Try adjusting your filters or time range'}
           </p>
-          <p className="text-sm text-slate-400">
+          <p className="text-xs text-neutral-300">
             {signals.length} signal{signals.length !== 1 ? 's' : ''} in your database
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          <p className="text-sm text-slate-500">
-            <span className="font-semibold text-slate-700">{displayMatches.length}</span> match{displayMatches.length !== 1 ? 'es' : ''} from{' '}
-            <span className="font-semibold text-slate-700">{signals.length}</span> signals
+        <div className="space-y-2">
+          <p className="text-xs text-neutral-400 font-medium uppercase tracking-wider">
+            <span className="text-black">{displayMatches.length}</span> match{displayMatches.length !== 1 ? 'es' : ''} ·{' '}
+            <span className="text-black">{signals.length}</span> signals
           </p>
           {displayMatches.map(match => (
             <MatchCard key={`${match.name}-${match.category}`} match={match} />

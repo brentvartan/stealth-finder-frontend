@@ -1,52 +1,60 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { TrendingUp, LayoutDashboard, Play, Users, PlusCircle, LogOut, Download } from 'lucide-react';
+import { LayoutDashboard, Play, Users, PlusCircle, LogOut, Download } from 'lucide-react';
 import { items } from '../api/client';
+
+// Bullish bracket icon — matches the official logo mark
+const BullishIcon = ({ className = 'w-7 h-7' }) => (
+  <svg className={className} viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="32" height="32" stroke="currentColor" strokeWidth="3.5" />
+    <line x1="9" y1="14" x2="27" y2="14" stroke="currentColor" strokeWidth="3" />
+    <line x1="9" y1="22" x2="27" y2="22" stroke="currentColor" strokeWidth="3" />
+  </svg>
+);
 
 export default function Navigation() {
   const location = useLocation();
   const { user, logout } = useAuth();
 
   const navItems = [
-    { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/scan', icon: Play, label: 'Run Scan' },
-    { path: '/watchlist', icon: Users, label: 'Watchlist' },
-    { path: '/add-signal', icon: PlusCircle, label: 'Add Signal' },
+    { path: '/',           icon: LayoutDashboard, label: 'Dashboard'  },
+    { path: '/scan',       icon: Play,            label: 'Run Scan'   },
+    { path: '/watchlist',  icon: Users,           label: 'Watchlist'  },
+    { path: '/add-signal', icon: PlusCircle,      label: 'Add Signal' },
   ];
 
   const isActive = (path) => location.pathname === path;
 
   const handleExport = async () => {
     try {
-      // Fetch all items and export as JSON
       const response = await items.getAll({ per_page: 500 });
       const allItems = response.data.items || [];
 
-      const signals = [];
+      const signals   = [];
       const watchlist = [];
 
       allItems.forEach(item => {
         try {
           const meta = JSON.parse(item.description || '{}');
-          if (meta._type === 'signal') signals.push({ ...meta, item_id: item.id, title: item.title });
+          if (meta._type === 'signal')    signals.push({ ...meta, item_id: item.id, title: item.title });
           else if (meta._type === 'watchlist') watchlist.push({ ...meta, item_id: item.id, title: item.title });
         } catch (e) {}
       });
 
       const data = {
-        exported_at: new Date().toISOString(),
-        exported_by: user?.email,
-        signals_count: signals.length,
+        exported_at:     new Date().toISOString(),
+        exported_by:     user?.email,
+        signals_count:   signals.length,
         watchlist_count: watchlist.length,
         signals,
         watchlist,
       };
 
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
       a.download = `stealth-startups-${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
@@ -57,36 +65,47 @@ export default function Navigation() {
   };
 
   return (
-    <nav className="bg-white border-b border-slate-200 shadow-sm">
+    <nav style={{ backgroundColor: '#000000' }} className="border-b border-neutral-800">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-2 rounded-lg group-hover:shadow-lg transition-shadow">
-              <TrendingUp className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <div className="text-lg font-bold text-slate-900">Stealth Startup Finder</div>
-              <div className="text-xs text-slate-500">Bullish Intelligence</div>
+        <div className="flex items-center justify-between h-14">
+
+          {/* ── Logo ── */}
+          <Link to="/" className="flex items-center gap-3 group shrink-0">
+            <BullishIcon className="w-7 h-7 text-white group-hover:text-[#052EF0] transition-colors" />
+            <div className="flex flex-col leading-none">
+              <span className="font-display font-bold text-white text-base tracking-wide uppercase">
+                Stealth Finder
+              </span>
+              <span className="font-editorial italic text-[11px] text-neutral-400 tracking-wide">
+                Bullish Intelligence
+              </span>
             </div>
           </Link>
 
-          {/* Navigation Links */}
-          <div className="flex items-center gap-1">
+          {/* ── Nav Links ── */}
+          <div className="flex items-center gap-0.5">
             {navItems.map((item) => {
-              const Icon = item.icon;
+              const Icon   = item.icon;
+              const active = isActive(item.path);
               return (
                 <Link
                   key={item.path}
                   to={item.path}
                   className={`
-                    flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors
-                    ${isActive(item.path)
-                      ? 'bg-blue-50 text-blue-600'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    relative flex items-center gap-2 px-4 py-4 text-sm font-medium transition-colors
+                    ${active
+                      ? 'text-white'
+                      : 'text-neutral-400 hover:text-white'
                     }
                   `}
                 >
+                  {/* Active indicator bar at bottom */}
+                  {active && (
+                    <span
+                      className="absolute bottom-0 left-4 right-4 h-0.5 rounded-full"
+                      style={{ backgroundColor: '#052EF0' }}
+                    />
+                  )}
                   <Icon className="w-4 h-4" />
                   {item.label}
                 </Link>
@@ -94,36 +113,37 @@ export default function Navigation() {
             })}
           </div>
 
-          {/* User Menu */}
-          <div className="flex items-center gap-3">
+          {/* ── Right side: export + user ── */}
+          <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={handleExport}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-neutral-400 hover:text-white transition-colors rounded"
               title="Export data as JSON"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-3.5 h-3.5" />
               Export
             </button>
 
-            <div className="h-8 w-px bg-slate-200"></div>
+            <div className="h-5 w-px bg-neutral-700 mx-1" />
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
               <div className="text-right">
-                <div className="text-sm font-medium text-slate-900">
+                <div className="text-xs font-medium text-white leading-none">
                   {user?.first_name ? `${user.first_name} ${user.last_name}` : user?.email}
                 </div>
-                <div className="text-xs text-slate-500 capitalize">{user?.role || 'Analyst'}</div>
+                <div className="text-[10px] text-neutral-500 capitalize mt-0.5">{user?.role || 'Analyst'}</div>
               </div>
 
               <button
                 onClick={logout}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors"
+                className="p-2 text-neutral-400 hover:text-white transition-colors rounded"
                 title="Sign Out"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
+
         </div>
       </div>
     </nav>

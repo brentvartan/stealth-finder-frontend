@@ -3,12 +3,12 @@ import { items, scans } from '../api/client';
 import { Play, RefreshCw, CheckCircle, AlertCircle, Award, Camera, ShoppingBag, Building2, Globe, Linkedin } from 'lucide-react';
 import { CONSUMER_CATEGORIES } from './Dashboard';
 
-// ─── Signal score boosts by type ──────────────────────────────────────────────
+// ─── Score boosts ──────────────────────────────────────────────────────────────
 const SCORE_BOOSTS = {
   trademark: 15, delaware: 5, domain: 3, instagram: 8, shopify: 10, social: 2,
 };
 
-// ─── Simulated generators for sources we don't yet have live APIs for ─────────
+// ─── Simulated data generators ────────────────────────────────────────────────
 
 function getDelawareData(daysBack) {
   const companies = [
@@ -37,18 +37,18 @@ function getDelawareData(daysBack) {
 
 function getDomainData(daysBack) {
   const domains = [
-    { name: 'gethealthy.com',    category: 'Health/Wellness' },
-    { name: 'tryfit.io',         category: 'Fitness'         },
-    { name: 'foodhub.com',       category: 'CPG/Food/Drink'  },
-    { name: 'finflow.app',       category: 'Finance'         },
-    { name: 'learnai.com',       category: 'Education'       },
-    { name: 'stylematch.io',     category: 'Apparel'         },
-    { name: 'homedash.app',      category: 'Home/Lifestyle'  },
-    { name: 'beautyboss.com',    category: 'Beauty'          },
-    { name: 'glowai.ai',         category: 'Consumer AI'     },
-    { name: 'activeware.shop',   category: 'Apparel'         },
-    { name: 'playtime.com',      category: 'Sports'          },
-    { name: 'wellnesshq.com',    category: 'Health/Wellness' },
+    { name: 'gethealthy.com',  category: 'Health/Wellness' },
+    { name: 'tryfit.io',       category: 'Fitness'         },
+    { name: 'foodhub.com',     category: 'CPG/Food/Drink'  },
+    { name: 'finflow.app',     category: 'Finance'         },
+    { name: 'learnai.com',     category: 'Education'       },
+    { name: 'stylematch.io',   category: 'Apparel'         },
+    { name: 'homedash.app',    category: 'Home/Lifestyle'  },
+    { name: 'beautyboss.com',  category: 'Beauty'          },
+    { name: 'glowai.ai',       category: 'Consumer AI'     },
+    { name: 'activeware.shop', category: 'Apparel'         },
+    { name: 'playtime.com',    category: 'Sports'          },
+    { name: 'wellnesshq.com',  category: 'Health/Wellness' },
   ];
   const today = new Date();
   return domains.map(d => {
@@ -61,16 +61,16 @@ function getDomainData(daysBack) {
 
 function getInstagramData() {
   const handles = [
-    { handle: 'gethealthy',   category: 'Health/Wellness' },
-    { handle: 'tryfit',       category: 'Fitness'         },
-    { handle: 'foodhub',      category: 'CPG/Food/Drink'  },
-    { handle: 'finflow',      category: 'Finance'         },
-    { handle: 'learnai',      category: 'Education'       },
-    { handle: 'stylematch',   category: 'Apparel'         },
-    { handle: 'beautyboss',   category: 'Beauty'          },
-    { handle: 'glowai',       category: 'Consumer AI'     },
-    { handle: 'activeware',   category: 'Apparel'         },
-    { handle: 'playtime',     category: 'Sports'          },
+    { handle: 'gethealthy', category: 'Health/Wellness' },
+    { handle: 'tryfit',     category: 'Fitness'         },
+    { handle: 'foodhub',    category: 'CPG/Food/Drink'  },
+    { handle: 'finflow',    category: 'Finance'         },
+    { handle: 'learnai',    category: 'Education'       },
+    { handle: 'stylematch', category: 'Apparel'         },
+    { handle: 'beautyboss', category: 'Beauty'          },
+    { handle: 'glowai',     category: 'Consumer AI'     },
+    { handle: 'activeware', category: 'Apparel'         },
+    { handle: 'playtime',   category: 'Sports'          },
   ];
   const today = new Date();
   return handles.map(h => {
@@ -83,13 +83,13 @@ function getInstagramData() {
 
 function getShopifyData() {
   const stores = [
-    { name: 'GetHealthy',  domain: 'gethealthy.myshopify.com',  category: 'Health/Wellness' },
-    { name: 'TryFit',      domain: 'tryfit.myshopify.com',       category: 'Fitness'         },
-    { name: 'FoodHub',     domain: 'foodhub.myshopify.com',      category: 'CPG/Food/Drink'  },
-    { name: 'StyleMatch',  domain: 'stylematch.myshopify.com',   category: 'Apparel'         },
-    { name: 'BeautyBoss',  domain: 'beautyboss.myshopify.com',   category: 'Beauty'          },
-    { name: 'ActiveWear',  domain: 'activeware.myshopify.com',   category: 'Apparel'         },
-    { name: 'HomeDash',    domain: 'homedash.myshopify.com',     category: 'Home/Lifestyle'  },
+    { name: 'GetHealthy', domain: 'gethealthy.myshopify.com',  category: 'Health/Wellness' },
+    { name: 'TryFit',     domain: 'tryfit.myshopify.com',       category: 'Fitness'         },
+    { name: 'FoodHub',    domain: 'foodhub.myshopify.com',      category: 'CPG/Food/Drink'  },
+    { name: 'StyleMatch', domain: 'stylematch.myshopify.com',   category: 'Apparel'         },
+    { name: 'BeautyBoss', domain: 'beautyboss.myshopify.com',   category: 'Beauty'          },
+    { name: 'ActiveWear', domain: 'activeware.myshopify.com',   category: 'Apparel'         },
+    { name: 'HomeDash',   domain: 'homedash.myshopify.com',     category: 'Home/Lifestyle'  },
   ];
   const today = new Date();
   return stores.map(s => {
@@ -102,13 +102,13 @@ function getShopifyData() {
 
 function getSocialData() {
   const posts = [
-    { company: 'GetHealthy',  category: 'Health/Wellness', founder: 'Sarah Chen'     },
-    { company: 'TryFit',      category: 'Fitness',         founder: 'Mike Rodriguez'  },
-    { company: 'FoodHub',     category: 'CPG/Food/Drink',  founder: 'Lisa Park'       },
-    { company: 'BeautyBoss',  category: 'Beauty',          founder: 'Maya Patel'      },
-    { company: 'GlowAI',      category: 'Consumer AI',     founder: 'Chris Lee'       },
-    { company: 'StyleMatch',  category: 'Apparel',         founder: 'Sophie Turner'   },
-    { company: 'PlayTime',    category: 'Sports',          founder: 'Tom Harris'      },
+    { company: 'GetHealthy', category: 'Health/Wellness', founder: 'Sarah Chen'    },
+    { company: 'TryFit',     category: 'Fitness',         founder: 'Mike Rodriguez' },
+    { company: 'FoodHub',    category: 'CPG/Food/Drink',  founder: 'Lisa Park'      },
+    { company: 'BeautyBoss', category: 'Beauty',          founder: 'Maya Patel'     },
+    { company: 'GlowAI',     category: 'Consumer AI',     founder: 'Chris Lee'      },
+    { company: 'StyleMatch', category: 'Apparel',         founder: 'Sophie Turner'  },
+    { company: 'PlayTime',   category: 'Sports',          founder: 'Tom Harris'     },
   ];
   const today = new Date();
   return posts.map(p => {
@@ -119,12 +119,9 @@ function getSocialData() {
   });
 }
 
-// ─── Convert simulated raw results → signal records ───────────────────────────
-
 function rawToSignals(results, type) {
   return results.map(r => {
     let companyName, description, url, timestamp;
-
     switch (type) {
       case 'delaware':
         companyName = r.name.replace(/\s+(Inc|LLC|Corporation|Corp|Labs)\.?$/i, '').trim();
@@ -159,36 +156,37 @@ function rawToSignals(results, type) {
       default:
         return null;
     }
-
     return { companyName, signal_type: type, category: r.category, description, url, timestamp };
   }).filter(Boolean);
 }
 
-// ─── Main RunScan component ───────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const SCAN_TYPES = [
-  { value: 'full',       label: '🔥 Full Scan (All Sources)' },
-  { value: 'trademark',  label: '🏆 USPTO Trademarks Only'   },
-  { value: 'delaware',   label: '🏛️ Delaware Filings Only'   },
-  { value: 'instagram',  label: '📸 Instagram Handles Only'  },
-  { value: 'shopify',    label: '🛍️ Shopify Stores Only'     },
-  { value: 'domain',     label: '🌐 Domains Only'            },
-  { value: 'social',     label: '💬 Social Media Only'       },
+  { value: 'full',       label: 'Full Scan — All Sources'     },
+  { value: 'trademark',  label: 'USPTO Trademarks Only'       },
+  { value: 'delaware',   label: 'Delaware Filings Only'       },
+  { value: 'instagram',  label: 'Instagram Handles Only'      },
+  { value: 'shopify',    label: 'Shopify Stores Only'         },
+  { value: 'domain',     label: 'Domain Registrations Only'   },
+  { value: 'social',     label: 'Social Media Only'           },
 ];
 
 const SOURCES = [
-  { icon: Award,       label: 'USPTO Trademarks',    desc: 'Live data — real filings from the last N days',         color: 'text-purple-600 bg-purple-50',  badge: '🟢 Live' },
-  { icon: Camera,      label: 'Instagram Handles',   desc: 'Consumer brands secure @handle before website',         color: 'text-pink-600 bg-pink-50',      badge: '🔵 Simulated' },
-  { icon: ShoppingBag, label: 'Shopify Stores',      desc: 'New DTC stores with 0 products = stealth',             color: 'text-emerald-600 bg-emerald-50', badge: '🔵 Simulated' },
-  { icon: Building2,   label: 'Delaware Filings',    desc: 'Traditional incorporation tracking',                    color: 'text-blue-600 bg-blue-50',      badge: '🔵 Simulated' },
-  { icon: Globe,       label: 'Domain Registration', desc: 'Recently registered URLs',                              color: 'text-green-600 bg-green-50',    badge: '🔵 Simulated' },
-  { icon: Linkedin,    label: 'Social Media',        desc: 'Founders announcing stealth mode',                      color: 'text-indigo-600 bg-indigo-50',  badge: '🔵 Simulated' },
+  { icon: Award,       label: 'USPTO Trademarks',    desc: 'Live — real filings from the last N days',              live: true  },
+  { icon: Camera,      label: 'Instagram Handles',   desc: 'Consumer brands secure @handle before website',         live: false },
+  { icon: ShoppingBag, label: 'Shopify Stores',      desc: 'New DTC stores with 0 products = stealth',             live: false },
+  { icon: Building2,   label: 'Delaware Filings',    desc: 'Traditional incorporation tracking',                    live: false },
+  { icon: Globe,       label: 'Domain Registration', desc: 'Recently registered URLs',                              live: false },
+  { icon: Linkedin,    label: 'Social Media',        desc: 'Founders announcing stealth mode',                      live: false },
 ];
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function RunScan() {
   const [scanType, setScanType] = useState('full');
   const [daysBack, setDaysBack] = useState(30);
-  const [status, setStatus] = useState(null);
+  const [status,   setStatus]   = useState(null);
   const [scanning, setScanning] = useState(false);
 
   const runScan = async () => {
@@ -197,7 +195,6 @@ export default function RunScan() {
 
     let totalSaved = 0;
 
-    // ── Helper: save a batch of signals to the backend ──────────────────────
     const saveSignals = async (signalList) => {
       const promises = signalList.map(sig =>
         items.create(sig.companyName, JSON.stringify({
@@ -217,106 +214,89 @@ export default function RunScan() {
     };
 
     try {
-      // ── Step 1: USPTO Trademarks (live data, saved with dedup on backend) ──
       if (scanType === 'full' || scanType === 'trademark') {
-        setStatus(s => ({ ...s, message: '🔴 Live: querying USPTO trademark database...', progress: 10 }));
-
-        // Backend fetches, deduplicates, and saves — returns counts only
+        setStatus(s => ({ ...s, message: 'Live: querying USPTO trademark database...', progress: 10 }));
         const resp = await scans.trademark(daysBack, 200);
         const { total_found, new_saved, skipped, error: tmError } = resp.data;
-
         if (tmError) throw new Error(`USPTO API: ${tmError}`);
-
         totalSaved += new_saved;
-
         setStatus(s => ({
           ...s,
-          message: `✅ USPTO: ${total_found.toLocaleString()} filings scanned — ${new_saved} new, ${skipped} already saved`,
+          message: `USPTO: ${total_found.toLocaleString()} filings scanned — ${new_saved} new, ${skipped} already saved`,
           progress: 25,
         }));
       }
 
-      // ── Step 2–6: Simulated sources ────────────────────────────────────────
       const simSteps = [];
       if (scanType === 'full' || scanType === 'delaware')
-        simSteps.push({ type: 'delaware',  label: 'Scanning Delaware filings...',      progress: 40,  data: () => getDelawareData(daysBack) });
+        simSteps.push({ type: 'delaware',  label: 'Scanning Delaware filings...',       progress: 40, data: () => getDelawareData(daysBack) });
       if (scanType === 'full' || scanType === 'domain')
-        simSteps.push({ type: 'domain',    label: 'Monitoring domain registrations...', progress: 55, data: () => getDomainData(daysBack) });
+        simSteps.push({ type: 'domain',    label: 'Monitoring domain registrations...',  progress: 55, data: () => getDomainData(daysBack) });
       if (scanType === 'full' || scanType === 'instagram')
-        simSteps.push({ type: 'instagram', label: 'Checking Instagram handles...',      progress: 68, data: () => getInstagramData() });
+        simSteps.push({ type: 'instagram', label: 'Checking Instagram handles...',       progress: 68, data: () => getInstagramData() });
       if (scanType === 'full' || scanType === 'shopify')
-        simSteps.push({ type: 'shopify',   label: 'Scanning Shopify stores...',         progress: 80, data: () => getShopifyData() });
+        simSteps.push({ type: 'shopify',   label: 'Scanning Shopify stores...',          progress: 80, data: () => getShopifyData() });
       if (scanType === 'full' || scanType === 'social')
-        simSteps.push({ type: 'social',    label: 'Parsing social media...',            progress: 90, data: () => getSocialData() });
+        simSteps.push({ type: 'social',    label: 'Parsing social media...',             progress: 90, data: () => getSocialData() });
 
       for (const step of simSteps) {
         setStatus(s => ({ ...s, message: step.label, progress: step.progress }));
         await new Promise(r => setTimeout(r, 500));
-
         const signals = rawToSignals(step.data(), step.type);
         const saved = await saveSignals(signals);
         totalSaved += saved;
       }
 
       setStatus({
-        phase:    'done',
-        progress: 100,
-        message:  `Scan complete — saved ${totalSaved} new signals.`,
-        done:     true,
-        error:    false,
-        saved:    totalSaved,
+        phase: 'done', progress: 100,
+        message: `Scan complete — ${totalSaved} new signals saved.`,
+        done: true, error: false, saved: totalSaved,
       });
     } catch (err) {
       setStatus({
-        phase:    'error',
-        progress: 0,
-        message:  `Scan failed: ${err.message}`,
-        done:     true,
-        error:    true,
-        saved:    totalSaved,
+        phase: 'error', progress: 0,
+        message: `Scan failed: ${err.message}`,
+        done: true, error: true, saved: totalSaved,
       });
     } finally {
       setScanning(false);
     }
   };
 
+  const selectClass = 'w-full border border-neutral-200 rounded px-3 py-2.5 text-sm focus:outline-none focus:border-[#052EF0] transition-colors bg-white';
+
   return (
-    <div className="max-w-7xl mx-auto px-6 py-6">
-      <div className="max-w-2xl">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-slate-900">Run Scan</h2>
-          <p className="text-slate-500 mt-1">
+    <div className="max-w-7xl mx-auto px-6 py-7">
+      <div className="max-w-xl">
+
+        {/* ── Page header ── */}
+        <div className="mb-7">
+          <h1 className="font-display font-bold text-3xl uppercase tracking-wide text-black">
+            Run Scan
+          </h1>
+          <p className="text-neutral-400 text-sm mt-1">
             Scan real and simulated sources for stealth startup signals. USPTO data is live.
           </p>
         </div>
 
-        {/* Config card */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
-
-          {/* Scan type */}
+        {/* ── Config card ── */}
+        <div className="bg-white rounded-lg p-6 space-y-5" style={{ border: '1px solid #E5E5E0' }}>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Scan Type</label>
-            <select
-              value={scanType}
-              onChange={e => setScanType(e.target.value)}
-              disabled={scanning}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
+            <label className="block text-xs font-medium text-neutral-400 mb-2 uppercase tracking-wider">
+              Scan Type
+            </label>
+            <select value={scanType} onChange={e => setScanType(e.target.value)} disabled={scanning} className={selectClass}>
               {SCAN_TYPES.map(t => (
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>
           </div>
 
-          {/* Time period */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Time Period</label>
-            <select
-              value={daysBack}
-              onChange={e => setDaysBack(parseInt(e.target.value))}
-              disabled={scanning}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
+            <label className="block text-xs font-medium text-neutral-400 mb-2 uppercase tracking-wider">
+              Time Period
+            </label>
+            <select value={daysBack} onChange={e => setDaysBack(parseInt(e.target.value))} disabled={scanning} className={selectClass}>
               <option value="7">Last 7 days</option>
               <option value="30">Last 30 days (recommended)</option>
               <option value="60">Last 60 days</option>
@@ -326,38 +306,38 @@ export default function RunScan() {
 
           {/* Progress */}
           {status && (
-            <div className={`rounded-lg p-4 border ${
-              status.error ? 'bg-red-50 border-red-200' :
-              status.done  ? 'bg-green-50 border-green-200' :
-                             'bg-blue-50 border-blue-200'
-            }`}>
+            <div
+              className="rounded p-4"
+              style={{
+                backgroundColor: status.error ? '#FEF2F2' : status.done ? '#F0FDF4' : '#EEF2FF',
+                border: `1px solid ${status.error ? '#FECACA' : status.done ? '#BBF7D0' : '#C7D2FE'}`,
+              }}
+            >
               <div className="flex items-center gap-2 mb-2">
                 {status.error ? (
-                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
                 ) : status.done ? (
                   <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
                 ) : (
-                  <RefreshCw className="w-4 h-4 text-blue-600 shrink-0 animate-spin" />
+                  <RefreshCw className="w-4 h-4 shrink-0 animate-spin" style={{ color: '#052EF0' }} />
                 )}
-                <span className={`text-sm font-medium ${
-                  status.error ? 'text-red-800' : status.done ? 'text-green-800' : 'text-blue-800'
-                }`}>
+                <span className={`text-sm font-medium ${status.error ? 'text-red-800' : status.done ? 'text-green-800' : 'text-neutral-800'}`}>
                   {status.message}
                 </span>
               </div>
 
               {!status.done && (
-                <div className="w-full bg-white rounded-full h-2 overflow-hidden">
+                <div className="w-full bg-white rounded-full h-1.5 overflow-hidden">
                   <div
-                    className="bg-blue-600 h-full rounded-full transition-all duration-500"
-                    style={{ width: `${status.progress}%` }}
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${status.progress}%`, backgroundColor: '#052EF0' }}
                   />
                 </div>
               )}
 
               {status.done && !status.error && (
-                <p className="text-sm text-green-700 mt-1">
-                  Head to the <strong>Dashboard</strong> to see your matches.
+                <p className="text-xs text-green-700 mt-2">
+                  Head to <strong>Dashboard</strong> to see your matches.
                 </p>
               )}
             </div>
@@ -367,45 +347,61 @@ export default function RunScan() {
           <button
             onClick={runScan}
             disabled={scanning}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3 text-sm font-display font-semibold tracking-widest uppercase text-white rounded transition-all flex items-center justify-center gap-2"
+            style={{ backgroundColor: scanning ? '#999' : '#052EF0' }}
           >
             {scanning ? (
               <>
-                <RefreshCw className="w-5 h-5 animate-spin" />
+                <RefreshCw className="w-4 h-4 animate-spin" />
                 Scanning...
               </>
             ) : (
               <>
-                <Play className="w-5 h-5" />
+                <Play className="w-4 h-4" />
                 Run Scan
               </>
             )}
           </button>
         </div>
 
-        {/* Source guide */}
-        <div className="mt-6 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h3 className="font-semibold text-slate-900 mb-4">🎯 Signal Sources</h3>
+        {/* ── Source reference ── */}
+        <div className="mt-5 bg-white rounded-lg p-6" style={{ border: '1px solid #E5E5E0' }}>
+          <h3 className="font-display font-bold text-xs uppercase tracking-widest text-neutral-400 mb-4">
+            Signal Sources
+          </h3>
           <div className="space-y-3">
             {SOURCES.map(source => {
               const Icon = source.icon;
               return (
-                <div key={source.label} className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg shrink-0 ${source.color}`}>
-                    <Icon className="w-4 h-4" />
+                <div key={source.label} className="flex items-center gap-3">
+                  <div
+                    className="w-8 h-8 rounded flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: source.live ? '#052EF0' : '#F5F0EB' }}
+                  >
+                    <Icon className="w-4 h-4" style={{ color: source.live ? '#fff' : '#999' }} />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-slate-900">{source.label}</span>
-                      <span className="text-xs text-slate-400">{source.badge}</span>
+                      <span className="text-sm font-medium text-black">{source.label}</span>
+                      <span
+                        className="text-[10px] font-medium px-1.5 py-0.5 rounded uppercase tracking-wider"
+                        style={
+                          source.live
+                            ? { backgroundColor: '#052EF0', color: '#fff' }
+                            : { backgroundColor: '#EEEEEE', color: '#999' }
+                        }
+                      >
+                        {source.live ? 'Live' : 'Sim'}
+                      </span>
                     </div>
-                    <div className="text-xs text-slate-500">{source.desc}</div>
+                    <div className="text-xs text-neutral-400">{source.desc}</div>
                   </div>
                 </div>
               );
             })}
           </div>
         </div>
+
       </div>
     </div>
   );

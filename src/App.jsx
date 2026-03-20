@@ -15,10 +15,10 @@ function ProtectedRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5F0EB' }}>
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading...</p>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 mx-auto mb-4" style={{ borderColor: '#052EF0' }}></div>
+          <p className="text-neutral-400 text-sm font-medium">Loading...</p>
         </div>
       </div>
     );
@@ -36,7 +36,7 @@ function AppContent() {
 
   return (
     <Router basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="min-h-screen" style={{ backgroundColor: '#F5F0EB' }}>
         {user && <Navigation />}
 
         <Routes>

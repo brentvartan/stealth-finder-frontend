@@ -95,6 +95,13 @@ export const auth = {
     api.post('/auth/reset-password', { token, password }),
 };
 
+// ─── Scans (real data from live sources) ──────────────────────────────────────
+export const scans = {
+  // Returns { signals: [...], total_found: N, fetched: N, error: null }
+  trademark: (daysBack = 30, maxResults = 200) =>
+    api.post('/scans/trademark', { days_back: daysBack, max_results: maxResults }),
+};
+
 // ─── Items (underlying storage for signals + watchlist) ───────────────────────
 export const items = {
   getAll: (params = {}) =>

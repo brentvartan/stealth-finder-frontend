@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { items } from '../api/client';
+import { items, scans } from '../api/client';
 import { Play, RefreshCw, CheckCircle, AlertCircle, Award, Camera, ShoppingBag, Building2, Globe, Linkedin } from 'lucide-react';
 import { CONSUMER_CATEGORIES } from './Dashboard';
 
@@ -8,35 +8,7 @@ const SCORE_BOOSTS = {
   trademark: 15, delaware: 5, domain: 3, instagram: 8, shopify: 10, social: 2,
 };
 
-// ─── Simulated data generators (mirrors the prototype) ───────────────────────
-
-function getTrademarkData(daysBack) {
-  const trademarks = [
-    { name: 'GETHEALTHY',   category: 'Health/Wellness',  class: 'Class 44' },
-    { name: 'TRYFIT',       category: 'Fitness',           class: 'Class 41' },
-    { name: 'FOODHUB',      category: 'CPG/Food/Drink',    class: 'Class 43' },
-    { name: 'FINFLOW',      category: 'Finance',           class: 'Class 36' },
-    { name: 'LEARNAI',      category: 'Education',         class: 'Class 41' },
-    { name: 'WELLNESSPATH', category: 'Health/Wellness',   class: 'Class 44' },
-    { name: 'STYLEMATCH',   category: 'Apparel',           class: 'Class 25' },
-    { name: 'HOMEDASH',     category: 'Home/Lifestyle',    class: 'Class 35' },
-    { name: 'FITTRACK',     category: 'Fitness',           class: 'Class 9'  },
-    { name: 'MINDFULME',    category: 'Health/Wellness',   class: 'Class 44' },
-    { name: 'SMARTPAY',     category: 'Finance',           class: 'Class 36' },
-    { name: 'BEAUTYBOSS',   category: 'Beauty',            class: 'Class 3'  },
-    { name: 'GLOW AI',      category: 'Consumer AI',       class: 'Class 3'  },
-    { name: 'ACTIVEWARE',   category: 'Apparel',           class: 'Class 25' },
-    { name: 'PLAYTIME',     category: 'Sports',            class: 'Class 28' },
-  ];
-  const count = Math.min(12 + Math.floor(daysBack / 8), trademarks.length);
-  const today = new Date();
-  return trademarks.slice(0, count).map(tm => {
-    const daysAgo = Math.floor(Math.random() * daysBack);
-    const date = new Date(today);
-    date.setDate(date.getDate() - daysAgo);
-    return { ...tm, filing_date: date.toISOString() };
-  });
-}
+// ─── Simulated generators for sources we don't yet have live APIs for ─────────
 
 function getDelawareData(daysBack) {
   const companies = [
@@ -147,19 +119,13 @@ function getSocialData() {
   });
 }
 
-// ─── Convert raw scan results to signal records ───────────────────────────────
+// ─── Convert simulated raw results → signal records ───────────────────────────
 
 function rawToSignals(results, type) {
   return results.map(r => {
     let companyName, description, url, timestamp;
 
     switch (type) {
-      case 'trademark':
-        companyName = r.name;
-        description = `${r.name} — ${r.class} — Filed ${new Date(r.filing_date).toLocaleDateString()}`;
-        url = 'https://tess2.uspto.gov/';
-        timestamp = r.filing_date;
-        break;
       case 'delaware':
         companyName = r.name.replace(/\s+(Inc|LLC|Corporation|Corp|Labs)\.?$/i, '').trim();
         description = `${r.name} — ${r.entity_type} — Filed ${new Date(r.filing_date).toLocaleDateString()}`;
@@ -211,79 +177,103 @@ const SCAN_TYPES = [
 ];
 
 const SOURCES = [
-  { icon: Award,     label: 'USPTO Trademarks',  desc: 'Earliest signal — 6–12 mo before incorporation',  color: 'text-purple-600 bg-purple-50' },
-  { icon: Camera,    label: 'Instagram Handles', desc: 'Consumer brands secure @handle before website',    color: 'text-pink-600 bg-pink-50'     },
-  { icon: ShoppingBag, label: 'Shopify Stores',  desc: 'New DTC stores with 0 products = stealth',        color: 'text-emerald-600 bg-emerald-50' },
-  { icon: Building2, label: 'Delaware Filings',  desc: 'Traditional incorporation tracking',               color: 'text-blue-600 bg-blue-50'    },
-  { icon: Globe,     label: 'Domain Registration', desc: 'Recently registered URLs',                       color: 'text-green-600 bg-green-50'  },
-  { icon: Linkedin,  label: 'Social Media',      desc: 'Founders announcing stealth mode',                 color: 'text-indigo-600 bg-indigo-50' },
+  { icon: Award,       label: 'USPTO Trademarks',    desc: 'Live data — real filings from the last N days',         color: 'text-purple-600 bg-purple-50',  badge: '🟢 Live' },
+  { icon: Camera,      label: 'Instagram Handles',   desc: 'Consumer brands secure @handle before website',         color: 'text-pink-600 bg-pink-50',      badge: '🔵 Simulated' },
+  { icon: ShoppingBag, label: 'Shopify Stores',      desc: 'New DTC stores with 0 products = stealth',             color: 'text-emerald-600 bg-emerald-50', badge: '🔵 Simulated' },
+  { icon: Building2,   label: 'Delaware Filings',    desc: 'Traditional incorporation tracking',                    color: 'text-blue-600 bg-blue-50',      badge: '🔵 Simulated' },
+  { icon: Globe,       label: 'Domain Registration', desc: 'Recently registered URLs',                              color: 'text-green-600 bg-green-50',    badge: '🔵 Simulated' },
+  { icon: Linkedin,    label: 'Social Media',        desc: 'Founders announcing stealth mode',                      color: 'text-indigo-600 bg-indigo-50',  badge: '🔵 Simulated' },
 ];
 
 export default function RunScan() {
   const [scanType, setScanType] = useState('full');
   const [daysBack, setDaysBack] = useState(30);
-  const [status, setStatus] = useState(null); // { phase, progress, message, done, error, saved }
+  const [status, setStatus] = useState(null);
   const [scanning, setScanning] = useState(false);
 
   const runScan = async () => {
     setScanning(true);
     setStatus({ phase: 'init', progress: 0, message: 'Starting scan...', done: false, error: false, saved: 0 });
 
-    const steps = [];
-    if (scanType === 'full' || scanType === 'trademark')  steps.push({ type: 'trademark',  label: 'Searching USPTO trademarks...',  progress: 15, data: () => getTrademarkData(daysBack) });
-    if (scanType === 'full' || scanType === 'delaware')   steps.push({ type: 'delaware',   label: 'Scanning Delaware filings...',   progress: 30, data: () => getDelawareData(daysBack) });
-    if (scanType === 'full' || scanType === 'domain')     steps.push({ type: 'domain',     label: 'Monitoring domain registrations...', progress: 45, data: () => getDomainData(daysBack) });
-    if (scanType === 'full' || scanType === 'instagram')  steps.push({ type: 'instagram',  label: 'Checking Instagram handles...',  progress: 60, data: () => getInstagramData() });
-    if (scanType === 'full' || scanType === 'shopify')    steps.push({ type: 'shopify',    label: 'Scanning Shopify stores...',     progress: 75, data: () => getShopifyData() });
-    if (scanType === 'full' || scanType === 'social')     steps.push({ type: 'social',     label: 'Parsing social media...',        progress: 88, data: () => getSocialData() });
-
     let totalSaved = 0;
 
+    // ── Helper: save a batch of signals to the backend ──────────────────────
+    const saveSignals = async (signalList) => {
+      const promises = signalList.map(sig =>
+        items.create(sig.companyName, JSON.stringify({
+          _type:        'signal',
+          company_name: sig.companyName,
+          signal_type:  sig.signal_type,
+          category:     sig.category,
+          score_boost:  SCORE_BOOSTS[sig.signal_type] || 5,
+          description:  sig.description,
+          url:          sig.url,
+          notes:        sig.notes || '',
+          timestamp:    sig.timestamp,
+        })).catch(() => null)
+      );
+      const results = await Promise.all(promises);
+      return results.filter(Boolean).length;
+    };
+
     try {
-      for (const step of steps) {
+      // ── Step 1: USPTO Trademarks (live data, saved with dedup on backend) ──
+      if (scanType === 'full' || scanType === 'trademark') {
+        setStatus(s => ({ ...s, message: '🔴 Live: querying USPTO trademark database...', progress: 10 }));
+
+        // Backend fetches, deduplicates, and saves — returns counts only
+        const resp = await scans.trademark(daysBack, 200);
+        const { total_found, new_saved, skipped, error: tmError } = resp.data;
+
+        if (tmError) throw new Error(`USPTO API: ${tmError}`);
+
+        totalSaved += new_saved;
+
+        setStatus(s => ({
+          ...s,
+          message: `✅ USPTO: ${total_found.toLocaleString()} filings scanned — ${new_saved} new, ${skipped} already saved`,
+          progress: 25,
+        }));
+      }
+
+      // ── Step 2–6: Simulated sources ────────────────────────────────────────
+      const simSteps = [];
+      if (scanType === 'full' || scanType === 'delaware')
+        simSteps.push({ type: 'delaware',  label: 'Scanning Delaware filings...',      progress: 40,  data: () => getDelawareData(daysBack) });
+      if (scanType === 'full' || scanType === 'domain')
+        simSteps.push({ type: 'domain',    label: 'Monitoring domain registrations...', progress: 55, data: () => getDomainData(daysBack) });
+      if (scanType === 'full' || scanType === 'instagram')
+        simSteps.push({ type: 'instagram', label: 'Checking Instagram handles...',      progress: 68, data: () => getInstagramData() });
+      if (scanType === 'full' || scanType === 'shopify')
+        simSteps.push({ type: 'shopify',   label: 'Scanning Shopify stores...',         progress: 80, data: () => getShopifyData() });
+      if (scanType === 'full' || scanType === 'social')
+        simSteps.push({ type: 'social',    label: 'Parsing social media...',            progress: 90, data: () => getSocialData() });
+
+      for (const step of simSteps) {
         setStatus(s => ({ ...s, message: step.label, progress: step.progress }));
+        await new Promise(r => setTimeout(r, 500));
 
-        // Small simulated delay for realism
-        await new Promise(r => setTimeout(r, 600));
-
-        const rawResults = step.data();
-        const signals = rawToSignals(rawResults, step.type);
-
-        // Save to backend in parallel
-        const savePromises = signals.map(sig =>
-          items.create(sig.companyName, JSON.stringify({
-            _type: 'signal',
-            company_name: sig.companyName,
-            signal_type: sig.signal_type,
-            category: sig.category,
-            score_boost: SCORE_BOOSTS[sig.signal_type] || 5,
-            description: sig.description,
-            url: sig.url,
-            notes: '',
-            timestamp: sig.timestamp,
-          })).catch(() => null) // ignore individual failures
-        );
-
-        const results = await Promise.all(savePromises);
-        totalSaved += results.filter(Boolean).length;
+        const signals = rawToSignals(step.data(), step.type);
+        const saved = await saveSignals(signals);
+        totalSaved += saved;
       }
 
       setStatus({
-        phase: 'done',
+        phase:    'done',
         progress: 100,
-        message: `Scan complete! Saved ${totalSaved} new signals.`,
-        done: true,
-        error: false,
-        saved: totalSaved,
+        message:  `Scan complete — saved ${totalSaved} new signals.`,
+        done:     true,
+        error:    false,
+        saved:    totalSaved,
       });
     } catch (err) {
       setStatus({
-        phase: 'error',
+        phase:    'error',
         progress: 0,
-        message: `Scan failed: ${err.message}`,
-        done: true,
-        error: true,
-        saved: totalSaved,
+        message:  `Scan failed: ${err.message}`,
+        done:     true,
+        error:    true,
+        saved:    totalSaved,
       });
     } finally {
       setScanning(false);
@@ -296,7 +286,7 @@ export default function RunScan() {
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-slate-900">Run Scan</h2>
           <p className="text-slate-500 mt-1">
-            Simulate a scan across public data sources and save discovered signals to your database.
+            Scan real and simulated sources for stealth startup signals. USPTO data is live.
           </p>
         </div>
 
@@ -334,12 +324,12 @@ export default function RunScan() {
             </select>
           </div>
 
-          {/* Progress bar */}
+          {/* Progress */}
           {status && (
             <div className={`rounded-lg p-4 border ${
-              status.error   ? 'bg-red-50 border-red-200' :
-              status.done    ? 'bg-green-50 border-green-200' :
-                               'bg-blue-50 border-blue-200'
+              status.error ? 'bg-red-50 border-red-200' :
+              status.done  ? 'bg-green-50 border-green-200' :
+                             'bg-blue-50 border-blue-200'
             }`}>
               <div className="flex items-center gap-2 mb-2">
                 {status.error ? (
@@ -404,20 +394,16 @@ export default function RunScan() {
                   <div className={`p-2 rounded-lg shrink-0 ${source.color}`}>
                     <Icon className="w-4 h-4" />
                   </div>
-                  <div>
-                    <div className="text-sm font-medium text-slate-900">{source.label}</div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-slate-900">{source.label}</span>
+                      <span className="text-xs text-slate-400">{source.badge}</span>
+                    </div>
                     <div className="text-xs text-slate-500">{source.desc}</div>
                   </div>
                 </div>
               );
             })}
-          </div>
-
-          <div className="mt-5 pt-4 border-t border-slate-100 text-xs text-slate-500 leading-relaxed">
-            <p>
-              <strong>Note:</strong> This scan simulates signals based on real data patterns. In production,
-              each source connects to live APIs (USPTO TESS, Delaware ICIS, GoDaddy registry, Shopify partner API, etc.).
-            </p>
           </div>
         </div>
       </div>

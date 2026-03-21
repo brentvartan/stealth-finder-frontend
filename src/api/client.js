@@ -115,6 +115,15 @@ export const scans = {
     api.post('/scans/trademark', { days_back: daysBack, max_results: maxResults }),
 };
 
+// ─── Scheduled Scans ──────────────────────────────────────────────────────────
+export const scheduledScans = {
+  list:    ()         => api.get('/scheduled-scans/'),
+  create:  (data)     => api.post('/scheduled-scans/', data),
+  update:  (id, data) => api.patch(`/scheduled-scans/${id}`, data),
+  delete:  (id)       => api.delete(`/scheduled-scans/${id}`),
+  runNow:  (id)       => api.post(`/scheduled-scans/${id}/run`, {}, { timeout: 300000 }),
+};
+
 // ─── Items (underlying storage for signals + watchlist) ───────────────────────
 export const items = {
   getAll: (params = {}) =>

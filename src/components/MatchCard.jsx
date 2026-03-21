@@ -158,14 +158,17 @@ export default function MatchCard({ match }) {
   const bullishScore = enrichment?.bullish_score;
   const watchCfg    = WATCH_CONFIG[watchLevel] || null;
 
-  const isCold = watchLevel === 'cold';
+  const isCold      = watchLevel === 'cold';
+  const isUnenriched = !isEnriched;
 
   const sortedSignals = [...(match.signals || [])].sort(
     (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
   );
 
-  // COLD cards render as a slim single row
-  if (isCold && isEnriched) {
+  // COLD and unenriched cards both render as slim single rows
+  if (isCold || isUnenriched) {
+    const slimLabel = isCold ? 'COLD' : 'PENDING';
+    const slimScore = isCold ? bullishScore : match.score;
     return (
       <div
         className="bg-white rounded-lg overflow-hidden transition-shadow hover:shadow-sm cursor-pointer"
@@ -178,7 +181,7 @@ export default function MatchCard({ match }) {
             className="w-8 h-8 rounded flex flex-col items-center justify-center shrink-0"
             style={{ backgroundColor: '#F2F2F2', color: '#bbb' }}
           >
-            <span className="font-display font-bold text-sm leading-none">{bullishScore}</span>
+            <span className="font-display font-bold text-sm leading-none">{slimScore}</span>
           </div>
           {/* Name + category */}
           <div className="flex-1 min-w-0 flex items-baseline gap-2">
@@ -189,21 +192,26 @@ export default function MatchCard({ match }) {
               {match.category}
             </span>
           </div>
-          {/* COLD label */}
-          <span className="text-[10px] font-medium text-neutral-300 uppercase tracking-wider shrink-0">COLD</span>
+          {/* COLD / PENDING label */}
+          <span className="text-[10px] font-medium text-neutral-300 uppercase tracking-wider shrink-0">{slimLabel}</span>
           <div className="text-neutral-200">
             {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </div>
         </div>
-        {/* Expandable detail for COLD */}
+        {/* Expandable detail */}
         {expanded && (
           <div style={{ borderTop: '1px solid #F0F0F0', backgroundColor: '#FAFAF8' }} className="p-4 space-y-3">
-            {enrichment.one_line_thesis && (
+            {isCold && enrichment?.one_line_thesis && (
               <p className="text-xs font-editorial italic text-neutral-400 leading-snug">
                 {enrichment.one_line_thesis}
               </p>
             )}
-            <EnrichmentPanel enrichment={enrichment} />
+            {isCold && <EnrichmentPanel enrichment={enrichment} />}
+            {isUnenriched && (
+              <p className="text-xs text-neutral-400 italic">
+                Not yet scored — click <strong>Bullish AI</strong> on the dashboard to analyse this brand.
+              </p>
+            )}
           </div>
         )}
       </div>

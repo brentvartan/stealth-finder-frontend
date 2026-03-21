@@ -5,6 +5,7 @@ import Dashboard from './components/Dashboard';
 import RunScan from './components/RunScan';
 import Watchlist from './components/Watchlist';
 import AddSignal from './components/AddSignal';
+import ScheduledScans from './components/ScheduledScans';
 import Navigation from './components/Navigation';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './App.css';
@@ -74,6 +75,15 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <AddSignal />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/schedules"
+            element={
+              <ProtectedRoute>
+                <ScheduledScans />
               </ProtectedRoute>
             }
           />

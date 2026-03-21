@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Play, Users, PlusCircle, LogOut, Download } from 'lucide-react';
+import { LayoutDashboard, Play, Users, PlusCircle, LogOut, Download, Clock } from 'lucide-react';
 import { items } from '../api/client';
 
 // Bullish logo mark — square border + two parallelogram bars
@@ -20,6 +20,7 @@ export default function Navigation() {
   const navItems = [
     { path: '/',           icon: LayoutDashboard, label: 'Dashboard'  },
     { path: '/scan',       icon: Play,            label: 'Run Scan'   },
+    { path: '/schedules',  icon: Clock,           label: 'Schedules'  },
     { path: '/watchlist',  icon: Users,           label: 'Watchlist'  },
     { path: '/add-signal', icon: PlusCircle,      label: 'Add Signal' },
   ];

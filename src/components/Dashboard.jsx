@@ -41,6 +41,8 @@ function buildMatches(signals, filters) {
     groups[key].signals.push(signal);
   });
 
+  const TIER_ORDER = { hot: 0, warm: 1, cold: 2, null: 3 };
+
   return Object.values(groups)
     .map(group => {
       const hasTrademark = group.signals.some(s => s.signal_type === 'trademark');
@@ -67,7 +69,16 @@ function buildMatches(signals, filters) {
       };
     })
     .filter(m => m.signals.length >= filters.minSignals)
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => {
+      // Primary: HOT → WARM → COLD → unenriched
+      const aTier = TIER_ORDER[a.enrichment?.watch_level ?? 'null'] ?? 3;
+      const bTier = TIER_ORDER[b.enrichment?.watch_level ?? 'null'] ?? 3;
+      if (aTier !== bTier) return aTier - bTier;
+      // Secondary: higher Bullish score first (or signal score if unenriched)
+      const aScore = a.enrichment?.bullish_score ?? a.score;
+      const bScore = b.enrichment?.bullish_score ?? b.score;
+      return bScore - aScore;
+    });
 }
 
 function parseSignalsFromItems(allItems) {
@@ -94,19 +105,32 @@ function parseSignalsFromItems(allItems) {
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 
-function StatCard({ label, value, accent = false }) {
+function StatCard({ label, sublabel, value, total, topColor = '#E5E5E0', valueColor = '#000', onClick, active }) {
   return (
     <div
-      className="bg-white rounded-lg p-5 flex flex-col gap-2"
-      style={{ borderTop: `3px solid ${accent ? '#052EF0' : '#E5E5E0'}` }}
+      className={`bg-white rounded-lg p-5 flex flex-col gap-2 transition-all ${onClick ? 'cursor-pointer hover:shadow-md' : ''} ${active ? 'shadow-md' : ''}`}
+      style={{ borderTop: `3px solid ${topColor}`, outline: active ? `2px solid ${topColor}` : 'none', outlineOffset: '2px' }}
+      onClick={onClick}
     >
-      <span className="text-xs font-medium text-neutral-400 uppercase tracking-wider">{label}</span>
-      <span
-        className="font-display font-bold text-4xl leading-none"
-        style={{ color: accent ? '#052EF0' : '#000000' }}
-      >
-        {value}
-      </span>
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-xs font-medium text-neutral-400 uppercase tracking-wider">{label}</span>
+        {onClick && (
+          <span className="text-[9px] text-neutral-300 uppercase tracking-wide shrink-0 mt-0.5">
+            {active ? 'Clear ×' : 'Filter'}
+          </span>
+        )}
+      </div>
+      <div className="flex items-baseline gap-2">
+        <span className="font-display font-bold text-4xl leading-none" style={{ color: valueColor }}>
+          {value}
+        </span>
+        {total > 0 && (
+          <span className="text-xs text-neutral-300 font-medium">of {total} scored</span>
+        )}
+      </div>
+      {sublabel && (
+        <p className="text-[10px] text-neutral-300 leading-snug mt-1">{sublabel}</p>
+      )}
     </div>
   );
 }
@@ -114,13 +138,14 @@ function StatCard({ label, value, accent = false }) {
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const [signals,   setSignals]   = useState([]);
-  const [matches,   setMatches]   = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [error,     setError]     = useState('');
-  const [enriching, setEnriching] = useState(false);
-  const [enrichMsg, setEnrichMsg] = useState('');
-  const [filters,   setFilters]   = useState({
+  const [signals,    setSignals]    = useState([]);
+  const [matches,    setMatches]    = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState('');
+  const [enriching,  setEnriching]  = useState(false);
+  const [enrichMsg,  setEnrichMsg]  = useState('');
+  const [tierFilter, setTierFilter] = useState(null); // null | 'hot' | 'warm' | 'cold'
+  const [filters,    setFilters]    = useState({
     minSignals: 1,
     dateRange:  90,
     categories: CONSUMER_CATEGORIES,
@@ -165,12 +190,15 @@ export default function Dashboard() {
   useEffect(() => { loadSignals(); }, [loadSignals]);
   useEffect(() => { setMatches(buildMatches(signals, filters)); }, [signals, filters]);
 
-  const displayMatches = filters.search.trim()
-    ? matches.filter(m =>
-        m.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-        m.category.toLowerCase().includes(filters.search.toLowerCase())
-      )
-    : matches;
+  const displayMatches = matches
+    .filter(m => !tierFilter || (m.enrichment?.watch_level === tierFilter))
+    .filter(m =>
+      !filters.search.trim() ||
+      m.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+      m.category.toLowerCase().includes(filters.search.toLowerCase())
+    );
+
+  const toggleTier = (tier) => setTierFilter(prev => prev === tier ? null : tier);
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-7 space-y-6">
@@ -206,11 +234,37 @@ export default function Dashboard() {
       </div>
 
       {/* ── Stats ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="With Trademark"  value={matches.filter(m => m.hasTrademark).length} accent />
-        <StatCard label="DTC Ready"       value={matches.filter(m => m.hasShopify && m.hasInstagram).length} />
-        <StatCard label="Bullish Hot"     value={matches.filter(m => m.enrichment?.watch_level === 'hot').length} accent />
-        <StatCard label="Bullish Warm"    value={matches.filter(m => m.enrichment?.watch_level === 'warm').length} />
+      <div className="grid grid-cols-3 gap-3">
+        <StatCard
+          label="Bullish Hot"
+          sublabel="Score ≥ 70 · Strong consumer signal, cultural tension, repeat potential"
+          value={matches.filter(m => m.enrichment?.watch_level === 'hot').length}
+          total={matches.filter(m => m.enrichment?.enriched).length}
+          topColor="#052EF0"
+          valueColor="#052EF0"
+          onClick={() => toggleTier('hot')}
+          active={tierFilter === 'hot'}
+        />
+        <StatCard
+          label="Bullish Warm"
+          sublabel="Score 50–69 · Interesting thesis, needs more signal or founder context"
+          value={matches.filter(m => m.enrichment?.watch_level === 'warm').length}
+          total={matches.filter(m => m.enrichment?.enriched).length}
+          topColor="#000"
+          valueColor="#000"
+          onClick={() => toggleTier('warm')}
+          active={tierFilter === 'warm'}
+        />
+        <StatCard
+          label="Cold"
+          sublabel="Score < 50 · Pass at this stage — generic name, no consumer signal, B2B-likely"
+          value={matches.filter(m => m.enrichment?.watch_level === 'cold').length}
+          total={matches.filter(m => m.enrichment?.enriched).length}
+          topColor="#E5E5E0"
+          valueColor="#999"
+          onClick={() => toggleTier('cold')}
+          active={tierFilter === 'cold'}
+        />
       </div>
 
       {/* ── Filters ── */}

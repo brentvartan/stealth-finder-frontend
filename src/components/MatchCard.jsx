@@ -19,9 +19,9 @@ const SIGNAL_TYPE_ORDER = ['trademark', 'delaware', 'domain', 'instagram', 'shop
 // ─── Watch-level helpers ────────────────────────────────────────────────────
 
 const WATCH_CONFIG = {
-  hot:  { label: 'HOT',  bg: '#052EF0', text: '#fff',     Icon: Flame     },
-  warm: { label: 'WARM', bg: '#000',    text: '#fff',     Icon: TrendingUp },
-  cold: { label: 'COLD', bg: '#EEEEEE', text: '#888',     Icon: Minus     },
+  hot:  { label: 'HOT',  bg: '#052EF0', text: '#fff', pillBg: '#052EF0', pillText: '#fff', Icon: Flame      },
+  warm: { label: 'WARM', bg: '#000',    text: '#fff', pillBg: '#000',    pillText: '#fff', Icon: TrendingUp },
+  cold: { label: 'COLD', bg: '#E8E8E8', text: '#aaa', pillBg: '#EEEEEE', pillText: '#999', Icon: Minus      },
 };
 
 function WatchBadge({ level, score }) {
@@ -153,21 +153,72 @@ export default function MatchCard({ match }) {
   const [expanded, setExpanded] = useState(false);
 
   const { enrichment } = match;
-  const isEnriched = enrichment?.enriched;
-  const watchLevel = enrichment?.watch_level;
+  const isEnriched  = enrichment?.enriched;
+  const watchLevel  = enrichment?.watch_level || (isEnriched ? 'cold' : null);
   const bullishScore = enrichment?.bullish_score;
+  const watchCfg    = WATCH_CONFIG[watchLevel] || null;
 
-  const isHigh   = match.score >= 50;
-  const isMedium = match.score >= 30;
+  const isCold = watchLevel === 'cold';
 
   const sortedSignals = [...(match.signals || [])].sort(
     (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
   );
 
+  // COLD cards render as a slim single row
+  if (isCold && isEnriched) {
+    return (
+      <div
+        className="bg-white rounded-lg overflow-hidden transition-shadow hover:shadow-sm cursor-pointer"
+        style={{ border: '1px solid #F0F0F0' }}
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div className="px-4 py-2.5 flex items-center gap-3">
+          {/* Muted left badge */}
+          <div
+            className="w-8 h-8 rounded flex flex-col items-center justify-center shrink-0"
+            style={{ backgroundColor: '#F2F2F2', color: '#bbb' }}
+          >
+            <span className="font-display font-bold text-sm leading-none">{bullishScore}</span>
+          </div>
+          {/* Name + category */}
+          <div className="flex-1 min-w-0 flex items-baseline gap-2">
+            <h3 className="font-display font-bold text-sm uppercase tracking-wide text-neutral-400 leading-none truncate">
+              {match.name}
+            </h3>
+            <span className="text-[10px] font-medium text-neutral-300 uppercase tracking-wider shrink-0">
+              {match.category}
+            </span>
+          </div>
+          {/* COLD label */}
+          <span className="text-[10px] font-medium text-neutral-300 uppercase tracking-wider shrink-0">COLD</span>
+          <div className="text-neutral-200">
+            {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </div>
+        </div>
+        {/* Expandable detail for COLD */}
+        {expanded && (
+          <div style={{ borderTop: '1px solid #F0F0F0', backgroundColor: '#FAFAF8' }} className="p-4 space-y-3">
+            {enrichment.one_line_thesis && (
+              <p className="text-xs font-editorial italic text-neutral-400 leading-snug">
+                {enrichment.one_line_thesis}
+              </p>
+            )}
+            <EnrichmentPanel enrichment={enrichment} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // HOT / WARM / unenriched cards — full display
+  const borderColor = watchLevel === 'hot' ? '#052EF0' : watchLevel === 'warm' ? '#000' : '#E5E5E0';
+  const pillBg      = watchCfg?.pillBg  || '#052EF0';
+  const pillText    = watchCfg?.pillText || '#fff';
+
   return (
     <div
       className="bg-white rounded-lg overflow-hidden transition-shadow hover:shadow-md"
-      style={{ border: `1px solid ${watchLevel === 'hot' ? '#052EF0' : '#E5E5E0'}` }}
+      style={{ border: `2px solid ${borderColor}` }}
     >
       {/* ── Main row ── */}
       <div
@@ -175,22 +226,27 @@ export default function MatchCard({ match }) {
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-4">
-          {/* Signal score badge */}
+          {/* Watch-level badge (left) */}
           <div
-            className="w-12 h-12 rounded-lg flex flex-col items-center justify-center shrink-0"
+            className="w-14 h-14 rounded-lg flex flex-col items-center justify-center shrink-0"
             style={{
-              backgroundColor: isHigh ? '#052EF0' : isMedium ? '#000' : '#F5F0EB',
-              color: isHigh || isMedium ? '#fff' : '#333',
+              backgroundColor: watchCfg?.bg || '#F5F0EB',
+              color: watchCfg?.text || '#333',
             }}
           >
-            <span className="font-display font-bold text-lg leading-none">{match.score}</span>
-            <span className="text-[8px] font-medium opacity-60 tracking-wide mt-0.5">SIG</span>
+            {watchCfg?.Icon && <watchCfg.Icon className="w-4 h-4 mb-0.5 opacity-80" />}
+            <span className="font-display font-bold text-lg leading-none">
+              {isEnriched ? bullishScore : match.score}
+            </span>
+            <span className="text-[8px] font-medium opacity-60 tracking-wide mt-0.5">
+              {isEnriched ? watchCfg?.label : 'SIG'}
+            </span>
           </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-baseline gap-2 mb-1">
-              <h3 className="font-display font-bold text-lg uppercase tracking-wide text-black leading-none">
+              <h3 className="font-display font-bold text-xl uppercase tracking-wide text-black leading-none">
                 {match.name}
               </h3>
               <span className="text-xs font-medium text-neutral-400 uppercase tracking-wider whitespace-nowrap">
@@ -207,7 +263,7 @@ export default function MatchCard({ match }) {
                   <span
                     key={type}
                     className="text-[10px] font-medium px-2 py-0.5 rounded-full"
-                    style={{ backgroundColor: '#052EF0', color: '#fff' }}
+                    style={{ backgroundColor: pillBg, color: pillText }}
                   >
                     {config.badge}
                   </span>
@@ -223,22 +279,17 @@ export default function MatchCard({ match }) {
               </span>
             </div>
 
-            {/* One-line thesis (collapsed preview) */}
-            {isEnriched && enrichment.one_line_thesis && !expanded && (
-              <p className="text-xs font-editorial italic text-neutral-500 mt-1.5 leading-snug">
+            {/* One-line thesis visible without expanding */}
+            {isEnriched && enrichment.one_line_thesis && (
+              <p className="text-sm font-editorial italic text-neutral-600 mt-2 leading-snug">
                 {enrichment.one_line_thesis}
               </p>
             )}
           </div>
 
-          {/* Right: Bullish AI badge + chevron */}
-          <div className="flex items-center gap-2 shrink-0">
-            {isEnriched && (
-              <WatchBadge level={watchLevel} score={bullishScore} />
-            )}
-            <div className="text-neutral-300">
-              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </div>
+          {/* Right: chevron only — watch level is already on the left badge */}
+          <div className="text-neutral-300 shrink-0">
+            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </div>
         </div>
       </div>

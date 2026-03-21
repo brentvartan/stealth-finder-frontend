@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Award, Building2, Globe, Camera, ShoppingBag, Linkedin,
-  ChevronDown, ChevronUp, ExternalLink, Pencil
+  ChevronDown, ChevronUp, ExternalLink, Pencil, Flame, TrendingUp, Minus,
 } from 'lucide-react';
 
 export const SIGNAL_CONFIG = {
@@ -16,8 +16,146 @@ export const SIGNAL_CONFIG = {
 
 const SIGNAL_TYPE_ORDER = ['trademark', 'delaware', 'domain', 'instagram', 'shopify', 'social'];
 
+// ─── Watch-level helpers ────────────────────────────────────────────────────
+
+const WATCH_CONFIG = {
+  hot:  { label: 'HOT',  bg: '#052EF0', text: '#fff',     Icon: Flame     },
+  warm: { label: 'WARM', bg: '#000',    text: '#fff',     Icon: TrendingUp },
+  cold: { label: 'COLD', bg: '#EEEEEE', text: '#888',     Icon: Minus     },
+};
+
+function WatchBadge({ level, score }) {
+  const cfg = WATCH_CONFIG[level] || WATCH_CONFIG.cold;
+  const { Icon } = cfg;
+  return (
+    <div
+      className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-display font-bold tracking-wider shrink-0"
+      style={{ backgroundColor: cfg.bg, color: cfg.text }}
+    >
+      <Icon className="w-3 h-3" />
+      <span>{score}</span>
+      <span className="opacity-60">{cfg.label}</span>
+    </div>
+  );
+}
+
+// ─── Enrichment panel (expanded) ───────────────────────────────────────────
+
+function EnrichmentPanel({ enrichment }) {
+  if (!enrichment?.enriched) return null;
+
+  const {
+    bullish_score, watch_level, consumer_brand, repeat_potential, repeat_reason,
+    cultural_theme, advocacy_deficiency, remarkability_drivers, one_line_thesis,
+    red_flags, comparable_portfolio,
+  } = enrichment;
+
+  const watchCfg = WATCH_CONFIG[watch_level] || WATCH_CONFIG.cold;
+
+  return (
+    <div
+      className="rounded-lg p-4 space-y-3"
+      style={{ backgroundColor: '#F5F0EB', border: '1px solid #E5E5E0' }}
+    >
+      {/* Header row */}
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-display font-bold uppercase tracking-widest text-neutral-400">
+          Bullish AI Analysis
+        </span>
+        <div
+          className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-bold"
+          style={{ backgroundColor: watchCfg.bg, color: watchCfg.text }}
+        >
+          <span className="text-lg font-display leading-none">{bullish_score}</span>
+          <span className="text-[10px] tracking-wide opacity-70">/ 100</span>
+        </div>
+      </div>
+
+      {/* Thesis */}
+      {one_line_thesis && (
+        <p className="text-sm font-editorial italic text-neutral-700 leading-snug border-l-2 pl-3"
+           style={{ borderColor: watchCfg.bg }}>
+          {one_line_thesis}
+        </p>
+      )}
+
+      {/* Key signals grid */}
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        <div>
+          <span className="text-neutral-400 uppercase tracking-wider text-[9px] font-medium">Consumer Brand</span>
+          <p className="font-medium text-black mt-0.5">{consumer_brand ? 'Yes ✓' : 'Not clear'}</p>
+        </div>
+        <div>
+          <span className="text-neutral-400 uppercase tracking-wider text-[9px] font-medium">Repeat Potential</span>
+          <p className="font-medium text-black mt-0.5 capitalize">{repeat_potential || '—'}</p>
+          {repeat_reason && <p className="text-neutral-400 text-[10px] leading-tight mt-0.5">{repeat_reason}</p>}
+        </div>
+        {cultural_theme && (
+          <div className="col-span-2">
+            <span className="text-neutral-400 uppercase tracking-wider text-[9px] font-medium">2026 Cultural Theme</span>
+            <p className="font-medium mt-0.5" style={{ color: '#052EF0' }}>{cultural_theme}</p>
+          </div>
+        )}
+        {advocacy_deficiency && (
+          <div className="col-span-2">
+            <span className="text-neutral-400 uppercase tracking-wider text-[9px] font-medium">Category Whitespace</span>
+            <p className="text-neutral-600 mt-0.5 leading-snug">{advocacy_deficiency}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Remarkability drivers */}
+      {remarkability_drivers?.length > 0 && (
+        <div>
+          <span className="text-neutral-400 uppercase tracking-wider text-[9px] font-medium">Remarkability Drivers</span>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {remarkability_drivers.map(d => (
+              <span
+                key={d}
+                className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                style={{ backgroundColor: '#052EF0', color: '#fff' }}
+              >
+                {d}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Portfolio comp */}
+      {comparable_portfolio && (
+        <div>
+          <span className="text-neutral-400 uppercase tracking-wider text-[9px] font-medium">Portfolio Comp</span>
+          <p className="text-neutral-600 text-xs mt-0.5 font-editorial italic">{comparable_portfolio}</p>
+        </div>
+      )}
+
+      {/* Red flags */}
+      {red_flags?.length > 0 && (
+        <div>
+          <span className="text-neutral-400 uppercase tracking-wider text-[9px] font-medium">Flags</span>
+          <ul className="mt-1 space-y-0.5">
+            {red_flags.map((flag, i) => (
+              <li key={i} className="text-xs text-red-600 flex items-start gap-1">
+                <span className="mt-0.5 shrink-0">·</span>{flag}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main card ──────────────────────────────────────────────────────────────
+
 export default function MatchCard({ match }) {
   const [expanded, setExpanded] = useState(false);
+
+  const { enrichment } = match;
+  const isEnriched = enrichment?.enriched;
+  const watchLevel = enrichment?.watch_level;
+  const bullishScore = enrichment?.bullish_score;
 
   const isHigh   = match.score >= 50;
   const isMedium = match.score >= 30;
@@ -29,7 +167,7 @@ export default function MatchCard({ match }) {
   return (
     <div
       className="bg-white rounded-lg overflow-hidden transition-shadow hover:shadow-md"
-      style={{ border: '1px solid #E5E5E0' }}
+      style={{ border: `1px solid ${watchLevel === 'hot' ? '#052EF0' : '#E5E5E0'}` }}
     >
       {/* ── Main row ── */}
       <div
@@ -37,16 +175,16 @@ export default function MatchCard({ match }) {
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-4">
-          {/* Score badge */}
+          {/* Signal score badge */}
           <div
-            className="w-14 h-14 rounded-lg flex flex-col items-center justify-center shrink-0"
+            className="w-12 h-12 rounded-lg flex flex-col items-center justify-center shrink-0"
             style={{
               backgroundColor: isHigh ? '#052EF0' : isMedium ? '#000' : '#F5F0EB',
               color: isHigh || isMedium ? '#fff' : '#333',
             }}
           >
-            <span className="font-display font-bold text-xl leading-none">{match.score}</span>
-            <span className="text-[8px] font-medium opacity-60 tracking-wide mt-0.5">PTS</span>
+            <span className="font-display font-bold text-lg leading-none">{match.score}</span>
+            <span className="text-[8px] font-medium opacity-60 tracking-wide mt-0.5">SIG</span>
           </div>
 
           {/* Content */}
@@ -61,7 +199,6 @@ export default function MatchCard({ match }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              {/* Signal type badges */}
               {SIGNAL_TYPE_ORDER.map(type => {
                 const key = `has${type.charAt(0).toUpperCase()}${type.slice(1)}`;
                 if (!match[key]) return null;
@@ -76,7 +213,6 @@ export default function MatchCard({ match }) {
                   </span>
                 );
               })}
-
               <span className="text-xs text-neutral-300">·</span>
               <span className="text-xs text-neutral-400">
                 {match.signals.length} signal{match.signals.length !== 1 ? 's' : ''}
@@ -86,67 +222,82 @@ export default function MatchCard({ match }) {
                 {new Date(match.latestSignal).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </span>
             </div>
+
+            {/* One-line thesis (collapsed preview) */}
+            {isEnriched && enrichment.one_line_thesis && !expanded && (
+              <p className="text-xs font-editorial italic text-neutral-500 mt-1.5 leading-snug">
+                {enrichment.one_line_thesis}
+              </p>
+            )}
           </div>
 
-          {/* Expand chevron */}
-          <div className="shrink-0 text-neutral-300">
-            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          {/* Right: Bullish AI badge + chevron */}
+          <div className="flex items-center gap-2 shrink-0">
+            {isEnriched && (
+              <WatchBadge level={watchLevel} score={bullishScore} />
+            )}
+            <div className="text-neutral-300">
+              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ── Expanded timeline ── */}
+      {/* ── Expanded panel ── */}
       {expanded && (
-        <div style={{ borderTop: '1px solid #E5E5E0', backgroundColor: '#FAFAF8' }} className="p-4">
-          <h4
-            className="font-display font-semibold text-xs uppercase tracking-widest text-neutral-400 mb-3"
-          >
-            Signal Timeline
-          </h4>
-          <div className="space-y-2">
-            {sortedSignals.map((signal, idx) => {
-              const config = SIGNAL_CONFIG[signal.signal_type] || SIGNAL_CONFIG.manual;
-              const Icon   = config.icon;
-              return (
-                <div
-                  key={signal.id || idx}
-                  className="bg-white rounded p-3 text-sm"
-                  style={{ border: '1px solid #E5E5E0' }}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-display font-semibold uppercase tracking-wider flex items-center gap-1.5 text-black">
-                      <Icon className="w-3.5 h-3.5" style={{ color: '#052EF0' }} />
-                      {config.label}
-                    </span>
-                    <span className="text-[10px] text-neutral-300 font-medium">
-                      {new Date(signal.timestamp).toLocaleDateString('en-US', {
-                        month: 'short', day: 'numeric', year: 'numeric'
-                      })}
-                    </span>
+        <div style={{ borderTop: '1px solid #E5E5E0', backgroundColor: '#FAFAF8' }} className="p-4 space-y-4">
+
+          {/* AI Analysis */}
+          {isEnriched && <EnrichmentPanel enrichment={enrichment} />}
+
+          {/* Signal timeline */}
+          <div>
+            <h4 className="font-display font-semibold text-xs uppercase tracking-widest text-neutral-400 mb-3">
+              Signal Timeline
+            </h4>
+            <div className="space-y-2">
+              {sortedSignals.map((signal, idx) => {
+                const config = SIGNAL_CONFIG[signal.signal_type] || SIGNAL_CONFIG.manual;
+                const Icon   = config.icon;
+                return (
+                  <div
+                    key={signal.id || idx}
+                    className="bg-white rounded p-3 text-sm"
+                    style={{ border: '1px solid #E5E5E0' }}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-display font-semibold uppercase tracking-wider flex items-center gap-1.5 text-black">
+                        <Icon className="w-3.5 h-3.5" style={{ color: '#052EF0' }} />
+                        {config.label}
+                      </span>
+                      <span className="text-[10px] text-neutral-300 font-medium">
+                        {new Date(signal.timestamp).toLocaleDateString('en-US', {
+                          month: 'short', day: 'numeric', year: 'numeric',
+                        })}
+                      </span>
+                    </div>
+                    {signal.description && (
+                      <p className="text-neutral-600 mt-1 text-xs leading-relaxed">{signal.description}</p>
+                    )}
+                    {signal.notes && (
+                      <p className="text-neutral-400 text-xs mt-1 font-editorial italic">{signal.notes}</p>
+                    )}
+                    {signal.url && signal.url !== '#' && (
+                      <a
+                        href={signal.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs mt-2 inline-flex items-center gap-1 font-medium transition-colors"
+                        style={{ color: '#052EF0' }}
+                        onClick={e => e.stopPropagation()}
+                      >
+                        View Source <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
                   </div>
-
-                  {signal.description && (
-                    <p className="text-neutral-600 mt-1 text-xs leading-relaxed">{signal.description}</p>
-                  )}
-                  {signal.notes && (
-                    <p className="text-neutral-400 text-xs mt-1 font-editorial italic">{signal.notes}</p>
-                  )}
-
-                  {signal.url && signal.url !== '#' && (
-                    <a
-                      href={signal.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs mt-2 inline-flex items-center gap-1 font-medium transition-colors"
-                      style={{ color: '#052EF0' }}
-                      onClick={e => e.stopPropagation()}
-                    >
-                      View Source <ExternalLink className="w-3 h-3" />
-                    </a>
-                  )}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

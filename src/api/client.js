@@ -95,6 +95,19 @@ export const auth = {
     api.post('/auth/reset-password', { token, password }),
 };
 
+// ─── Enrichment (Bullish AI analysis via Claude) ──────────────────────────────
+export const enrich = {
+  signal: (itemId) =>
+    api.post(`/enrich/signal/${itemId}`),
+
+  batch: ({ itemIds, unenrichedOnly, limit } = {}) =>
+    api.post('/enrich/batch', {
+      ...(itemIds       ? { item_ids: itemIds }             : {}),
+      ...(unenrichedOnly ? { unenriched_only: true }        : {}),
+      ...(limit         ? { limit }                         : {}),
+    }),
+};
+
 // ─── Scans (real data from live sources) ──────────────────────────────────────
 export const scans = {
   // Returns { signals: [...], total_found: N, fetched: N, error: null }

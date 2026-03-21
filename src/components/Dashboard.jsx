@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { items } from '../api/client';
+import { items, enrich } from '../api/client';
 import MatchCard from './MatchCard';
-import { Search, RefreshCw, Award, ShoppingBag, CheckCircle, TrendingUp } from 'lucide-react';
+import { Search, RefreshCw, Award, ShoppingBag, CheckCircle, TrendingUp, Sparkles } from 'lucide-react';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -55,8 +55,13 @@ function buildMatches(signals, filters) {
       if (hasDelaware && hasDomain && hasSocial)       score += 10;
       if (hasShopify && hasInstagram)                  score += 15;
 
+      // Best enrichment: prefer trademark signal's enrichment, then any other
+      const tmEnriched  = group.signals.find(s => s.signal_type === 'trademark' && s.enrichment?.enriched);
+      const anyEnriched = group.signals.find(s => s.enrichment?.enriched);
+      const enrichment  = (tmEnriched || anyEnriched)?.enrichment || null;
+
       return {
-        ...group, score,
+        ...group, score, enrichment,
         hasTrademark, hasDelaware, hasDomain, hasInstagram, hasShopify, hasSocial,
         latestSignal: new Date(Math.max(...group.signals.map(s => new Date(s.timestamp)))),
       };
@@ -79,6 +84,7 @@ function parseSignalsFromItems(allItems) {
           url:         meta.url || '',
           notes:       meta.notes || '',
           timestamp:   meta.timestamp || item.created_at,
+          enrichment:  meta.enrichment || null,
         }];
       }
     } catch (e) {}
@@ -108,11 +114,13 @@ function StatCard({ label, value, accent = false }) {
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const [signals,  setSignals]  = useState([]);
-  const [matches,  setMatches]  = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState('');
-  const [filters,  setFilters]  = useState({
+  const [signals,   setSignals]   = useState([]);
+  const [matches,   setMatches]   = useState([]);
+  const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState('');
+  const [enriching, setEnriching] = useState(false);
+  const [enrichMsg, setEnrichMsg] = useState('');
+  const [filters,   setFilters]   = useState({
     minSignals: 1,
     dateRange:  90,
     categories: CONSUMER_CATEGORIES,
@@ -133,6 +141,27 @@ export default function Dashboard() {
     }
   }, []);
 
+  const runEnrichment = useCallback(async () => {
+    setEnriching(true);
+    setEnrichMsg('');
+    try {
+      const resp = await enrich.batch({ unenrichedOnly: true, limit: 20 });
+      const { enriched, total_processed } = resp.data;
+      setEnrichMsg(
+        enriched > 0
+          ? `${enriched} signal${enriched !== 1 ? 's' : ''} analysed by Bullish AI`
+          : total_processed === 0
+            ? 'All signals already enriched'
+            : 'No new signals to enrich'
+      );
+      await loadSignals();
+    } catch (err) {
+      setEnrichMsg('Enrichment failed — check ANTHROPIC_API_KEY is set');
+    } finally {
+      setEnriching(false);
+    }
+  }, [loadSignals]);
+
   useEffect(() => { loadSignals(); }, [loadSignals]);
   useEffect(() => { setMatches(buildMatches(signals, filters)); }, [signals, filters]);
 
@@ -147,26 +176,41 @@ export default function Dashboard() {
     <div className="max-w-7xl mx-auto px-6 py-7 space-y-6">
 
       {/* ── Page header ── */}
-      <div className="flex items-baseline justify-between">
+      <div className="flex items-center justify-between">
         <h1 className="font-display font-bold text-3xl uppercase tracking-wide text-black">
           Matches
         </h1>
-        <button
-          onClick={loadSignals}
-          disabled={loading}
-          className="flex items-center gap-1.5 text-xs font-medium text-neutral-400 hover:text-black disabled:opacity-40 transition-colors"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-3">
+          {enrichMsg && (
+            <span className="text-xs text-neutral-400">{enrichMsg}</span>
+          )}
+          <button
+            onClick={runEnrichment}
+            disabled={enriching || loading}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-display font-semibold tracking-wider uppercase text-white rounded transition-all disabled:opacity-40"
+            style={{ backgroundColor: enriching ? '#999' : '#052EF0' }}
+            title="Score signals against Bullish investment thesis using Claude AI"
+          >
+            <Sparkles className={`w-3.5 h-3.5 ${enriching ? 'animate-pulse' : ''}`} />
+            {enriching ? 'Analysing...' : 'Bullish AI'}
+          </button>
+          <button
+            onClick={loadSignals}
+            disabled={loading}
+            className="flex items-center gap-1.5 text-xs font-medium text-neutral-400 hover:text-black disabled:opacity-40 transition-colors"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* ── Stats ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="With Trademark"  value={matches.filter(m => m.hasTrademark).length}                                   accent />
+        <StatCard label="With Trademark"  value={matches.filter(m => m.hasTrademark).length} accent />
         <StatCard label="DTC Ready"       value={matches.filter(m => m.hasShopify && m.hasInstagram).length} />
-        <StatCard label="Perfect Match"   value={matches.filter(m => m.hasTrademark && m.hasDelaware && m.hasDomain).length}  accent />
-        <StatCard label="High Score 50+"  value={matches.filter(m => m.score >= 50).length} />
+        <StatCard label="Bullish Hot"     value={matches.filter(m => m.enrichment?.watch_level === 'hot').length} accent />
+        <StatCard label="Bullish Warm"    value={matches.filter(m => m.enrichment?.watch_level === 'warm').length} />
       </div>
 
       {/* ── Filters ── */}
@@ -264,9 +308,9 @@ export default function Dashboard() {
         <div className="bg-white rounded-lg p-16 text-center">
           <div className="w-14 h-14 mx-auto mb-4 opacity-10">
             <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="2" width="32" height="32" stroke="#000" strokeWidth="3.5" />
-              <line x1="9" y1="14" x2="27" y2="14" stroke="#000" strokeWidth="3" />
-              <line x1="9" y1="22" x2="27" y2="22" stroke="#000" strokeWidth="3" />
+              <rect x="1.5" y="1.5" width="33" height="33" stroke="#000" strokeWidth="3" />
+              <polygon points="8.5,10.5 18,10.5 17,13 8.5,13" fill="#000" />
+              <polygon points="8.5,22 27,22 26,25 8.5,25" fill="#000" />
             </svg>
           </div>
           <h3 className="font-display font-bold text-xl uppercase tracking-wide text-black mb-2">

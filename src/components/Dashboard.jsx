@@ -156,7 +156,7 @@ export default function Dashboard() {
     try {
       setLoading(true);
       setError('');
-      const response = await items.getAll({ per_page: 200 });
+      const response = await items.getAll({ per_page: 1000 });
       const allItems = response.data.items || [];
       setSignals(parseSignalsFromItems(allItems));
     } catch (err) {

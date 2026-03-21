@@ -214,16 +214,19 @@ export default function RunScan() {
       return results.filter(Boolean).length;
     };
 
+    let totalSkipped = 0;
+
     try {
       if (scanType === 'full' || scanType === 'trademark') {
         setStatus(s => ({ ...s, message: 'Live: querying USPTO trademark database...', progress: 10 }));
         const resp = await scans.trademark(daysBack, 200);
         const { total_found, new_saved, skipped, error: tmError } = resp.data;
         if (tmError) throw new Error(`USPTO API: ${tmError}`);
-        totalSaved += new_saved;
+        totalSaved   += new_saved;
+        totalSkipped += (skipped || 0);
         setStatus(s => ({
           ...s,
-          message: `USPTO: ${total_found.toLocaleString()} filings scanned — ${new_saved} new, ${skipped} already saved`,
+          message: `USPTO: ${total_found.toLocaleString()} filings scanned — ${new_saved} new, ${skipped} already in database`,
           progress: 25,
         }));
       }
@@ -234,10 +237,11 @@ export default function RunScan() {
         const deResp = await scans.delaware(daysBack, 150);
         const { fetched: deFetched, domain_hits, new_saved: deNew, skipped: deSkipped, error: deError } = deResp.data;
         if (deError) throw new Error(`Delaware API: ${deError}`);
-        totalSaved += deNew;
+        totalSaved   += deNew;
+        totalSkipped += (deSkipped || 0);
         setStatus(s => ({
           ...s,
-          message: `Delaware: ${deFetched} entities found, ${domain_hits} domain matches — ${deNew} new signals saved`,
+          message: `Delaware: ${deFetched} entities found, ${domain_hits} domain matches — ${deNew} new, ${deSkipped} already in database`,
           progress: 65,
         }));
       }
@@ -258,9 +262,10 @@ export default function RunScan() {
         totalSaved += saved;
       }
 
+      const skippedNote = totalSkipped > 0 ? ` (${totalSkipped} already in your database — deduped)` : '';
       setStatus({
         phase: 'done', progress: 100,
-        message: `Scan complete — ${totalSaved} new signals saved.`,
+        message: `Scan complete — ${totalSaved} new signals added.${skippedNote}`,
         done: true, error: false, saved: totalSaved,
       });
     } catch (err) {

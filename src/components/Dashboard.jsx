@@ -29,8 +29,10 @@ function buildMatches(signals, filters) {
   cutoffDate.setDate(cutoffDate.getDate() - filters.dateRange);
 
   const filtered = signals.filter(signal => {
-    const signalDate = new Date(signal.timestamp);
-    return signalDate >= cutoffDate && filters.categories.includes(signal.category);
+    // Filter by when WE saved the signal (savedAt), not the original filing date.
+    // A 6-month-old Form D we just discovered is still a fresh find.
+    const discoveryDate = new Date(signal.savedAt || signal.timestamp);
+    return discoveryDate >= cutoffDate && filters.categories.includes(signal.category);
   });
 
   const groups = {};
@@ -95,6 +97,7 @@ function parseSignalsFromItems(allItems) {
           url:         meta.url || '',
           notes:       meta.notes || '',
           timestamp:   meta.timestamp || item.created_at,
+          savedAt:     item.created_at,   // when WE discovered it (used for date filter)
           enrichment:  meta.enrichment || null,
         }];
       }
@@ -147,7 +150,7 @@ export default function Dashboard() {
   const [tierFilter, setTierFilter] = useState(null); // null | 'hot' | 'warm' | 'cold'
   const [filters,    setFilters]    = useState({
     minSignals: 1,
-    dateRange:  90,
+    dateRange:  180,
     categories: CONSUMER_CATEGORIES,
     search:     '',
   });

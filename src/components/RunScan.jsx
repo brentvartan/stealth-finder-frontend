@@ -174,7 +174,7 @@ const SCAN_TYPES = [
 ];
 
 const SOURCES = [
-  { icon: Building2,   label: 'Delaware Filings',    desc: 'Live — new LLCs & Corps filed in the last N days. Commitment signal: serious enough to incorporate but not yet public.',   live: true  },
+  { icon: Building2,   label: 'Delaware Filings',    desc: 'Live — Form D filings (pre-raise, pre-announcement). Incorporated in DE, raising first capital quietly. Strongest stealth signal.',   live: true  },
   { icon: Globe,       label: 'Domain Registration', desc: 'Live — auto cross-referenced for every Delaware hit. Matching .com registered recently = compound signal.',               live: true  },
   { icon: Award,       label: 'USPTO Trademarks',    desc: 'Live — real filings from the last N days',              live: true  },
   { icon: Camera,      label: 'Instagram Handles',   desc: 'Consumer brands secure @handle before website',         live: false },

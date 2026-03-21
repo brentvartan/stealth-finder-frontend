@@ -110,9 +110,11 @@ export const enrich = {
 
 // ─── Scans (real data from live sources) ──────────────────────────────────────
 export const scans = {
-  // Returns { signals: [...], total_found: N, fetched: N, error: null }
   trademark: (daysBack = 30, maxResults = 200) =>
     api.post('/scans/trademark', { days_back: daysBack, max_results: maxResults }),
+
+  delaware: (daysBack = 7, maxResults = 150) =>
+    api.post('/scans/delaware', { days_back: daysBack, max_results: maxResults }, { timeout: 120000 }),
 };
 
 // ─── Scheduled Scans ──────────────────────────────────────────────────────────

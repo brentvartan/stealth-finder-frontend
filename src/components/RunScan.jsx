@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { items, scans } from '../api/client';
+
 import { Play, RefreshCw, CheckCircle, AlertCircle, Award, Camera, ShoppingBag, Building2, Globe, Linkedin } from 'lucide-react';
 import { CONSUMER_CATEGORIES } from './Dashboard';
 
@@ -173,11 +174,11 @@ const SCAN_TYPES = [
 ];
 
 const SOURCES = [
+  { icon: Building2,   label: 'Delaware Filings',    desc: 'Live — new LLCs & Corps filed in the last N days. Commitment signal: serious enough to incorporate but not yet public.',   live: true  },
+  { icon: Globe,       label: 'Domain Registration', desc: 'Live — auto cross-referenced for every Delaware hit. Matching .com registered recently = compound signal.',               live: true  },
   { icon: Award,       label: 'USPTO Trademarks',    desc: 'Live — real filings from the last N days',              live: true  },
   { icon: Camera,      label: 'Instagram Handles',   desc: 'Consumer brands secure @handle before website',         live: false },
   { icon: ShoppingBag, label: 'Shopify Stores',      desc: 'New DTC stores with 0 products = stealth',             live: false },
-  { icon: Building2,   label: 'Delaware Filings',    desc: 'Traditional incorporation tracking',                    live: false },
-  { icon: Globe,       label: 'Domain Registration', desc: 'Recently registered URLs',                              live: false },
   { icon: Linkedin,    label: 'Social Media',        desc: 'Founders announcing stealth mode',                      live: false },
 ];
 
@@ -227,17 +228,27 @@ export default function RunScan() {
         }));
       }
 
+      // ── Live: Delaware filings + automatic domain cross-reference ──
+      if (scanType === 'full' || scanType === 'delaware' || scanType === 'domain') {
+        setStatus(s => ({ ...s, message: 'Live: querying Delaware entity filings + cross-referencing domains...', progress: 40 }));
+        const deResp = await scans.delaware(daysBack, 150);
+        const { fetched: deFetched, domain_hits, new_saved: deNew, skipped: deSkipped, error: deError } = deResp.data;
+        if (deError) throw new Error(`Delaware API: ${deError}`);
+        totalSaved += deNew;
+        setStatus(s => ({
+          ...s,
+          message: `Delaware: ${deFetched} entities found, ${domain_hits} domain matches — ${deNew} new signals saved`,
+          progress: 65,
+        }));
+      }
+
       const simSteps = [];
-      if (scanType === 'full' || scanType === 'delaware')
-        simSteps.push({ type: 'delaware',  label: 'Scanning Delaware filings...',       progress: 40, data: () => getDelawareData(daysBack) });
-      if (scanType === 'full' || scanType === 'domain')
-        simSteps.push({ type: 'domain',    label: 'Monitoring domain registrations...',  progress: 55, data: () => getDomainData(daysBack) });
       if (scanType === 'full' || scanType === 'instagram')
-        simSteps.push({ type: 'instagram', label: 'Checking Instagram handles...',       progress: 68, data: () => getInstagramData() });
+        simSteps.push({ type: 'instagram', label: 'Checking Instagram handles...',  progress: 78, data: () => getInstagramData() });
       if (scanType === 'full' || scanType === 'shopify')
-        simSteps.push({ type: 'shopify',   label: 'Scanning Shopify stores...',          progress: 80, data: () => getShopifyData() });
+        simSteps.push({ type: 'shopify',   label: 'Scanning Shopify stores...',     progress: 88, data: () => getShopifyData() });
       if (scanType === 'full' || scanType === 'social')
-        simSteps.push({ type: 'social',    label: 'Parsing social media...',             progress: 90, data: () => getSocialData() });
+        simSteps.push({ type: 'social',    label: 'Parsing social media...',        progress: 94, data: () => getSocialData() });
 
       for (const step of simSteps) {
         setStatus(s => ({ ...s, message: step.label, progress: step.progress }));
@@ -275,7 +286,7 @@ export default function RunScan() {
             Run Scan
           </h1>
           <p className="text-neutral-400 text-sm mt-1">
-            Scan real and simulated sources for stealth startup signals. USPTO data is live.
+            Delaware filings, domain cross-references, and USPTO trademarks are all live. Other sources coming soon.
           </p>
         </div>
 

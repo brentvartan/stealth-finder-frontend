@@ -145,7 +145,7 @@ export default function Dashboard() {
     setEnriching(true);
     setEnrichMsg('');
     try {
-      const resp = await enrich.batch({ unenrichedOnly: true, limit: 20 });
+      const resp = await enrich.batch({ unenrichedOnly: true, limit: 5 });
       const { enriched, total_processed } = resp.data;
       setEnrichMsg(
         enriched > 0

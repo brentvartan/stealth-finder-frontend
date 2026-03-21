@@ -105,7 +105,7 @@ export const enrich = {
       ...(itemIds       ? { item_ids: itemIds }             : {}),
       ...(unenrichedOnly ? { unenriched_only: true }        : {}),
       ...(limit         ? { limit }                         : {}),
-    }),
+    }, { timeout: 120000 }),
 };
 
 // ─── Scans (real data from live sources) ──────────────────────────────────────

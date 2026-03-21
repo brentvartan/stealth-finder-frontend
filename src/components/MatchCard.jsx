@@ -113,7 +113,7 @@ function EnrichmentPanel({ enrichment }) {
               <span
                 key={d}
                 className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                style={{ backgroundColor: '#052EF0', color: '#fff' }}
+                style={{ backgroundColor: '#000', color: '#fff' }}
               >
                 {d}
               </span>

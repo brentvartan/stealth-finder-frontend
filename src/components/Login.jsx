@@ -71,12 +71,15 @@ export default function Login() {
       <div className="mb-10 flex flex-col items-center gap-4">
         <BullishIcon className="w-6 h-6 text-white/40" />
         <div
-          className="flex items-center justify-center"
           style={{
             border: '1.5px solid rgba(255,255,255,0.45)',
             borderRadius: '50%',
-            width: 210,
-            height: 210,
+            width: 188,
+            height: 272,
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+            paddingBottom: 52,
           }}
         >
           <div className="text-center leading-tight">

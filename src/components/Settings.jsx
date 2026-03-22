@@ -1,26 +1,44 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { settings as settingsApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { Plus, X, CheckCircle, Slack, Bell, BarChart2, Save } from 'lucide-react';
+import { Plus, X, CheckCircle, Save, Bell, Slack, BarChart2, Clock, Users } from 'lucide-react';
+import ScheduledScans from './ScheduledScans';
+import Team from './Team';
 
-export default function Settings() {
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+// ─── Sub-components ──────────────────────────────────────────────────────────
 
-  const [loading,  setLoading]  = useState(true);
-  const [saving,   setSaving]   = useState(false);
-  const [saved,    setSaved]    = useState(false);
-  const [error,    setError]    = useState('');
+const inputClass = 'w-full border border-neutral-200 rounded px-3 py-2.5 text-sm focus:outline-none focus:border-[#052EF0] transition-colors disabled:bg-neutral-50 disabled:text-neutral-400';
+const labelClass = 'block text-xs font-medium text-neutral-400 mb-1.5 uppercase tracking-wider';
 
-  const [alertEmails,    setAlertEmails]    = useState([]);
-  const [newEmail,       setNewEmail]       = useState('');
-  const [slackWebhook,   setSlackWebhook]   = useState('');
-  const [digestEnabled,  setDigestEnabled]  = useState(true);
-  const [daysBack,       setDaysBack]       = useState(30);
-  const [maxResults,     setMaxResults]     = useState(200);
+function SectionHeader({ icon: Icon, title, subtitle }) {
+  return (
+    <div className="flex items-start gap-3 mb-5">
+      <div className="w-8 h-8 rounded flex items-center justify-center shrink-0" style={{ backgroundColor: '#F2F2F2' }}>
+        <Icon className="w-4 h-4 text-neutral-500" />
+      </div>
+      <div>
+        <h3 className="font-display font-bold text-sm uppercase tracking-widest text-black">{title}</h3>
+        <p className="text-xs text-neutral-400 mt-0.5">{subtitle}</p>
+      </div>
+    </div>
+  );
+}
 
-  const [testingSlack,   setTestingSlack]   = useState(false);
-  const [slackTestMsg,   setSlackTestMsg]   = useState('');
+// ─── Alerts tab ──────────────────────────────────────────────────────────────
+
+function AlertsTab({ isAdmin }) {
+  const [loading,       setLoading]       = useState(true);
+  const [saving,        setSaving]        = useState(false);
+  const [saved,         setSaved]         = useState(false);
+  const [error,         setError]         = useState('');
+  const [alertEmails,   setAlertEmails]   = useState([]);
+  const [newEmail,      setNewEmail]      = useState('');
+  const [slackWebhook,  setSlackWebhook]  = useState('');
+  const [digestEnabled, setDigestEnabled] = useState(true);
+  const [daysBack,      setDaysBack]      = useState(30);
+  const [maxResults,    setMaxResults]    = useState(200);
+  const [testingSlack,  setTestingSlack]  = useState(false);
+  const [slackTestMsg,  setSlackTestMsg]  = useState('');
 
   const load = useCallback(async () => {
     try {
@@ -32,7 +50,7 @@ export default function Settings() {
       setDigestEnabled(d.digest_enabled !== false);
       setDaysBack(d.scan_days_back || 30);
       setMaxResults(d.scan_max_results || 200);
-    } catch (err) {
+    } catch {
       setError('Failed to load settings.');
     } finally {
       setLoading(false);
@@ -86,51 +104,16 @@ export default function Settings() {
     }
   };
 
-  const inputClass = 'w-full border border-neutral-200 rounded px-3 py-2.5 text-sm focus:outline-none focus:border-[#052EF0] transition-colors disabled:bg-neutral-50 disabled:text-neutral-400';
-  const labelClass = 'block text-xs font-medium text-neutral-400 mb-1.5 uppercase tracking-wider';
-
-  const SectionHeader = ({ icon: Icon, title, subtitle }) => (
-    <div className="flex items-start gap-3 mb-5">
-      <div className="w-8 h-8 rounded flex items-center justify-center shrink-0" style={{ backgroundColor: '#F2F2F2' }}>
-        <Icon className="w-4 h-4 text-neutral-500" />
-      </div>
-      <div>
-        <h3 className="font-display font-bold text-sm uppercase tracking-widest text-black">{title}</h3>
-        <p className="text-xs text-neutral-400 mt-0.5">{subtitle}</p>
-      </div>
-    </div>
-  );
-
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto px-6 py-16 text-center">
+      <div className="py-16 text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto" style={{ borderColor: '#052EF0' }} />
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-7 space-y-6">
-
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display font-bold text-3xl uppercase tracking-wide text-black">Settings</h1>
-          <p className="text-neutral-400 text-sm mt-1">Platform configuration for Stealth Finder.</p>
-        </div>
-        {isAdmin && (
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-display font-semibold tracking-wider uppercase text-white rounded transition-all"
-            style={{ backgroundColor: saving ? '#999' : '#052EF0' }}
-          >
-            {saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-            {saving ? 'Saving...' : saved ? 'Saved' : 'Save Changes'}
-          </button>
-        )}
-      </div>
-
+    <div className="space-y-6">
       {error && (
         <div className="p-3 rounded text-xs text-red-700 bg-red-50 border border-red-200">{error}</div>
       )}
@@ -283,6 +266,79 @@ export default function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Save */}
+      {isAdmin && (
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 px-5 py-2.5 text-sm font-display font-semibold tracking-wider uppercase text-white rounded transition-all"
+            style={{ backgroundColor: saving ? '#999' : '#052EF0' }}
+          >
+            {saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+            {saving ? 'Saving...' : saved ? 'Saved' : 'Save Changes'}
+          </button>
+          {saved && <span className="text-xs text-green-600 font-medium">Settings saved.</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Settings page ───────────────────────────────────────────────────────
+
+const TABS = [
+  { id: 'alerts',    label: 'Alerts',    icon: Bell    },
+  { id: 'schedules', label: 'Schedules', icon: Clock   },
+  { id: 'team',      label: 'Team',      icon: Users   },
+];
+
+export default function Settings() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  const [activeTab, setActiveTab] = useState('alerts');
+
+  return (
+    <div className="max-w-3xl mx-auto px-6 py-7">
+
+      {/* Page header */}
+      <div className="mb-6">
+        <h1 className="font-display font-bold text-3xl uppercase tracking-wide text-black">Settings</h1>
+        <p className="text-neutral-400 text-sm mt-1">Platform configuration for Stealth Finder.</p>
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex items-center gap-0 border-b border-neutral-200 mb-7">
+        {TABS.map(tab => {
+          const Icon = tab.icon;
+          const active = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`
+                relative flex items-center gap-2 px-5 py-3 text-sm font-medium transition-colors
+                ${active ? 'text-black' : 'text-neutral-400 hover:text-black'}
+              `}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {tab.label}
+              {active && (
+                <span
+                  className="absolute bottom-0 left-0 right-0 h-0.5"
+                  style={{ backgroundColor: '#052EF0' }}
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tab content */}
+      {activeTab === 'alerts'    && <AlertsTab isAdmin={isAdmin} />}
+      {activeTab === 'schedules' && <ScheduledScans embedded />}
+      {activeTab === 'team'      && <Team embedded />}
 
     </div>
   );

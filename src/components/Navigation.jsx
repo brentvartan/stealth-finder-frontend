@@ -20,12 +20,10 @@ export default function Navigation() {
 
   const navItems = [
     { path: '/',           icon: LayoutDashboard, label: 'Dashboard'  },
-    { path: '/ask',        icon: MessageCircle,   label: 'Ask Bullish'},
+    { path: '/ask',        icon: MessageCircle,   label: 'Ask Finder' },
     { path: '/scan',       icon: Play,            label: 'Run Scan'   },
-    { path: '/schedules',  icon: Clock,           label: 'Schedules'  },
-    { path: '/watchlist',  icon: Users,           label: 'Watchlist'  },
-    { path: '/team',       icon: UsersRound,      label: 'Team'       },
     { path: '/add-signal', icon: PlusCircle,      label: 'Add Signal' },
+    { path: '/watchlist',  icon: Users,           label: 'Watchlist'  },
     { path: '/settings',   icon: SettingsIcon,    label: 'Settings'   },
   ];
 
@@ -112,18 +110,15 @@ export default function Navigation() {
   return (
     <nav style={{ backgroundColor: '#000000' }} className="border-b border-neutral-800">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="flex items-center justify-between h-14">
+        <div className="flex items-center justify-between py-4">
 
           {/* ── Logo ── */}
           <Link to="/" className="flex items-center gap-3 group shrink-0">
             <BullishIcon className="w-7 h-7 text-white group-hover:text-[#052EF0] transition-colors" />
-            <div className="flex flex-col leading-none">
-              <span className="font-display font-bold text-white text-base tracking-wide uppercase">
-                Stealth Finder
-              </span>
-              <span className="font-editorial italic text-[11px] text-neutral-400 tracking-wide">
-                Bullish Intelligence
-              </span>
+            <div className="flex flex-col leading-tight">
+              <span className="font-display font-bold text-white text-[11px] tracking-widest uppercase">Stealth</span>
+              <span className="font-display font-bold text-white text-[11px] tracking-widest uppercase">Startup</span>
+              <span className="font-display font-bold text-white text-[11px] tracking-widest uppercase">Finder</span>
             </div>
           </Link>
 

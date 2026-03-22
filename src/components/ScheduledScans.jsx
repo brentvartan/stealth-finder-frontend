@@ -188,7 +188,7 @@ function AddScanForm({ onAdd, onCancel }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-export default function ScheduledScans() {
+export default function ScheduledScans({ embedded = false }) {
   const [scans,      setScans]      = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState('');
@@ -254,14 +254,16 @@ export default function ScheduledScans() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-7 space-y-6">
+    <div className={embedded ? 'space-y-5' : 'max-w-7xl mx-auto px-6 py-7 space-y-6'}>
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display font-bold text-3xl uppercase tracking-wide text-black">
-            Scheduled Scans
-          </h1>
+          {!embedded && (
+            <h1 className="font-display font-bold text-3xl uppercase tracking-wide text-black">
+              Scheduled Scans
+            </h1>
+          )}
           <p className="text-sm text-neutral-400 mt-1">
             Automatically scan USPTO daily for new consumer brand signals · HOT signals trigger an immediate email alert
           </p>

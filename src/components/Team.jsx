@@ -3,7 +3,7 @@ import { auth, admin } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { Users, Mail, CheckCircle, ShieldCheck, UserCircle, Crown } from 'lucide-react';
 
-export default function Team() {
+export default function Team({ embedded = false }) {
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.role === 'admin';
 
@@ -51,17 +51,19 @@ export default function Team() {
   const labelClass = 'block text-xs font-medium text-neutral-400 mb-1 uppercase tracking-wider';
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-7 space-y-6">
+    <div className={embedded ? 'space-y-5' : 'max-w-7xl mx-auto px-6 py-7 space-y-6'}>
 
       {/* Page header */}
-      <div>
-        <h1 className="font-display font-bold text-3xl uppercase tracking-wide text-black">
-          Team
-        </h1>
-        <p className="text-neutral-400 text-sm mt-1">
-          Bullish partners and analysts with access to Stealth Finder.
-        </p>
-      </div>
+      {!embedded && (
+        <div>
+          <h1 className="font-display font-bold text-3xl uppercase tracking-wide text-black">
+            Team
+          </h1>
+          <p className="text-neutral-400 text-sm mt-1">
+            Bullish partners and analysts with access to Stealth Finder.
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 

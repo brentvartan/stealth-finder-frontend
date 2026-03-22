@@ -261,7 +261,7 @@ export default function Dashboard() {
             title="Score signals against Bullish investment thesis using Claude AI"
           >
             <Sparkles className={`w-3.5 h-3.5 ${enriching ? 'animate-pulse' : ''}`} />
-            {enriching ? 'Analysing...' : 'Bullish AI'}
+            {enriching ? 'Scoring...' : 'Score'}
           </button>
           <button
             onClick={loadSignals}

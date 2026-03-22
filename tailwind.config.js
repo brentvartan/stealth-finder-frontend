@@ -8,11 +8,12 @@ export default {
     extend: {
       colors: {
         bullish: {
-          blue:  '#052EF0',
-          black: '#000000',
-          navy:  '#020A52',
+          blue:       '#052EF0',
+          'blue-light': '#87B4F8',
+          black:      '#000000',
+          navy:       '#020A52',
           'navy-deep': '#010525',
-          cream: '#F5F0EB',
+          cream:      '#F5F0EB',
           'gray-dark': '#333333',
           'gray-light': '#EEEEEE',
         },

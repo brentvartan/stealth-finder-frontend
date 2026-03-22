@@ -38,8 +38,8 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          # Production API — Railway backend
-          VITE_API_URL: https://web-production-801ed.up.railway.app/api
+          # Production API — custom domain
+          VITE_API_URL: https://api.bullish.co/api
           # Subdirectory base path for GitHub Pages
           VITE_BASE: /stealth-finder-frontend/
 

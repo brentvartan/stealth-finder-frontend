@@ -45,16 +45,13 @@ function FounderPanel({ founder, brandName, founderScore }) {
     ? `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(founder.name + ' ' + brandName)}`
     : `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(brandName + ' founder')}`;
 
+  const MINI_SIGNAL_MAXES = { chip_on_shoulder: 30, category_proximity: 25, magnetic_signal: 20, pedigree: 15, thesis_clarity: 10 };
+
   return (
     <div className="rounded-lg p-4 space-y-2.5" style={{ backgroundColor: '#fff', border: '1px solid #E5E5E0' }}>
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-display font-bold uppercase tracking-widest text-neutral-400 flex items-center gap-1.5">
           <User className="w-3 h-3" /> Jockey
-          {tierCfg && (
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: tierCfg.bg, color: tierCfg.color }}>
-              {founderScore.total} · {tierCfg.label}
-            </span>
-          )}
         </span>
         <a
           href={linkedinSearch}
@@ -67,6 +64,43 @@ function FounderPanel({ founder, brandName, founderScore }) {
           Search LinkedIn
         </a>
       </div>
+
+      {/* Founder score block */}
+      {tierCfg && founderScore?.breakdown && (
+        <div
+          className="rounded-lg px-3 py-2.5 flex items-center justify-between gap-3"
+          style={{ backgroundColor: tierCfg.bg, border: `1px solid ${tierCfg.color}22` }}
+        >
+          <div className="flex items-center gap-2">
+            <User className="w-4 h-4 shrink-0" style={{ color: tierCfg.color }} />
+            <div>
+              <span className="text-base font-display font-bold leading-none" style={{ color: tierCfg.color }}>
+                {founderScore.total}
+              </span>
+              <span className="text-[10px] font-medium ml-1 opacity-70" style={{ color: tierCfg.color }}>/100</span>
+              <p className="text-[10px] font-bold uppercase tracking-wide mt-0.5" style={{ color: tierCfg.color }}>
+                {tierCfg.label}
+              </p>
+            </div>
+          </div>
+          {/* Mini 5-bar chart */}
+          <div className="flex items-end gap-0.5 h-8">
+            {Object.entries(MINI_SIGNAL_MAXES).map(([key, max]) => {
+              const sig = founderScore.breakdown[key];
+              if (!sig) return null;
+              const pct = Math.max(8, Math.round((sig.score / max) * 100));
+              return (
+                <div
+                  key={key}
+                  className="w-2 rounded-sm"
+                  style={{ height: `${pct}%`, backgroundColor: tierCfg.color, opacity: 0.5 }}
+                  title={`${key.replace(/_/g, ' ')}: ${sig.score}/${max}`}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {isUnknown ? (
         <div>
@@ -512,6 +546,24 @@ export default function MatchCard({ match, onUpdate }) {
               <span className="text-xs text-neutral-400">
                 {new Date(match.latestSignal).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </span>
+              {(() => {
+                const fs = enrichment?.founder_score;
+                if (!fs?.gate_passed || !fs?.total || fs.total < 50) return null;
+                const jockeyColor = fs.tier === 'HIGH_PRIORITY' ? '#052EF0' : '#D97706';
+                return (
+                  <>
+                    <span className="text-neutral-300">·</span>
+                    <span
+                      className="flex items-center gap-0.5 text-xs font-bold"
+                      style={{ color: jockeyColor }}
+                      title={`Founder: ${fs.tier?.replace(/_/g, ' ')} · ${fs.total}/100`}
+                    >
+                      <User className="w-3.5 h-3.5" />
+                      {fs.total}
+                    </span>
+                  </>
+                );
+              })()}
             </div>
 
             {isEnriched && enrichment.one_line_thesis && (

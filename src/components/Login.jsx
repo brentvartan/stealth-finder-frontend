@@ -68,7 +68,7 @@ export default function Login() {
       }}
     >
       {/* ── Brand badge ── */}
-      <div className="mb-10 flex flex-col items-center gap-4">
+      <div className="mb-8 flex flex-col items-center gap-8">
         <BullishIcon className="w-6 h-6 text-white/40" />
         <div
           style={{
@@ -77,9 +77,8 @@ export default function Login() {
             width: 272,
             height: 188,
             display: 'flex',
-            alignItems: 'flex-end',
+            alignItems: 'center',
             justifyContent: 'center',
-            paddingBottom: 38,
           }}
         >
           <div className="text-center leading-tight">

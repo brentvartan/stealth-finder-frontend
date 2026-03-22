@@ -9,6 +9,8 @@ import ScheduledScans from './components/ScheduledScans';
 import Team from './components/Team';
 import AcceptInvite from './components/AcceptInvite';
 import Navigation from './components/Navigation';
+import Chat from './components/Chat';
+import Settings from './components/Settings';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './App.css';
 
@@ -98,6 +100,24 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <ScheduledScans />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/ask"
+            element={
+              <ProtectedRoute>
+                <Chat />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
               </ProtectedRoute>
             }
           />

@@ -161,5 +161,18 @@ export const items = {
     api.delete(`/items/${id}`),
 };
 
+// ─── Chat (Ask Bullish AI) ────────────────────────────────────────────────────
+export const chat = {
+  ask: (messages) =>
+    api.post('/chat/ask', { messages }, { timeout: 60000 }),
+};
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+export const settings = {
+  get: () => api.get('/settings'),
+  update: (data) => api.patch('/settings', data),
+  testSlack: (webhookUrl) => api.post('/settings/test-slack', { webhook_url: webhookUrl }),
+};
+
 export default api;
 export { api };

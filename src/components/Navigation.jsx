@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Play, Users, PlusCircle, LogOut, Download, Clock, UsersRound, Flame } from 'lucide-react';
+import { LayoutDashboard, Play, Users, PlusCircle, LogOut, Download, Clock, UsersRound, Flame, MessageCircle, Settings as SettingsIcon } from 'lucide-react';
 import { items } from '../api/client';
 
 // Bullish logo mark — square border + two parallelogram bars
@@ -20,11 +20,13 @@ export default function Navigation() {
 
   const navItems = [
     { path: '/',           icon: LayoutDashboard, label: 'Dashboard'  },
+    { path: '/ask',        icon: MessageCircle,   label: 'Ask Bullish'},
     { path: '/scan',       icon: Play,            label: 'Run Scan'   },
     { path: '/schedules',  icon: Clock,           label: 'Schedules'  },
     { path: '/watchlist',  icon: Users,           label: 'Watchlist'  },
     { path: '/team',       icon: UsersRound,      label: 'Team'       },
     { path: '/add-signal', icon: PlusCircle,      label: 'Add Signal' },
+    { path: '/settings',   icon: SettingsIcon,    label: 'Settings'   },
   ];
 
   const isActive = (path) => location.pathname === path;

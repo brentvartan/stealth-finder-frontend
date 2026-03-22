@@ -9,10 +9,13 @@ import {
  * Intensity = sum of bullish_scores for all signals belonging to that tension that week.
  * (Unscored signals count as 30 — present but unvalidated.)
  *
- * Tensions:
- *   - Ubiquitous Wellness  — health, self-optimisation, GLP-1, longevity, food identity
- *   - Uncompromising Self  — identity expression, beauty, personal care, authentic living
- *   - Individuals > Institutions — community, analog revival, DTC empowerment, creator autonomy
+ * Tensions (from Bullish 2026 Cultural Themes deck):
+ *   - Ubiquitous Wellness  ($7.3T) — health optimisation, GLP-1, longevity, Presently Offline,
+ *                                    Healthy Hedonism, Long Live Longevity
+ *   - Uncompromising Self  ($2.7T) — identity expression, beauty, Visible Values,
+ *                                    Technically Natural, Boldly Intimate
+ *   - Individuals > Institutions ($3.5T) — Communal Crafting, Micro Moguls,
+ *                                          Creator Legitimacy, DTC empowerment
  */
 
 const THEMES = {
@@ -22,27 +25,67 @@ const THEMES = {
 };
 
 // Keywords that signal each tension — checked against cultural_theme + category + one_line_thesis
+// Sourced from Bullish 2026 Cultural Themes deck + sub-theme language
+
+// Ubiquitous Wellness: health optimisation, GLP-1, longevity protocols, Presently Offline
+// (digital detox/analog self-care), Healthy Hedonism (permissive wellness, guilt-free
+// indulgence), Long Live Longevity (biohacking, healthspan, performance tracking)
 const WELLNESS_KEYS = [
+  // Core wellness
   'wellness', 'health', 'glp', 'glp-1', 'weight', 'longevity', 'healthspan',
   'nutrition', 'supplement', 'vitamin', 'diet', 'dietary', 'food', 'beverage',
   'drink', 'gut', 'sleep', 'mental', 'anxiety', 'stress', 'fitness',
-  'functional', 'medical', 'clinical', 'therapeutic', 'pet', 'longevity',
+  'functional', 'medical', 'clinical', 'therapeutic', 'pet',
   'biohack', 'recovery', 'immune', 'metabolic', 'hormone',
+  // Presently Offline sub-theme
+  'offline', 'detox', 'mindful', 'mindfulness', 'meditation', 'breathwork',
+  'sauna', 'cold plunge', 'spa', 'retreat', 'unplugged', 'screen-free',
+  // Healthy Hedonism sub-theme
+  'hedonism', 'permissive', 'indulge', 'guilt-free', 'pleasure', 'moderat',
+  // Long Live Longevity sub-theme
+  'anti-aging', 'anti-ageing', 'peptide', 'lifespan', 'biomarker',
+  'wearable', 'optimize', 'optimis', 'performance', 'protocol',
 ];
 
+// Uncompromising Self: identity expression, personal care as statement, Visible Values
+// (purpose-led consumption), Technically Natural (science + natural amplifying the self),
+// Boldly Intimate (taboo-breaking personal care, femtech, body positivity)
 const SELF_KEYS = [
+  // Core self/identity
   'beauty', 'skin', 'skincare', 'cosmetic', 'makeup', 'grooming', 'personal care',
   'haircare', 'fragrance', 'self', 'identity', 'expression', 'style', 'fashion',
   'apparel', 'authentic', 'unapologetic', 'gen alpha', 'genz', 'gen z',
   'transparency', 'clean label', 'sustainable', 'climate', 'body care', 'intimate',
+  // Visible Values sub-theme
+  'values', 'purpose', 'ethical', 'conscious', 'cause', 'advocacy', 'empowerment',
+  'self-care', 'statement',
+  // Technically Natural sub-theme
+  'natural', 'science-backed', 'retinol', 'serum', 'derma', 'formul',
+  'ingredient', 'efficacy', 'biotech', 'actives',
+  // Boldly Intimate sub-theme
+  'taboo', 'femcare', 'femtech', 'period', 'menstrual', 'libido',
+  'body positive', 'bold', 'confidence', 'sexual wellness',
 ];
 
+// Individuals > Institutions: micro-communities, bypassing gatekeepers, Communal Crafting
+// (local/niche passion communities, third places), Micro Moguls (indie founders, DTC,
+// solopreneurs), Creator Legitimacy (platform independence, audience ownership)
 const INDIVIDUALS_KEYS = [
+  // Core anti-institution
   'individual', 'institution', 'community', 'creator', 'indie', 'craft', 'local',
   'independent', 'decentrali', 'direct', 'dtc', 'analog', 'revival', 'physical',
   'third place', 'third-place', 'running', 'sport', 'outdoor', 'finance', 'banking',
   'education', 'media', 'social', 'connection', 'rebellion', 'anti-corporate',
   'small batch', 'maker', 'handcraft',
+  // Communal Crafting sub-theme
+  'communal', 'collective', 'niche', 'artisan', 'micro-community', 'gathering',
+  'club', 'hobby', 'workshop', 'co-op',
+  // Micro Moguls sub-theme
+  'entrepreneur', 'founder', 'startup', 'solopreneur', 'side hustle',
+  'micro-brand', 'mogul', 'brand builder',
+  // Creator Legitimacy sub-theme
+  'gatekeeper', 'influencer', 'podcast', 'newsletter', 'substack',
+  'audience', 'subscriber', 'legitimacy', 'platform independence',
 ];
 
 function classifyTension(match) {

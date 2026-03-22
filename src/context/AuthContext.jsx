@@ -14,6 +14,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [newHotCount, setNewHotCount] = useState(0);
 
   useEffect(() => {
     // Check if user is logged in on mount
@@ -51,6 +52,11 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
       localStorage.setItem('user', JSON.stringify(userData));
+
+      // Rotate login timestamps so Dashboard can compute "new since last login"
+      const prevLogin = localStorage.getItem('this_login_at');
+      if (prevLogin) localStorage.setItem('prev_login_at', prevLogin);
+      localStorage.setItem('this_login_at', new Date().toISOString());
 
       setUser(userData);
       return { success: true };
@@ -112,6 +118,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     register,
     loginWithTokens,
+    newHotCount,
+    setNewHotCount,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

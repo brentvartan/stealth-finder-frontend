@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import {
   Award, Building2, Globe, Camera, ShoppingBag, Linkedin,
   ChevronDown, ChevronUp, ExternalLink, Pencil, Flame, TrendingUp, Minus, User,
+  Sparkles, Bookmark, BookmarkCheck, StickyNote, Save,
 } from 'lucide-react';
+import { enrich, items as itemsApi } from '../api/client';
 
 export const SIGNAL_CONFIG = {
   trademark: { icon: Award,       label: 'Trademark', badge: 'TM'     },
@@ -16,7 +18,7 @@ export const SIGNAL_CONFIG = {
 
 const SIGNAL_TYPE_ORDER = ['trademark', 'delaware', 'domain', 'instagram', 'shopify', 'social'];
 
-// ─── Watch-level helpers ────────────────────────────────────────────────────
+// ─── Watch-level helpers ─────────────────────────────────────────────────────
 
 const WATCH_CONFIG = {
   hot:  { label: 'HOT',  bg: '#052EF0', text: '#fff', pillBg: '#052EF0', pillText: '#fff', Icon: Flame      },
@@ -24,22 +26,7 @@ const WATCH_CONFIG = {
   cold: { label: 'COLD', bg: '#E8E8E8', text: '#aaa', pillBg: '#EEEEEE', pillText: '#999', Icon: Minus      },
 };
 
-function WatchBadge({ level, score }) {
-  const cfg = WATCH_CONFIG[level] || WATCH_CONFIG.cold;
-  const { Icon } = cfg;
-  return (
-    <div
-      className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-display font-bold tracking-wider shrink-0"
-      style={{ backgroundColor: cfg.bg, color: cfg.text }}
-    >
-      <Icon className="w-3 h-3" />
-      <span>{score}</span>
-      <span className="opacity-60">{cfg.label}</span>
-    </div>
-  );
-}
-
-// ─── Founder panel ──────────────────────────────────────────────────────────
+// ─── Founder panel ───────────────────────────────────────────────────────────
 
 function FounderPanel({ founder, brandName }) {
   const isUnknown = !founder || founder.confidence === 'unknown' || !founder.name;
@@ -99,7 +86,80 @@ function FounderPanel({ founder, brandName }) {
   );
 }
 
-// ─── Enrichment panel (expanded) ───────────────────────────────────────────
+// ─── Team notes panel ────────────────────────────────────────────────────────
+
+function TeamNotesPanel({ match, onSaved }) {
+  const [text, setText] = useState(match.team_notes || '');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved]   = useState(false);
+
+  const isDirty = text !== (match.team_notes || '');
+
+  const handleSave = async (e) => {
+    e.stopPropagation();
+    if (!match.primarySignalId) return;
+    setSaving(true);
+    try {
+      const primarySignal = match.signals.find(s => s.id === match.primarySignalId) || match.signals[0];
+      if (!primarySignal) return;
+      const updatedMeta = {
+        _type:        'signal',
+        company_name: primarySignal.companyName,
+        signal_type:  primarySignal.signal_type,
+        category:     primarySignal.category,
+        description:  primarySignal.description,
+        url:          primarySignal.url,
+        notes:        primarySignal.notes,
+        timestamp:    primarySignal.timestamp,
+        enrichment:   primarySignal.enrichment,
+        team_notes:   text,
+      };
+      if (primarySignal.fp) updatedMeta.fp = primarySignal.fp;
+      await itemsApi.update(primarySignal.id, { description: JSON.stringify(updatedMeta) });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+      if (onSaved) onSaved();
+    } catch (err) {
+      console.error('Failed to save note:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="rounded-lg p-3 space-y-2" style={{ backgroundColor: '#fff', border: '1px solid #E5E5E0' }}>
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-display font-bold uppercase tracking-widest text-neutral-400 flex items-center gap-1.5">
+          <StickyNote className="w-3 h-3" /> Team Notes
+        </span>
+        {saved && (
+          <span className="text-[10px] text-green-500 font-medium">Saved ✓</span>
+        )}
+      </div>
+      <textarea
+        value={text}
+        onChange={e => setText(e.target.value)}
+        onClick={e => e.stopPropagation()}
+        placeholder="Add a note for the team — meeting notes, contact info, thesis thoughts..."
+        className="w-full text-xs text-neutral-600 bg-transparent resize-none focus:outline-none placeholder-neutral-300 leading-relaxed"
+        rows={text ? Math.max(2, text.split('\n').length + 1) : 2}
+      />
+      {isDirty && (
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-1 text-[10px] font-medium px-2.5 py-1 rounded transition-colors"
+          style={{ backgroundColor: saving ? '#EEE' : '#052EF0', color: saving ? '#999' : '#fff' }}
+        >
+          <Save className="w-3 h-3" />
+          {saving ? 'Saving...' : 'Save Note'}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Enrichment panel ────────────────────────────────────────────────────────
 
 function EnrichmentPanel({ enrichment, brandName }) {
   if (!enrichment?.enriched) return null;
@@ -210,10 +270,13 @@ function EnrichmentPanel({ enrichment, brandName }) {
   );
 }
 
-// ─── Main card ──────────────────────────────────────────────────────────────
+// ─── Main card ───────────────────────────────────────────────────────────────
 
-export default function MatchCard({ match }) {
-  const [expanded, setExpanded] = useState(false);
+export default function MatchCard({ match, onUpdate }) {
+  const [expanded,      setExpanded]      = useState(false);
+  const [reenriching,   setReenriching]   = useState(false);
+  const [watchlisted,   setWatchlisted]   = useState(false);
+  const [watchlisting,  setWatchlisting]  = useState(false);
 
   const { enrichment } = match;
   const isEnriched  = enrichment?.enriched;
@@ -221,14 +284,59 @@ export default function MatchCard({ match }) {
   const bullishScore = enrichment?.bullish_score;
   const watchCfg    = WATCH_CONFIG[watchLevel] || null;
 
-  const isCold      = watchLevel === 'cold';
+  const isCold       = watchLevel === 'cold';
   const isUnenriched = !isEnriched;
+  const isHotOrWarm  = watchLevel === 'hot' || watchLevel === 'warm';
+
+  const primarySignalId = match.primarySignalId || match.signals?.[0]?.id;
 
   const sortedSignals = [...(match.signals || [])].sort(
     (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
   );
 
-  // COLD and unenriched cards both render as slim single rows
+  // ── Re-enrich ──
+  const handleReenrich = async (e) => {
+    e.stopPropagation();
+    if (!primarySignalId) return;
+    setReenriching(true);
+    try {
+      await enrich.signal(primarySignalId);
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      console.error('Re-enrich failed:', err);
+    } finally {
+      setReenriching(false);
+    }
+  };
+
+  // ── Add to watchlist ──
+  const handleAddToWatchlist = async (e) => {
+    e.stopPropagation();
+    setWatchlisting(true);
+    try {
+      const founder = enrichment?.founder;
+      const founderName = (founder?.name && founder.confidence !== 'unknown') ? founder.name : '';
+      const meta = {
+        _type:    'watchlist',
+        name:     founderName || match.name,
+        company:  match.name,
+        linkedin: '',
+        twitter:  '',
+        notes:    enrichment?.one_line_thesis
+          ? `From Stealth Finder — ${enrichment.one_line_thesis}`
+          : `From Stealth Finder — ${match.category}`,
+        added_at: new Date().toISOString(),
+      };
+      await itemsApi.create(founderName || match.name, JSON.stringify(meta));
+      setWatchlisted(true);
+    } catch (err) {
+      console.error('Add to watchlist failed:', err);
+    } finally {
+      setWatchlisting(false);
+    }
+  };
+
+  // ── COLD / unenriched slim row ──
   if (isCold || isUnenriched) {
     const slimLabel = isCold ? 'COLD' : 'PENDING';
     const slimScore = isCold ? bullishScore : match.score;
@@ -239,14 +347,12 @@ export default function MatchCard({ match }) {
         onClick={() => setExpanded(!expanded)}
       >
         <div className="px-4 py-2.5 flex items-center gap-3">
-          {/* Muted left badge */}
           <div
             className="w-8 h-8 rounded flex flex-col items-center justify-center shrink-0"
             style={{ backgroundColor: '#F2F2F2', color: '#bbb' }}
           >
             <span className="font-display font-bold text-sm leading-none">{slimScore}</span>
           </div>
-          {/* Name + category */}
           <div className="flex-1 min-w-0 flex items-baseline gap-2">
             <h3 className="font-display font-bold text-sm uppercase tracking-wide text-neutral-400 leading-none truncate">
               {match.name}
@@ -255,13 +361,11 @@ export default function MatchCard({ match }) {
               {match.category}
             </span>
           </div>
-          {/* COLD / PENDING label */}
           <span className="text-[10px] font-medium text-neutral-300 uppercase tracking-wider shrink-0">{slimLabel}</span>
           <div className="text-neutral-200">
             {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </div>
         </div>
-        {/* Expandable detail */}
         {expanded && (
           <div style={{ borderTop: '1px solid #F0F0F0', backgroundColor: '#FAFAF8' }} className="p-4 space-y-3">
             {isCold && enrichment?.one_line_thesis && (
@@ -270,6 +374,7 @@ export default function MatchCard({ match }) {
               </p>
             )}
             {isCold && <EnrichmentPanel enrichment={enrichment} brandName={match.name} />}
+            {isCold && <TeamNotesPanel match={match} onSaved={onUpdate} />}
             {isUnenriched && (
               <p className="text-xs text-neutral-400 italic">
                 Not yet scored — click <strong>Bullish AI</strong> on the dashboard to analyse this brand.
@@ -281,7 +386,7 @@ export default function MatchCard({ match }) {
     );
   }
 
-  // HOT / WARM / unenriched cards — full display
+  // ── HOT / WARM full card ──
   const borderColor = watchLevel === 'hot' ? '#052EF0' : watchLevel === 'warm' ? '#000' : '#E5E5E0';
   const pillBg      = watchCfg?.pillBg  || '#052EF0';
   const pillText    = watchCfg?.pillText || '#fff';
@@ -297,7 +402,7 @@ export default function MatchCard({ match }) {
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-4">
-          {/* Watch-level badge (left) */}
+          {/* Watch-level badge */}
           <div
             className="w-14 h-14 rounded-lg flex flex-col items-center justify-center shrink-0"
             style={{
@@ -350,7 +455,6 @@ export default function MatchCard({ match }) {
               </span>
             </div>
 
-            {/* One-line thesis visible without expanding */}
             {isEnriched && enrichment.one_line_thesis && (
               <p className="text-sm font-editorial italic text-neutral-600 mt-2 leading-snug">
                 {enrichment.one_line_thesis}
@@ -358,7 +462,42 @@ export default function MatchCard({ match }) {
             )}
           </div>
 
-          {/* Right: chevron only — watch level is already on the left badge */}
+          {/* Right: action buttons + chevron */}
+          <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
+            {/* Add to Watchlist */}
+            {isHotOrWarm && isEnriched && (
+              <button
+                onClick={handleAddToWatchlist}
+                disabled={watchlisting || watchlisted}
+                title={watchlisted ? 'Added to Watchlist' : 'Add founder to Watchlist'}
+                className="p-1.5 rounded transition-colors"
+                style={{ color: watchlisted ? '#052EF0' : '#CCC' }}
+              >
+                {watchlisted
+                  ? <BookmarkCheck className="w-4 h-4" />
+                  : watchlisting
+                    ? <div className="animate-spin rounded-full h-4 w-4 border-b border-neutral-300" />
+                    : <Bookmark className="w-4 h-4 hover:text-[#052EF0]" style={{ transition: 'color 0.15s' }} />
+                }
+              </button>
+            )}
+            {/* Re-enrich */}
+            {isHotOrWarm && isEnriched && (
+              <button
+                onClick={handleReenrich}
+                disabled={reenriching}
+                title="Re-run Bullish AI analysis"
+                className="p-1.5 rounded transition-colors"
+                style={{ color: reenriching ? '#CCC' : '#CCC' }}
+              >
+                <Sparkles
+                  className={`w-4 h-4 ${reenriching ? 'animate-pulse text-[#052EF0]' : 'hover:text-[#052EF0]'}`}
+                  style={{ transition: 'color 0.15s' }}
+                />
+              </button>
+            )}
+          </div>
+
           <div className="text-neutral-300 shrink-0">
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </div>
@@ -369,8 +508,10 @@ export default function MatchCard({ match }) {
       {expanded && (
         <div style={{ borderTop: '1px solid #E5E5E0', backgroundColor: '#FAFAF8' }} className="p-4 space-y-4">
 
-          {/* AI Analysis */}
           {isEnriched && <EnrichmentPanel enrichment={enrichment} brandName={match.name} />}
+
+          {/* Team Notes */}
+          <TeamNotesPanel match={match} onSaved={onUpdate} />
 
           {/* Signal timeline */}
           <div>

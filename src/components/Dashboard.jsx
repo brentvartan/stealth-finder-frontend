@@ -1,13 +1,29 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { items, enrich } from '../api/client';
+import { items as itemsApi, enrich } from '../api/client';
 import MatchCard from './MatchCard';
-import { Search, RefreshCw, Award, ShoppingBag, CheckCircle, TrendingUp, Sparkles } from 'lucide-react';
+import { Search, RefreshCw, Award, ShoppingBag, CheckCircle, TrendingUp, Sparkles, Flame } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 export const CONSUMER_CATEGORIES = [
   'Consumer AI', 'Home/Lifestyle', 'CPG/Food/Drink', 'Apparel', 'Beauty',
   'Health/Wellness', 'Fitness', 'Education', 'Finance', 'Entertainment', 'Sports',
+];
+
+export const BULLISH_THEMES = [
+  'GLP-1 / Weight Management Adjacent',
+  'Women\'s Health Renaissance',
+  'Longevity / Healthspan',
+  'Functional Beverages',
+  'Men\'s Personal Care Awakening',
+  'Third-Place Fitness',
+  'GenAlpha Beauty',
+  'Premium Pet',
+  'Analog Revival',
+  'Dietary / Food Identity',
+  'Climate-Positive Consumer',
+  'AI-Personalized Care',
 ];
 
 const SCORE_BOOSTS = {
@@ -64,10 +80,14 @@ function buildMatches(signals, filters) {
       const anyEnriched = group.signals.find(s => s.enrichment?.enriched);
       const enrichment  = (tmEnriched || anyEnriched)?.enrichment || null;
 
+      const primarySignal = tmEnriched || anyEnriched || group.signals[0];
+
       return {
         ...group, score, enrichment,
         hasTrademark, hasDelaware, hasDomain, hasInstagram, hasShopify, hasSocial,
         latestSignal: new Date(Math.max(...group.signals.map(s => new Date(s.timestamp)))),
+        primarySignalId: primarySignal?.id ?? null,
+        team_notes: primarySignal?.team_notes || '',
       };
     })
     .filter(m => m.signals.length >= filters.minSignals)
@@ -99,6 +119,8 @@ function parseSignalsFromItems(allItems) {
           timestamp:   meta.timestamp || item.created_at,
           savedAt:     item.created_at,   // when WE discovered it (used for date filter)
           enrichment:  meta.enrichment || null,
+          team_notes:  meta.team_notes || '',
+          fp:          meta.fp || '',
         }];
       }
     } catch (e) {}
@@ -141,6 +163,7 @@ function StatCard({ label, sublabel, value, total, topColor = '#E5E5E0', valueCo
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function Dashboard() {
+  const { setNewHotCount } = useAuth();
   const [signals,    setSignals]    = useState([]);
   const [matches,    setMatches]    = useState([]);
   const [loading,    setLoading]    = useState(true);
@@ -153,21 +176,34 @@ export default function Dashboard() {
     dateRange:  180,
     categories: CONSUMER_CATEGORIES,
     search:     '',
+    minScore:   0,
+    theme:      '',
   });
 
   const loadSignals = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
-      const response = await items.getAll({ per_page: 1000 });
+      const response = await itemsApi.getAll({ per_page: 1000 });
       const allItems = response.data.items || [];
       setSignals(parseSignalsFromItems(allItems));
+
+      // Update "new since last login" HOT badge in nav
+      const prevLogin = localStorage.getItem('prev_login_at');
+      if (prevLogin) {
+        const cutoff = new Date(prevLogin);
+        const parsedSignals = parseSignalsFromItems(allItems);
+        const hotNew = parsedSignals.filter(s =>
+          s.enrichment?.watch_level === 'hot' && new Date(s.savedAt) > cutoff
+        ).length;
+        setNewHotCount(hotNew);
+      }
     } catch (err) {
       setError('Failed to load signals. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setNewHotCount]);
 
   const runEnrichment = useCallback(async () => {
     setEnriching(true);
@@ -199,7 +235,9 @@ export default function Dashboard() {
       !filters.search.trim() ||
       m.name.toLowerCase().includes(filters.search.toLowerCase()) ||
       m.category.toLowerCase().includes(filters.search.toLowerCase())
-    );
+    )
+    .filter(m => !filters.minScore || (m.enrichment?.bullish_score || 0) >= filters.minScore)
+    .filter(m => !filters.theme || m.enrichment?.cultural_theme === filters.theme);
 
   const toggleTier = (tier) => setTierFilter(prev => prev === tier ? null : tier);
 
@@ -310,6 +348,37 @@ export default function Dashboard() {
               <option value="30">Last 30 days</option>
               <option value="60">Last 60 days</option>
               <option value="90">Last 90 days</option>
+              <option value="180">Last 180 days</option>
+            </select>
+          </label>
+
+          <label className="flex items-center gap-2 text-sm">
+            <span className="text-neutral-400 whitespace-nowrap text-xs uppercase tracking-wide font-medium">Min Score</span>
+            <select
+              value={filters.minScore}
+              onChange={e => setFilters(f => ({ ...f, minScore: parseInt(e.target.value) }))}
+              className="border border-neutral-200 rounded px-2 py-2 text-sm focus:outline-none focus:border-[#052EF0]"
+            >
+              <option value="0">Any</option>
+              <option value="50">50+</option>
+              <option value="60">60+</option>
+              <option value="70">70+ (HOT)</option>
+              <option value="80">80+</option>
+            </select>
+          </label>
+
+          <label className="flex items-center gap-2 text-sm">
+            <span className="text-neutral-400 whitespace-nowrap text-xs uppercase tracking-wide font-medium">Theme</span>
+            <select
+              value={filters.theme}
+              onChange={e => setFilters(f => ({ ...f, theme: e.target.value }))}
+              className="border border-neutral-200 rounded px-2 py-2 text-sm focus:outline-none focus:border-[#052EF0]"
+              style={{ maxWidth: '200px' }}
+            >
+              <option value="">All Themes</option>
+              {BULLISH_THEMES.map(t => (
+                <option key={t} value={t}>{t}</option>
+              ))}
             </select>
           </label>
         </div>
@@ -389,7 +458,7 @@ export default function Dashboard() {
             <span className="text-black">{signals.length}</span> signals
           </p>
           {displayMatches.map(match => (
-            <MatchCard key={`${match.name}-${match.category}`} match={match} />
+            <MatchCard key={`${match.name}-${match.category}`} match={match} onUpdate={loadSignals} />
           ))}
         </div>
       )}

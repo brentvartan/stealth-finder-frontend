@@ -56,7 +56,7 @@ function FounderPanel({ founder, brandName, founderScore }) {
             </span>
           )}
         </span>
-        <
+        <a
           href={linkedinSearch}
           target="_blank"
           rel="noopener noreferrer"

@@ -169,8 +169,9 @@ export default function Dashboard() {
   const [matches,    setMatches]    = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState('');
-  const [enriching,  setEnriching]  = useState(false);
-  const [enrichMsg,  setEnrichMsg]  = useState('');
+  const [enriching,    setEnriching]    = useState(false);
+  const [rescoring,    setRescoring]    = useState(false);
+  const [enrichMsg,    setEnrichMsg]    = useState('');
   const [tierFilter, setTierFilter] = useState(null); // null | 'hot' | 'warm' | 'cold'
   const [filters,    setFilters]    = useState({
     minSignals: 1,
@@ -227,6 +228,21 @@ export default function Dashboard() {
     }
   }, [loadSignals]);
 
+  const runRescoreAll = useCallback(async () => {
+    setRescoring(true);
+    setEnrichMsg('');
+    try {
+      const resp = await enrich.batch({ rescoreAll: true, limit: 50 });
+      const { enriched } = resp.data;
+      setEnrichMsg(`${enriched} signal${enriched !== 1 ? 's' : ''} re-scored`);
+      await loadSignals();
+    } catch (err) {
+      setEnrichMsg('Re-score failed');
+    } finally {
+      setRescoring(false);
+    }
+  }, [loadSignals]);
+
   useEffect(() => { loadSignals(); }, [loadSignals]);
   useEffect(() => { setMatches(buildMatches(signals, filters)); }, [signals, filters]);
 
@@ -277,14 +293,24 @@ export default function Dashboard() {
             <span className="text-xs text-neutral-400">{enrichMsg}</span>
           )}
           <button
+            onClick={runRescoreAll}
+            disabled={rescoring || enriching || loading}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-display font-semibold tracking-wider uppercase rounded transition-all disabled:opacity-40"
+            style={{ border: '1.5px solid #052EF0', color: rescoring ? '#999' : '#052EF0', backgroundColor: 'transparent' }}
+            title="Re-score all signals with latest Bullish AI model (updates founder scores)"
+          >
+            <Sparkles className={`w-3.5 h-3.5 ${rescoring ? 'animate-pulse' : ''}`} />
+            {rescoring ? 'Re-Scoring...' : 'Re-Score All'}
+          </button>
+          <button
             onClick={runEnrichment}
             disabled={enriching || loading}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-display font-semibold tracking-wider uppercase text-white rounded transition-all disabled:opacity-40"
             style={{ backgroundColor: enriching ? '#999' : '#052EF0' }}
-            title="Score signals against Bullish investment thesis using Claude AI"
+            title="Score new unscored signals against Bullish investment thesis"
           >
             <Sparkles className={`w-3.5 h-3.5 ${enriching ? 'animate-pulse' : ''}`} />
-            {enriching ? 'Scoring...' : 'Score'}
+            {enriching ? 'Scoring...' : 'Score New'}
           </button>
           <button
             onClick={loadSignals}

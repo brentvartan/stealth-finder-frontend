@@ -120,12 +120,13 @@ export const enrich = {
   signal: (itemId) =>
     api.post(`/enrich/signal/${itemId}`),
 
-  batch: ({ itemIds, unenrichedOnly, limit } = {}) =>
+  batch: ({ itemIds, unenrichedOnly, rescoreAll, limit } = {}) =>
     api.post('/enrich/batch', {
-      ...(itemIds       ? { item_ids: itemIds }             : {}),
-      ...(unenrichedOnly ? { unenriched_only: true }        : {}),
-      ...(limit         ? { limit }                         : {}),
-    }, { timeout: 120000 }),
+      ...(itemIds        ? { item_ids: itemIds }      : {}),
+      ...(unenrichedOnly ? { unenriched_only: true }  : {}),
+      ...(rescoreAll     ? { rescore_all: true }       : {}),
+      ...(limit          ? { limit }                  : {}),
+    }, { timeout: 300000 }),
 };
 
 // ─── Scans (real data from live sources) ──────────────────────────────────────

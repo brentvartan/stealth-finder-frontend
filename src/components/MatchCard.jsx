@@ -549,19 +549,17 @@ export default function MatchCard({ match, onUpdate }) {
               {(() => {
                 const fs = enrichment?.founder_score;
                 if (!fs?.gate_passed || !fs?.total || fs.total < 50) return null;
-                const jockeyColor = fs.tier === 'HIGH_PRIORITY' ? '#052EF0' : '#D97706';
+                const isTop = fs.tier === 'HIGH_PRIORITY';
+                const bg    = isTop ? '#052EF0' : '#D97706';
                 return (
-                  <>
-                    <span className="text-neutral-300">·</span>
-                    <span
-                      className="flex items-center gap-0.5 text-xs font-bold"
-                      style={{ color: jockeyColor }}
-                      title={`Founder: ${fs.tier?.replace(/_/g, ' ')} · ${fs.total}/100`}
-                    >
-                      <User className="w-3.5 h-3.5" />
-                      {fs.total}
-                    </span>
-                  </>
+                  <span
+                    className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[10px] text-white shrink-0"
+                    style={{ backgroundColor: bg }}
+                    title={`Founder: ${fs.tier?.replace(/_/g, ' ')} · ${fs.total}/100`}
+                  >
+                    <User className="w-3 h-3" />
+                    JOCKEY {fs.total}
+                  </span>
                 );
               })()}
             </div>

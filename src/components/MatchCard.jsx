@@ -30,8 +30,16 @@ const WATCH_CONFIG = {
 
 // ─── Founder panel ───────────────────────────────────────────────────────────
 
-function FounderPanel({ founder, brandName }) {
+const FOUNDER_TIER_BADGE = {
+  HIGH_PRIORITY: { label: 'High Priority', color: '#16a34a', bg: '#f0fdf4' },
+  WATCH_LIST:    { label: 'Watch List',    color: '#D97706', bg: '#fffbeb' },
+  WEAK_SIGNAL:   { label: 'Weak Signal',   color: '#EA580C', bg: '#fff7ed' },
+  PASS:          { label: 'Pass',          color: '#DC2626', bg: '#fef2f2' },
+};
+
+function FounderPanel({ founder, brandName, founderScore }) {
   const isUnknown = !founder || founder.confidence === 'unknown' || !founder.name;
+  const tierCfg = founderScore?.gate_passed && founderScore?.tier ? FOUNDER_TIER_BADGE[founderScore.tier] : null;
 
   const linkedinSearch = founder?.name
     ? `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(founder.name + ' ' + brandName)}`
@@ -42,8 +50,13 @@ function FounderPanel({ founder, brandName }) {
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-display font-bold uppercase tracking-widest text-neutral-400 flex items-center gap-1.5">
           <User className="w-3 h-3" /> Jockey
+          {tierCfg && (
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: tierCfg.bg, color: tierCfg.color }}>
+              {founderScore.total} · {tierCfg.label}
+            </span>
+          )}
         </span>
-        <a
+        <
           href={linkedinSearch}
           target="_blank"
           rel="noopener noreferrer"
@@ -169,7 +182,7 @@ function EnrichmentPanel({ enrichment, brandName }) {
   const {
     bullish_score, watch_level, consumer_brand, repeat_potential, repeat_reason,
     cultural_theme, advocacy_deficiency, remarkability_drivers, one_line_thesis,
-    red_flags, comparable_portfolio, founder,
+    red_flags, comparable_portfolio, founder, founder_score,
   } = enrichment;
 
   const watchCfg = WATCH_CONFIG[watch_level] || WATCH_CONFIG.cold;
@@ -267,7 +280,7 @@ function EnrichmentPanel({ enrichment, brandName }) {
       )}
 
       {/* Founder / Jockey */}
-      <FounderPanel founder={founder} brandName={brandName} />
+      <FounderPanel founder={founder} brandName={brandName} founderScore={founder_score} />
     </div>
   );
 }

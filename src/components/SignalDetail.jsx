@@ -52,6 +52,113 @@ function buildBrief(match) {
   return lines.filter(Boolean).join('\n');
 }
 
+// ─── Founder score card ───────────────────────────────────────────────────────
+
+const FOUNDER_TIER_CONFIG = {
+  HIGH_PRIORITY: { label: 'High Priority', color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
+  WATCH_LIST:    { label: 'Watch List',    color: '#D97706', bg: '#fffbeb', border: '#fde68a' },
+  WEAK_SIGNAL:   { label: 'Weak Signal',   color: '#EA580C', bg: '#fff7ed', border: '#fed7aa' },
+  PASS:          { label: 'Pass',          color: '#DC2626', bg: '#fef2f2', border: '#fecaca' },
+};
+
+const FOUNDER_SIGNAL_LABELS = {
+  chip_on_shoulder:   { label: 'Chip-on-Shoulder',   max: 30 },
+  category_proximity: { label: 'Category Proximity', max: 25 },
+  magnetic_signal:    { label: 'Magnetic Signal',    max: 20 },
+  pedigree:           { label: 'Pedigree',           max: 15 },
+  thesis_clarity:     { label: 'Thesis Clarity',     max: 10 },
+};
+
+function FounderScoreCard({ founderScore }) {
+  if (!founderScore) return null;
+
+  if (!founderScore.gate_passed) {
+    return (
+      <div className="bg-white rounded-lg p-5" style={{ border: '1px solid #E5E5E0' }}>
+        <h3 className="font-display font-bold text-xs uppercase tracking-widest text-neutral-400 mb-2">Founder Score</h3>
+        <p className="text-xs text-neutral-400 italic">Category does not pass the Bullish consumer gate — founder scoring skipped.</p>
+      </div>
+    );
+  }
+
+  const tierCfg = FOUNDER_TIER_CONFIG[founderScore.tier] || null;
+
+  return (
+    <div className="bg-white rounded-lg p-5 space-y-4" style={{ border: '1px solid #E5E5E0' }}>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="font-display font-bold text-xs uppercase tracking-widest text-neutral-400">Founder Score</h3>
+        {tierCfg && (
+          <span
+            className="text-xs font-bold px-2.5 py-1 rounded-full"
+            style={{ backgroundColor: tierCfg.bg, color: tierCfg.color, border: `1px solid ${tierCfg.border}` }}
+          >
+            {founderScore.total}/100 · {tierCfg.label}
+          </span>
+        )}
+      </div>
+
+      {/* 5 signal bars */}
+      <div className="space-y-3">
+        {Object.entries(FOUNDER_SIGNAL_LABELS).map(([key, { label, max }]) => {
+          const sig = founderScore.breakdown?.[key];
+          if (!sig) return null;
+          const pct = Math.round((sig.score / max) * 100);
+          const barColor = pct >= 70 ? '#16a34a' : pct >= 40 ? '#D97706' : '#E5E5E0';
+          const CONF_COLOR = { high: '#16a34a', medium: '#D97706', low: '#9CA3AF' };
+          return (
+            <div key={key}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium text-neutral-700">{label}</span>
+                <span className="text-xs text-neutral-400">
+                  {sig.score}/{max}
+                  <span className="ml-1.5 text-[10px] font-medium" style={{ color: CONF_COLOR[sig.confidence] || '#9CA3AF' }}>
+                    {sig.confidence}
+                  </span>
+                </span>
+              </div>
+              <div className="h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${pct}%`, backgroundColor: barColor }}
+                />
+              </div>
+              {sig.flags?.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {sig.flags.map((f, i) => (
+                    <span key={i} className="text-[10px] text-neutral-400 italic">{f}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Action */}
+      {founderScore.action && tierCfg && (
+        <p className="text-xs font-medium" style={{ color: tierCfg.color }}>
+          → {founderScore.action}
+        </p>
+      )}
+
+      {/* Human review flags */}
+      {founderScore.human_review_flags?.length > 0 && (
+        <div className="pt-1 border-t border-neutral-100">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-300 mb-1.5">Needs Human Review</p>
+          <ul className="space-y-1">
+            {founderScore.human_review_flags.map((f, i) => (
+              <li key={i} className="text-xs text-neutral-500 flex items-start gap-1.5">
+                <span className="shrink-0 mt-0.5 text-amber-400">⚑</span>{f}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Score ring ───────────────────────────────────────────────────────────────
 
 function ScoreBadge({ score, watchLevel }) {
@@ -528,6 +635,11 @@ export default function SignalDetail() {
             </div>
           )}
         </div>
+      )}
+
+      {/* ── Founder Score ── */}
+      {isEnriched && e.founder_score && (
+        <FounderScoreCard founderScore={e.founder_score} />
       )}
 
       {/* ── Team Notes ── */}

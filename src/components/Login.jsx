@@ -74,12 +74,12 @@ export default function Login() {
           style={{
             border: '1.5px solid rgba(255,255,255,0.45)',
             borderRadius: '50%',
-            width: 188,
-            height: 272,
+            width: 272,
+            height: 188,
             display: 'flex',
             alignItems: 'flex-end',
             justifyContent: 'center',
-            paddingBottom: 52,
+            paddingBottom: 38,
           }}
         >
           <div className="text-center leading-tight">

@@ -169,9 +169,8 @@ export default function Dashboard() {
   const [matches,    setMatches]    = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState('');
-  const [enriching,    setEnriching]    = useState(false);
-  const [rescoring,    setRescoring]    = useState(false);
-  const [enrichMsg,    setEnrichMsg]    = useState('');
+  const [enriching,  setEnriching]  = useState(false);
+  const [enrichMsg,  setEnrichMsg]  = useState('');
   const [tierFilter, setTierFilter] = useState(null); // null | 'hot' | 'warm' | 'cold'
   const [filters,    setFilters]    = useState({
     minSignals: 1,
@@ -211,35 +210,17 @@ export default function Dashboard() {
     setEnriching(true);
     setEnrichMsg('');
     try {
-      const resp = await enrich.batch({ unenrichedOnly: true, limit: 5 });
-      const { enriched, total_processed } = resp.data;
-      setEnrichMsg(
-        enriched > 0
-          ? `${enriched} signal${enriched !== 1 ? 's' : ''} analysed by Bullish AI`
-          : total_processed === 0
-            ? 'All signals already enriched'
-            : 'No new signals to enrich'
+      const resp = await enrich.batch({ rescoreAll: true, limit: 50 });
+      const { enriched } = resp.data;
+      setEnrichMsg(enriched > 0
+        ? `${enriched} signal${enriched !== 1 ? 's' : ''} scored`
+        : 'Nothing to score'
       );
       await loadSignals();
     } catch (err) {
-      setEnrichMsg('Enrichment failed — check ANTHROPIC_API_KEY is set');
+      setEnrichMsg('Scoring failed');
     } finally {
       setEnriching(false);
-    }
-  }, [loadSignals]);
-
-  const runRescoreAll = useCallback(async () => {
-    setRescoring(true);
-    setEnrichMsg('');
-    try {
-      const resp = await enrich.batch({ rescoreAll: true, limit: 50 });
-      const { enriched } = resp.data;
-      setEnrichMsg(`${enriched} signal${enriched !== 1 ? 's' : ''} re-scored`);
-      await loadSignals();
-    } catch (err) {
-      setEnrichMsg('Re-score failed');
-    } finally {
-      setRescoring(false);
     }
   }, [loadSignals]);
 
@@ -293,24 +274,14 @@ export default function Dashboard() {
             <span className="text-xs text-neutral-400">{enrichMsg}</span>
           )}
           <button
-            onClick={runRescoreAll}
-            disabled={rescoring || enriching || loading}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-display font-semibold tracking-wider uppercase rounded transition-all disabled:opacity-40"
-            style={{ border: '1.5px solid #052EF0', color: rescoring ? '#999' : '#052EF0', backgroundColor: 'transparent' }}
-            title="Re-score all signals with latest Bullish AI model (updates founder scores)"
-          >
-            <Sparkles className={`w-3.5 h-3.5 ${rescoring ? 'animate-pulse' : ''}`} />
-            {rescoring ? 'Re-Scoring...' : 'Re-Score All'}
-          </button>
-          <button
             onClick={runEnrichment}
             disabled={enriching || loading}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-display font-semibold tracking-wider uppercase text-white rounded transition-all disabled:opacity-40"
             style={{ backgroundColor: enriching ? '#999' : '#052EF0' }}
-            title="Score new unscored signals against Bullish investment thesis"
+            title="Score all signals with Bullish AI"
           >
             <Sparkles className={`w-3.5 h-3.5 ${enriching ? 'animate-pulse' : ''}`} />
-            {enriching ? 'Scoring...' : 'Score New'}
+            {enriching ? 'Scoring...' : 'Score'}
           </button>
           <button
             onClick={loadSignals}

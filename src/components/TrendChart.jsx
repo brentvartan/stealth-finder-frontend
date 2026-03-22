@@ -90,6 +90,13 @@ const INDIVIDUALS_KEYS = [
 
 function classifyTension(match) {
   const e = match.enrichment || {};
+
+  // Use server-side tension if available (set by Claude at enrichment time)
+  if (e.tension && ['wellness', 'self', 'individuals'].includes(e.tension)) {
+    return e.tension;
+  }
+
+  // Fallback: keyword matching for signals enriched before server-side tension was added
   const combined = [
     e.cultural_theme || '',
     match.category || '',

@@ -21,7 +21,7 @@ import {
 const THEMES = {
   wellness:     { label: 'Ubiquitous Wellness',        color: '#052EF0' },
   self:         { label: 'Uncompromising Self',         color: '#000000' },
-  individuals:  { label: 'Individuals > Institutions', color: '#10B981' },
+  individuals:  { label: 'Individuals > Institutions', color: '#333333' },
 };
 
 // Keywords that signal each tension — checked against cultural_theme + category + one_line_thesis

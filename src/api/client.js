@@ -135,6 +135,9 @@ export const scans = {
 
   delaware: (daysBack = 7, maxResults = 150) =>
     api.post('/scans/delaware', { days_back: daysBack, max_results: maxResults }, { timeout: 120000 }),
+
+  producthunt: (daysBack = 14, maxResults = 100) =>
+    api.post('/scans/producthunt', { days_back: daysBack, max_results: maxResults }),
 };
 
 // ─── Scheduled Scans ──────────────────────────────────────────────────────────

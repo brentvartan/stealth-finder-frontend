@@ -3,7 +3,7 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Flame, TrendingUp, Minus, User, Linkedin, ExternalLink,
   Sparkles, Bookmark, BookmarkCheck, MessageCircle, StickyNote, Save,
-  Award, Building2, Globe, Camera, ShoppingBag, Pencil,
+  Award, Building2, Globe, Camera, ShoppingBag, Pencil, Rocket, Copy, CheckCheck,
 } from 'lucide-react';
 import { enrich, items as itemsApi } from '../api/client';
 
@@ -18,12 +18,39 @@ const WATCH_CONFIG = {
 const SIGNAL_CONFIG = {
   trademark: { icon: Award,       label: 'Trademark Filing', badge: 'TM'     },
   delaware:  { icon: Building2,   label: 'Delaware Corp',    badge: 'DE'     },
-  domain:    { icon: Globe,       label: 'Domain Registration', badge: 'URL' },
-  instagram: { icon: Camera,      label: 'Instagram',        badge: 'IG'     },
-  shopify:   { icon: ShoppingBag, label: 'Shopify Store',    badge: 'SHOP'   },
-  social:    { icon: Pencil,      label: 'Social Signal',    badge: 'SOCIAL' },
-  manual:    { icon: Pencil,      label: 'Manual Signal',    badge: 'MANUAL' },
+  domain:       { icon: Globe,       label: 'Domain Registration', badge: 'URL'  },
+  instagram:    { icon: Camera,      label: 'Instagram',           badge: 'IG'   },
+  shopify:      { icon: ShoppingBag, label: 'Shopify Store',       badge: 'SHOP' },
+  social:       { icon: Pencil,      label: 'Social Signal',       badge: 'SOC'  },
+  producthunt:  { icon: Rocket,      label: 'Product Hunt',        badge: 'PH'   },
+  manual:       { icon: Pencil,      label: 'Manual Signal',       badge: 'MAN'  },
 };
+
+function buildBrief(match) {
+  const e   = match.enrichment || {};
+  const lvl = e.watch_level?.toUpperCase() || 'UNSCORED';
+  const founder = e.founder?.name && e.founder.confidence !== 'unknown' ? e.founder.name : null;
+  const founderBio = e.founder?.background || null;
+  const linkedinSearch = founder
+    ? `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(founder + ' ' + match.name)}`
+    : `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(match.name + ' founder')}`;
+
+  const lines = [
+    `STEALTH SIGNAL — ${match.name}`,
+    `Category: ${match.category}`,
+    e.bullish_score ? `Bullish Score: ${e.bullish_score}/100 (${lvl})` : `Status: ${lvl}`,
+    e.cultural_theme ? `Theme: ${e.cultural_theme}` : null,
+    e.one_line_thesis ? `\nThesis: ${e.one_line_thesis}` : null,
+    founder ? `\nFounder: ${founder}` : '\nFounder: Unknown (confirmed stealth)',
+    founderBio ? `Background: ${founderBio}` : null,
+    `LinkedIn: ${linkedinSearch}`,
+    e.comparable_portfolio ? `Comp: ${e.comparable_portfolio}` : null,
+    `\nSignals: ${match.signals?.map(s => s.signal_type.toUpperCase()).join(', ') || '—'}`,
+    match.team_notes ? `\nTeam Notes: ${match.team_notes}` : null,
+    `\n— Stealth Finder · ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
+  ];
+  return lines.filter(Boolean).join('\n');
+}
 
 // ─── Score ring ───────────────────────────────────────────────────────────────
 
@@ -138,6 +165,15 @@ export default function SignalDetail() {
   const [reenriching,  setReenriching]  = useState(false);
   const [watchlisted,  setWatchlisted]  = useState(false);
   const [watchlisting, setWatchlisting] = useState(false);
+  const [briefCopied,  setBriefCopied]  = useState(false);
+
+  const handleCopyBrief = async () => {
+    try {
+      await navigator.clipboard.writeText(buildBrief(currentMatch));
+      setBriefCopied(true);
+      setTimeout(() => setBriefCopied(false), 2500);
+    } catch {}
+  };
 
   if (!currentMatch) {
     return (
@@ -226,6 +262,15 @@ export default function SignalDetail() {
           Back
         </button>
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleCopyBrief}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded border transition-colors"
+            style={{ borderColor: '#E5E5E0', color: briefCopied ? '#16a34a' : '#666' }}
+            title="Copy lead brief — paste into Streak as new Lead"
+          >
+            {briefCopied ? <CheckCheck className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            {briefCopied ? 'Copied!' : 'Copy Brief'}
+          </button>
           <button
             onClick={handleAskFinder}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded border transition-colors"

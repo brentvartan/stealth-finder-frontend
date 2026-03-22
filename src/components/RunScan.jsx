@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { items, scans } from '../api/client';
 
-import { Play, RefreshCw, CheckCircle, AlertCircle, Award, Camera, ShoppingBag, Building2, Globe, Linkedin } from 'lucide-react';
+import { Play, RefreshCw, CheckCircle, AlertCircle, Award, Camera, ShoppingBag, Building2, Globe, Linkedin, Rocket } from 'lucide-react';
 import { CONSUMER_CATEGORIES } from './Dashboard';
 
 // ─── Score boosts ──────────────────────────────────────────────────────────────
@@ -164,22 +164,24 @@ function rawToSignals(results, type) {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const SCAN_TYPES = [
-  { value: 'full',       label: 'Full Scan — All Sources'     },
-  { value: 'trademark',  label: 'USPTO Trademarks Only'       },
-  { value: 'delaware',   label: 'Delaware Filings Only'       },
-  { value: 'instagram',  label: 'Instagram Handles Only'      },
-  { value: 'shopify',    label: 'Shopify Stores Only'         },
-  { value: 'domain',     label: 'Domain Registrations Only'   },
-  { value: 'social',     label: 'Social Media Only'           },
+  { value: 'full',         label: 'Full Scan — All Live Sources'   },
+  { value: 'trademark',    label: 'USPTO Trademarks Only'          },
+  { value: 'delaware',     label: 'Delaware + Form D Only'         },
+  { value: 'producthunt',  label: 'Product Hunt Launches Only'     },
+  { value: 'instagram',    label: 'Instagram Handles Only'         },
+  { value: 'shopify',      label: 'Shopify Stores Only'            },
+  { value: 'domain',       label: 'Domain Registrations Only'      },
+  { value: 'social',       label: 'Social Media Only'              },
 ];
 
 const SOURCES = [
-  { icon: Building2,   label: 'Delaware Filings',    desc: 'Live — SEC Form D (Reg D exemption). DE-incorporated, quietly raising first capital. Note: raw DE incorporations (earlier signal) require paid data access — on roadmap.',   live: true  },
-  { icon: Globe,       label: 'Domain Registration', desc: 'Live — auto cross-referenced for every Delaware hit. Matching .com registered recently = compound signal.',               live: true  },
-  { icon: Award,       label: 'USPTO Trademarks',    desc: 'Live — real filings from the last N days',              live: true  },
-  { icon: Camera,      label: 'Instagram Handles',   desc: 'Consumer brands secure @handle before website',         live: false },
-  { icon: ShoppingBag, label: 'Shopify Stores',      desc: 'New DTC stores with 0 products = stealth',             live: false },
-  { icon: Linkedin,    label: 'Social Media',        desc: 'Founders announcing stealth mode',                      live: false },
+  { icon: Award,       label: 'USPTO Trademarks',    desc: 'Live — real filings from the last N days. Earliest brand signal before any public activity.',             live: true  },
+  { icon: Building2,   label: 'Delaware + Form D',   desc: 'Live — SEC Form D (Reg D exemption) + domain cross-reference. DE-incorporated and quietly raising.',     live: true  },
+  { icon: Globe,       label: 'Domain Registration', desc: 'Live — auto cross-referenced for every Delaware hit. Matching .com registered recently = compound.',     live: true  },
+  { icon: Rocket,      label: 'Product Hunt',         desc: 'Live — consumer product launches. Post-stealth but still early; use to validate or find new arrivals.',  live: true  },
+  { icon: Camera,      label: 'Instagram Handles',   desc: 'Consumer brands secure @handle before website',                                                           live: false },
+  { icon: ShoppingBag, label: 'Shopify Stores',      desc: 'New DTC stores with 0 products = stealth',                                                               live: false },
+  { icon: Linkedin,    label: 'Social Media',        desc: 'Founders announcing stealth mode',                                                                        live: false },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -242,7 +244,22 @@ export default function RunScan() {
         setStatus(s => ({
           ...s,
           message: `Delaware: ${deFetched} entities found, ${domain_hits} domain matches — ${deNew} new, ${deSkipped} already in database`,
-          progress: 65,
+          progress: 55,
+        }));
+      }
+
+      // ── Live: Product Hunt consumer launches ──
+      if (scanType === 'full' || scanType === 'producthunt') {
+        setStatus(s => ({ ...s, message: 'Live: scanning Product Hunt for consumer launches...', progress: 68 }));
+        const phResp = await scans.producthunt(Math.min(daysBack, 14), 100);
+        const { fetched: phFetched, new_saved: phNew, skipped: phSkipped, error: phError } = phResp.data;
+        if (phError) throw new Error(`Product Hunt: ${phError}`);
+        totalSaved   += phNew;
+        totalSkipped += (phSkipped || 0);
+        setStatus(s => ({
+          ...s,
+          message: `Product Hunt: ${phFetched} consumer launches — ${phNew} new, ${phSkipped} already in database`,
+          progress: 75,
         }));
       }
 
@@ -291,7 +308,7 @@ export default function RunScan() {
             Run Scan
           </h1>
           <p className="text-neutral-400 text-sm mt-1">
-            Delaware filings, domain cross-references, and USPTO trademarks are all live. Other sources coming soon.
+            USPTO trademarks, Delaware/Form D filings, domain cross-references, and Product Hunt launches are all live.
           </p>
         </div>
 

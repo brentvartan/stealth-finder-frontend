@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Award, Building2, Globe, Camera, ShoppingBag, Linkedin,
+  Award, Building2, Globe, Camera, ShoppingBag, Linkedin, Rocket,
   ChevronDown, ChevronUp, ExternalLink, Pencil, Flame, TrendingUp, Minus, User,
-  Sparkles, Bookmark, BookmarkCheck, StickyNote, Save,
+  Sparkles, Bookmark, BookmarkCheck, StickyNote, Save, Copy, CheckCheck,
 } from 'lucide-react';
 import { enrich, items as itemsApi } from '../api/client';
 
 export const SIGNAL_CONFIG = {
-  trademark: { icon: Award,       label: 'Trademark', badge: 'TM'     },
-  delaware:  { icon: Building2,   label: 'Delaware',  badge: 'DE'     },
-  domain:    { icon: Globe,       label: 'Domain',    badge: 'URL'    },
-  instagram: { icon: Camera,      label: 'Instagram', badge: 'IG'     },
-  shopify:   { icon: ShoppingBag, label: 'Shopify',   badge: 'SHOP'   },
-  social:    { icon: Linkedin,    label: 'Social',    badge: 'SOCIAL' },
-  manual:    { icon: Pencil,      label: 'Manual',    badge: 'MANUAL' },
+  trademark:    { icon: Award,       label: 'Trademark',    badge: 'TM'   },
+  delaware:     { icon: Building2,   label: 'Delaware',     badge: 'DE'   },
+  domain:       { icon: Globe,       label: 'Domain',       badge: 'URL'  },
+  instagram:    { icon: Camera,      label: 'Instagram',    badge: 'IG'   },
+  shopify:      { icon: ShoppingBag, label: 'Shopify',      badge: 'SHOP' },
+  social:       { icon: Linkedin,    label: 'Social',       badge: 'SOC'  },
+  producthunt:  { icon: Rocket,      label: 'Product Hunt', badge: 'PH'   },
+  manual:       { icon: Pencil,      label: 'Manual',       badge: 'MAN'  },
 };
 
 const SIGNAL_TYPE_ORDER = ['trademark', 'delaware', 'domain', 'instagram', 'shopify', 'social'];
@@ -271,6 +272,35 @@ function EnrichmentPanel({ enrichment, brandName }) {
   );
 }
 
+// ─── Copy brief helper ────────────────────────────────────────────────────────
+
+function buildBrief(match) {
+  const e   = match.enrichment || {};
+  const lvl = e.watch_level?.toUpperCase() || 'UNSCORED';
+  const founder = e.founder?.name && e.founder.confidence !== 'unknown' ? e.founder.name : null;
+  const founderBio = e.founder?.background || null;
+  const linkedinSearch = founder
+    ? `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(founder + ' ' + match.name)}`
+    : `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(match.name + ' founder')}`;
+
+  const lines = [
+    `STEALTH SIGNAL — ${match.name}`,
+    `Category: ${match.category}`,
+    e.bullish_score ? `Bullish Score: ${e.bullish_score}/100 (${lvl})` : `Status: ${lvl}`,
+    e.cultural_theme ? `Theme: ${e.cultural_theme}` : null,
+    e.one_line_thesis ? `\nThesis: ${e.one_line_thesis}` : null,
+    founder ? `\nFounder: ${founder}` : '\nFounder: Unknown (confirmed stealth)',
+    founderBio ? `Background: ${founderBio}` : null,
+    `LinkedIn: ${linkedinSearch}`,
+    e.comparable_portfolio ? `Comp: ${e.comparable_portfolio}` : null,
+    `\nSignals: ${match.signals?.map(s => s.signal_type.toUpperCase()).join(', ') || '—'}`,
+    match.team_notes ? `\nTeam Notes: ${match.team_notes}` : null,
+    `\n— Stealth Finder · ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
+  ];
+
+  return lines.filter(Boolean).join('\n');
+}
+
 // ─── Main card ───────────────────────────────────────────────────────────────
 
 export default function MatchCard({ match, onUpdate }) {
@@ -278,6 +308,16 @@ export default function MatchCard({ match, onUpdate }) {
   const [reenriching,   setReenriching]   = useState(false);
   const [watchlisted,   setWatchlisted]   = useState(false);
   const [watchlisting,  setWatchlisting]  = useState(false);
+  const [briefCopied,   setBriefCopied]   = useState(false);
+
+  const handleCopyBrief = async (e) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(buildBrief(match));
+      setBriefCopied(true);
+      setTimeout(() => setBriefCopied(false), 2000);
+    } catch {}
+  };
 
   const { enrichment } = match;
   const isEnriched  = enrichment?.enriched;
@@ -470,6 +510,20 @@ export default function MatchCard({ match, onUpdate }) {
 
           {/* Right: action buttons + chevron */}
           <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
+            {/* Copy Brief */}
+            {isHotOrWarm && isEnriched && (
+              <button
+                onClick={handleCopyBrief}
+                title="Copy lead brief to clipboard (paste into Streak)"
+                className="p-1.5 rounded transition-colors"
+                style={{ color: briefCopied ? '#16a34a' : '#CCC' }}
+              >
+                {briefCopied
+                  ? <CheckCheck className="w-4 h-4" />
+                  : <Copy className="w-4 h-4 hover:text-[#052EF0]" style={{ transition: 'color 0.15s' }} />
+                }
+              </button>
+            )}
             {/* Add to Watchlist */}
             {isHotOrWarm && isEnriched && (
               <button

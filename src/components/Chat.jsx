@@ -116,7 +116,7 @@ export default function Chat() {
           </div>
           <div>
             <h1 className="font-display font-bold text-xl uppercase tracking-wide text-black leading-none">
-              Ask Bullish
+              Ask Finder
             </h1>
             <p className="text-xs text-neutral-400 mt-0.5">
               AI analyst over your signal database

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { chat as chatApi } from '../api/client';
 import { Send, Sparkles, Bot, User } from 'lucide-react';
 
@@ -61,8 +62,9 @@ function TypingIndicator() {
 }
 
 export default function Chat() {
+  const location               = useLocation();
   const [messages, setMessages] = useState([]);
-  const [input, setInput]       = useState('');
+  const [input, setInput]       = useState(location.state?.prefill || '');
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
   const bottomRef = useRef(null);

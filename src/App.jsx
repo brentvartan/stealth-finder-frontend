@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import Dashboard from './components/Dashboard';
 import RunScan from './components/RunScan';
 import Watchlist from './components/Watchlist';
@@ -11,6 +13,7 @@ import AcceptInvite from './components/AcceptInvite';
 import Navigation from './components/Navigation';
 import Chat from './components/Chat';
 import Settings from './components/Settings';
+import SignalDetail from './components/SignalDetail';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './App.css';
 
@@ -45,7 +48,9 @@ function AppContent() {
         {user && <Navigation />}
 
         <Routes>
-          <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
+          <Route path="/login"           element={user ? <Navigate to="/" replace /> : <Login />} />
+          <Route path="/forgot-password" element={user ? <Navigate to="/" replace /> : <ForgotPassword />} />
+          <Route path="/reset-password"  element={user ? <Navigate to="/" replace /> : <ResetPassword />} />
 
           {/* Public — accept-invite doesn't require auth (creates the account) */}
           <Route path="/accept-invite" element={<AcceptInvite />} />
@@ -118,6 +123,15 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/signal/:signalId"
+            element={
+              <ProtectedRoute>
+                <SignalDetail />
               </ProtectedRoute>
             }
           />

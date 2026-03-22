@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Award, Building2, Globe, Camera, ShoppingBag, Linkedin,
   ChevronDown, ChevronUp, ExternalLink, Pencil, Flame, TrendingUp, Minus, User,
@@ -422,9 +423,14 @@ export default function MatchCard({ match, onUpdate }) {
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-baseline gap-2 mb-1">
-              <h3 className="font-display font-bold text-xl uppercase tracking-wide text-black leading-none">
+              <Link
+                to={`/signal/${primarySignalId}`}
+                state={{ match }}
+                onClick={e => e.stopPropagation()}
+                className="font-display font-bold text-xl uppercase tracking-wide text-black leading-none hover:text-[#052EF0] transition-colors"
+              >
                 {match.name}
-              </h3>
+              </Link>
               <span className="text-xs font-medium text-neutral-400 uppercase tracking-wider whitespace-nowrap">
                 {match.category}
               </span>

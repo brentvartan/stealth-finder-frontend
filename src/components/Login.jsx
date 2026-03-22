@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 // Bullish logo mark — square border + two parallelogram bars
@@ -164,6 +165,14 @@ export default function Login() {
                   </>
                 ) : 'Sign In'}
               </button>
+              <div className="text-center mt-3">
+                <Link
+                  to="/forgot-password"
+                  className="text-xs text-white/30 hover:text-white/60 transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
             </form>
           ) : (
             <form onSubmit={handleRegister} className="space-y-4">

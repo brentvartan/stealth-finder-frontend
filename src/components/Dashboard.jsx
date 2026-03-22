@@ -231,11 +231,19 @@ export default function Dashboard() {
 
   const displayMatches = matches
     .filter(m => !tierFilter || (m.enrichment?.watch_level === tierFilter))
-    .filter(m =>
-      !filters.search.trim() ||
-      m.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-      m.category.toLowerCase().includes(filters.search.toLowerCase())
-    )
+    .filter(m => {
+      const q = filters.search.trim().toLowerCase();
+      if (!q) return true;
+      const e = m.enrichment || {};
+      return (
+        m.name.toLowerCase().includes(q) ||
+        m.category.toLowerCase().includes(q) ||
+        (e.one_line_thesis || '').toLowerCase().includes(q) ||
+        (e.cultural_theme || '').toLowerCase().includes(q) ||
+        (e.founder?.name || '').toLowerCase().includes(q) ||
+        (m.team_notes || '').toLowerCase().includes(q)
+      );
+    })
     .filter(m => !filters.minScore || (m.enrichment?.bullish_score || 0) >= filters.minScore)
     .filter(m => !filters.theme || m.enrichment?.cultural_theme === filters.theme);
 

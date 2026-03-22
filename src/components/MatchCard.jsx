@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Award, Building2, Globe, Camera, ShoppingBag, Linkedin,
-  ChevronDown, ChevronUp, ExternalLink, Pencil, Flame, TrendingUp, Minus,
+  ChevronDown, ChevronUp, ExternalLink, Pencil, Flame, TrendingUp, Minus, User,
 } from 'lucide-react';
 
 export const SIGNAL_CONFIG = {
@@ -39,15 +39,75 @@ function WatchBadge({ level, score }) {
   );
 }
 
+// ─── Founder panel ──────────────────────────────────────────────────────────
+
+function FounderPanel({ founder, brandName }) {
+  const isUnknown = !founder || founder.confidence === 'unknown' || !founder.name;
+
+  const linkedinSearch = founder?.name
+    ? `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(founder.name + ' ' + brandName)}`
+    : `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(brandName + ' founder')}`;
+
+  return (
+    <div className="rounded-lg p-4 space-y-2.5" style={{ backgroundColor: '#fff', border: '1px solid #E5E5E0' }}>
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-display font-bold uppercase tracking-widest text-neutral-400 flex items-center gap-1.5">
+          <User className="w-3 h-3" /> Jockey
+        </span>
+        <a
+          href={linkedinSearch}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1 text-[10px] font-medium text-neutral-400 hover:text-[#0077B5] transition-colors"
+          onClick={e => e.stopPropagation()}
+        >
+          <Linkedin className="w-3 h-3" />
+          Search LinkedIn
+        </a>
+      </div>
+
+      {isUnknown ? (
+        <div>
+          <p className="text-xs font-medium text-neutral-500 italic">Founder not yet public — confirmed stealth signal.</p>
+          <p className="text-[10px] text-neutral-400 mt-1">Research manually via LinkedIn or AngelList before reaching out.</p>
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-display font-bold text-black">{founder.name}</p>
+            {founder.confidence === 'inferred' && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-yellow-50 text-yellow-700 border border-yellow-200 font-medium uppercase tracking-wide">
+                Verify
+              </span>
+            )}
+          </div>
+          {founder.background && (
+            <p className="text-xs text-neutral-600 leading-snug">{founder.background}</p>
+          )}
+          {founder.prior_companies?.length > 0 && (
+            <div className="flex flex-wrap gap-1 pt-0.5">
+              {founder.prior_companies.map((co, i) => (
+                <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 font-medium">
+                  {co}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Enrichment panel (expanded) ───────────────────────────────────────────
 
-function EnrichmentPanel({ enrichment }) {
+function EnrichmentPanel({ enrichment, brandName }) {
   if (!enrichment?.enriched) return null;
 
   const {
     bullish_score, watch_level, consumer_brand, repeat_potential, repeat_reason,
     cultural_theme, advocacy_deficiency, remarkability_drivers, one_line_thesis,
-    red_flags, comparable_portfolio,
+    red_flags, comparable_portfolio, founder,
   } = enrichment;
 
   const watchCfg = WATCH_CONFIG[watch_level] || WATCH_CONFIG.cold;
@@ -143,6 +203,9 @@ function EnrichmentPanel({ enrichment }) {
           </ul>
         </div>
       )}
+
+      {/* Founder / Jockey */}
+      <FounderPanel founder={founder} brandName={brandName} />
     </div>
   );
 }
@@ -206,7 +269,7 @@ export default function MatchCard({ match }) {
                 {enrichment.one_line_thesis}
               </p>
             )}
-            {isCold && <EnrichmentPanel enrichment={enrichment} />}
+            {isCold && <EnrichmentPanel enrichment={enrichment} brandName={match.name} />}
             {isUnenriched && (
               <p className="text-xs text-neutral-400 italic">
                 Not yet scored — click <strong>Bullish AI</strong> on the dashboard to analyse this brand.
@@ -307,7 +370,7 @@ export default function MatchCard({ match }) {
         <div style={{ borderTop: '1px solid #E5E5E0', backgroundColor: '#FAFAF8' }} className="p-4 space-y-4">
 
           {/* AI Analysis */}
-          {isEnriched && <EnrichmentPanel enrichment={enrichment} />}
+          {isEnriched && <EnrichmentPanel enrichment={enrichment} brandName={match.name} />}
 
           {/* Signal timeline */}
           <div>

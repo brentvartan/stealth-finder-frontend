@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { items as itemsApi, enrich } from '../api/client';
 import MatchCard from './MatchCard';
+import TrendChart from './TrendChart';
 import { Search, RefreshCw, Award, ShoppingBag, CheckCircle, TrendingUp, Sparkles, Flame } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -257,7 +258,7 @@ export default function Dashboard() {
         <h1 className="font-display font-bold text-3xl uppercase tracking-wide text-black">
           Matches
         </h1>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {enrichMsg && (
             <span className="text-xs text-neutral-400">{enrichMsg}</span>
           )}
@@ -283,7 +284,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Stats ── */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <StatCard
           label="Bullish Hot"
           sublabel="Score ≥ 70 · Strong consumer signal, cultural tension, repeat potential"
@@ -316,79 +317,94 @@ export default function Dashboard() {
         />
       </div>
 
+      {/* ── Trend Chart ── */}
+      {signals.length > 0 && (
+        <div className="bg-white rounded-lg p-5" style={{ border: '1px solid #E5E5E0' }}>
+          <TrendChart signals={signals} />
+        </div>
+      )}
+
       {/* ── Filters ── */}
       <div className="bg-white rounded-lg p-5">
         <div className="flex flex-wrap gap-3 items-center">
           {/* Search */}
-          <div className="relative">
+          <div className="relative min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-300" />
             <input
               type="text"
               placeholder="Search companies..."
               value={filters.search}
               onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
-              className="pl-9 pr-3 py-2 border border-neutral-200 rounded text-sm focus:outline-none focus:border-[#052EF0] transition-colors"
+              className="pl-9 pr-3 py-2 border border-neutral-200 rounded text-sm focus:outline-none focus:border-[#052EF0] transition-colors w-full sm:w-auto"
             />
           </div>
 
-          <label className="flex items-center gap-2 text-sm">
-            <span className="text-neutral-400 whitespace-nowrap text-xs uppercase tracking-wide font-medium">Min Signals</span>
-            <select
-              value={filters.minSignals}
-              onChange={e => setFilters(f => ({ ...f, minSignals: parseInt(e.target.value) }))}
-              className="border border-neutral-200 rounded px-2 py-2 text-sm focus:outline-none focus:border-[#052EF0]"
-            >
-              <option value="1">1+</option>
-              <option value="2">2+</option>
-              <option value="3">3+</option>
-              <option value="4">4+ (Strong)</option>
-            </select>
-          </label>
+          <div className="min-w-0">
+            <label className="flex items-center gap-2 text-sm">
+              <span className="text-neutral-400 whitespace-nowrap text-xs uppercase tracking-wide font-medium">Min Signals</span>
+              <select
+                value={filters.minSignals}
+                onChange={e => setFilters(f => ({ ...f, minSignals: parseInt(e.target.value) }))}
+                className="border border-neutral-200 rounded px-2 py-2 text-sm focus:outline-none focus:border-[#052EF0]"
+              >
+                <option value="1">1+</option>
+                <option value="2">2+</option>
+                <option value="3">3+</option>
+                <option value="4">4+ (Strong)</option>
+              </select>
+            </label>
+          </div>
 
-          <label className="flex items-center gap-2 text-sm">
-            <span className="text-neutral-400 whitespace-nowrap text-xs uppercase tracking-wide font-medium">Time Range</span>
-            <select
-              value={filters.dateRange}
-              onChange={e => setFilters(f => ({ ...f, dateRange: parseInt(e.target.value) }))}
-              className="border border-neutral-200 rounded px-2 py-2 text-sm focus:outline-none focus:border-[#052EF0]"
-            >
-              <option value="7">Last 7 days</option>
-              <option value="30">Last 30 days</option>
-              <option value="60">Last 60 days</option>
-              <option value="90">Last 90 days</option>
-              <option value="180">Last 180 days</option>
-            </select>
-          </label>
+          <div className="min-w-0">
+            <label className="flex items-center gap-2 text-sm">
+              <span className="text-neutral-400 whitespace-nowrap text-xs uppercase tracking-wide font-medium">Time Range</span>
+              <select
+                value={filters.dateRange}
+                onChange={e => setFilters(f => ({ ...f, dateRange: parseInt(e.target.value) }))}
+                className="border border-neutral-200 rounded px-2 py-2 text-sm focus:outline-none focus:border-[#052EF0]"
+              >
+                <option value="7">Last 7 days</option>
+                <option value="30">Last 30 days</option>
+                <option value="60">Last 60 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="180">Last 180 days</option>
+              </select>
+            </label>
+          </div>
 
-          <label className="flex items-center gap-2 text-sm">
-            <span className="text-neutral-400 whitespace-nowrap text-xs uppercase tracking-wide font-medium">Min Score</span>
-            <select
-              value={filters.minScore}
-              onChange={e => setFilters(f => ({ ...f, minScore: parseInt(e.target.value) }))}
-              className="border border-neutral-200 rounded px-2 py-2 text-sm focus:outline-none focus:border-[#052EF0]"
-            >
-              <option value="0">Any</option>
-              <option value="50">50+</option>
-              <option value="60">60+</option>
-              <option value="70">70+ (HOT)</option>
-              <option value="80">80+</option>
-            </select>
-          </label>
+          <div className="min-w-0">
+            <label className="flex items-center gap-2 text-sm">
+              <span className="text-neutral-400 whitespace-nowrap text-xs uppercase tracking-wide font-medium">Min Score</span>
+              <select
+                value={filters.minScore}
+                onChange={e => setFilters(f => ({ ...f, minScore: parseInt(e.target.value) }))}
+                className="border border-neutral-200 rounded px-2 py-2 text-sm focus:outline-none focus:border-[#052EF0]"
+              >
+                <option value="0">Any</option>
+                <option value="50">50+</option>
+                <option value="60">60+</option>
+                <option value="70">70+ (HOT)</option>
+                <option value="80">80+</option>
+              </select>
+            </label>
+          </div>
 
-          <label className="flex items-center gap-2 text-sm">
-            <span className="text-neutral-400 whitespace-nowrap text-xs uppercase tracking-wide font-medium">Theme</span>
-            <select
-              value={filters.theme}
-              onChange={e => setFilters(f => ({ ...f, theme: e.target.value }))}
-              className="border border-neutral-200 rounded px-2 py-2 text-sm focus:outline-none focus:border-[#052EF0]"
-              style={{ maxWidth: '200px' }}
-            >
-              <option value="">All Themes</option>
-              {BULLISH_THEMES.map(t => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </label>
+          <div className="min-w-0">
+            <label className="flex items-center gap-2 text-sm">
+              <span className="text-neutral-400 whitespace-nowrap text-xs uppercase tracking-wide font-medium">Theme</span>
+              <select
+                value={filters.theme}
+                onChange={e => setFilters(f => ({ ...f, theme: e.target.value }))}
+                className="border border-neutral-200 rounded px-2 py-2 text-sm focus:outline-none focus:border-[#052EF0]"
+                style={{ maxWidth: '200px' }}
+              >
+                <option value="">All Themes</option>
+                {BULLISH_THEMES.map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </label>
+          </div>
         </div>
 
         {/* Category pills */}

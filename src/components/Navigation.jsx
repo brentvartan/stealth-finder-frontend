@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Play, Users, PlusCircle, LogOut, Download, Clock, UsersRound, Flame, MessageCircle, Settings as SettingsIcon } from 'lucide-react';
+import { LayoutDashboard, Play, Users, PlusCircle, LogOut, Download, Clock, UsersRound, Flame, MessageCircle, Settings as SettingsIcon, Menu, X } from 'lucide-react';
 import { items } from '../api/client';
 
 // Bullish logo mark — square border + two parallelogram bars
@@ -30,6 +30,7 @@ export default function Navigation() {
   const isActive = (path) => location.pathname === path;
 
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const getExportData = async () => {
     const response = await items.getAll({ per_page: 500 });
@@ -122,8 +123,8 @@ export default function Navigation() {
             </div>
           </Link>
 
-          {/* ── Nav Links ── */}
-          <div className="flex items-center gap-0.5">
+          {/* ── Nav Links (desktop only) ── */}
+          <div className="hidden md:flex items-center gap-0.5">
             {navItems.map((item) => {
               const Icon   = item.icon;
               const active = isActive(item.path);
@@ -161,8 +162,8 @@ export default function Navigation() {
             })}
           </div>
 
-          {/* ── Right side: export + user ── */}
-          <div className="flex items-center gap-1 shrink-0">
+          {/* ── Right side: export + user (desktop only) ── */}
+          <div className="hidden md:flex items-center gap-1 shrink-0">
             <div className="relative">
               <button
                 onClick={() => setShowExportMenu(m => !m)}
@@ -213,7 +214,91 @@ export default function Navigation() {
             </div>
           </div>
 
+          {/* ── Hamburger button (mobile only) ── */}
+          <button
+            className="md:hidden p-2 text-neutral-400 hover:text-white transition-colors rounded"
+            onClick={() => setMobileOpen(o => !o)}
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+
         </div>
+
+        {/* ── Mobile menu panel ── */}
+        {mobileOpen && (
+          <div className="md:hidden border-t border-neutral-800 pb-4">
+            <div className="flex flex-col">
+              {navItems.map((item) => {
+                const Icon   = item.icon;
+                const active = isActive(item.path);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors border-l-2 ${
+                      active
+                        ? 'text-white border-[#052EF0]'
+                        : 'text-neutral-400 hover:text-white border-transparent'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {item.label}
+                    {item.path === '/' && newHotCount > 0 && (
+                      <span
+                        className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none"
+                        style={{ backgroundColor: '#052EF0', color: '#fff' }}
+                      >
+                        <Flame className="w-2.5 h-2.5" />
+                        {newHotCount}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+
+              <div className="border-t border-neutral-800 mt-2 pt-3 px-4 flex flex-col gap-3">
+                {/* Export buttons */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleExportJSON}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-neutral-400 hover:text-white transition-colors rounded border border-neutral-700"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    JSON
+                  </button>
+                  <button
+                    onClick={handleExportCSV}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-neutral-400 hover:text-white transition-colors rounded border border-neutral-700"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    CSV
+                  </button>
+                </div>
+
+                {/* User info + logout */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-medium text-white leading-none">
+                      {user?.first_name ? `${user.first_name} ${user.last_name}` : user?.email}
+                    </div>
+                    <div className="text-[10px] text-neutral-500 capitalize mt-0.5">{user?.role || 'Analyst'}</div>
+                  </div>
+                  <button
+                    onClick={logout}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-neutral-400 hover:text-white transition-colors rounded border border-neutral-700"
+                    title="Sign Out"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </nav>
   );

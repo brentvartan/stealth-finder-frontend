@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, Flame, TrendingUp, Minus, User, Linkedin, ExternalLink,
   Sparkles, Bookmark, BookmarkCheck, MessageCircle, StickyNote, Save,
@@ -157,8 +157,9 @@ function TeamNotes({ match, onSaved }) {
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 export default function SignalDetail() {
-  const location = useLocation();
+  const location  = useLocation();
   const navigate  = useNavigate();
+  const { signalId } = useParams();
   const match     = location.state?.match;
 
   const [currentMatch, setCurrentMatch] = useState(match);
@@ -166,6 +167,60 @@ export default function SignalDetail() {
   const [watchlisted,  setWatchlisted]  = useState(false);
   const [watchlisting, setWatchlisting] = useState(false);
   const [briefCopied,  setBriefCopied]  = useState(false);
+  const [fetching,     setFetching]     = useState(false);
+  const [fetchError,   setFetchError]   = useState('');
+
+  // When navigated directly by URL (no router state), fetch from API
+  useEffect(() => {
+    if (!match && signalId) {
+      setFetching(true);
+      setFetchError('');
+      itemsApi.getAll({ per_page: 1000 })
+        .then(response => {
+          const allItems = response.data.items || [];
+          const item = allItems.find(i => i.id === parseInt(signalId));
+          if (!item) {
+            setFetchError('Signal not found.');
+            return;
+          }
+          let meta = {};
+          try { meta = JSON.parse(item.description || '{}'); } catch (e) {}
+          const constructedMatch = {
+            name:            meta.company_name || item.title,
+            category:        meta.category,
+            signals: [{
+              id:          item.id,
+              companyName: meta.company_name,
+              signal_type: meta.signal_type,
+              category:    meta.category,
+              description: meta.description,
+              url:         meta.url,
+              notes:       meta.notes,
+              timestamp:   meta.timestamp,
+              enrichment:  meta.enrichment,
+              team_notes:  meta.team_notes,
+            }],
+            enrichment:      meta.enrichment || null,
+            primarySignalId: item.id,
+            team_notes:      meta.team_notes || '',
+            hasTrademark:    meta.signal_type === 'trademark',
+            hasDelaware:     meta.signal_type === 'delaware',
+            hasDomain:       meta.signal_type === 'domain',
+            hasInstagram:    meta.signal_type === 'instagram',
+            hasShopify:      meta.signal_type === 'shopify',
+            hasSocial:       meta.signal_type === 'social',
+            score:           0,
+          };
+          setCurrentMatch(constructedMatch);
+        })
+        .catch(() => {
+          setFetchError('Failed to load signal. Please check your connection.');
+        })
+        .finally(() => {
+          setFetching(false);
+        });
+    }
+  }, [match, signalId]);
 
   const handleCopyBrief = async () => {
     try {
@@ -175,10 +230,19 @@ export default function SignalDetail() {
     } catch {}
   };
 
+  if (fetching) {
+    return (
+      <div className="max-w-3xl mx-auto px-6 py-16 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-3" style={{ borderColor: '#052EF0' }} />
+        <p className="text-neutral-400 text-sm">Loading signal...</p>
+      </div>
+    );
+  }
+
   if (!currentMatch) {
     return (
       <div className="max-w-3xl mx-auto px-6 py-16 text-center">
-        <p className="text-neutral-400 text-sm mb-4">Signal not found.</p>
+        <p className="text-neutral-400 text-sm mb-4">{fetchError || 'Signal not found.'}</p>
         <Link to="/" className="text-xs text-[#052EF0] hover:underline">← Back to Dashboard</Link>
       </div>
     );

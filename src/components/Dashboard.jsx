@@ -253,7 +253,21 @@ export default function Dashboard() {
   return (
     <div className="max-w-7xl mx-auto px-6 py-7 space-y-6">
 
-      {/* ── Page header ── */}
+      {/* ── Themes header + tracker ── */}
+      {signals.length > 0 && (
+        <>
+          <div className="flex items-center justify-between">
+            <h1 className="font-display font-bold text-3xl uppercase tracking-wide text-black">
+              Themes
+            </h1>
+          </div>
+          <div className="bg-white rounded-lg p-5" style={{ border: '1px solid #E5E5E0' }}>
+            <TrendChart signals={signals} />
+          </div>
+        </>
+      )}
+
+      {/* ── Matches header ── */}
       <div className="flex items-center justify-between">
         <h1 className="font-display font-bold text-3xl uppercase tracking-wide text-black">
           Matches
@@ -316,13 +330,6 @@ export default function Dashboard() {
           active={tierFilter === 'cold'}
         />
       </div>
-
-      {/* ── Trend Chart ── */}
-      {signals.length > 0 && (
-        <div className="bg-white rounded-lg p-5" style={{ border: '1px solid #E5E5E0' }}>
-          <TrendChart signals={signals} />
-        </div>
-      )}
 
       {/* ── Filters ── */}
       <div className="bg-white rounded-lg p-5">

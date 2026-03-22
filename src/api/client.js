@@ -93,6 +93,26 @@ export const auth = {
 
   resetPassword: (token, password) =>
     api.post('/auth/reset-password', { token, password }),
+
+  invite: (email) =>
+    api.post('/auth/invite', { email }),
+
+  acceptInvite: (token, firstName, lastName, password) =>
+    api.post('/auth/accept-invite', {
+      token,
+      first_name: firstName,
+      last_name: lastName,
+      password,
+    }),
+};
+
+// ─── Admin ─────────────────────────────────────────────────────────────────────
+export const admin = {
+  listUsers: (params = {}) =>
+    api.get('/admin/users', { params }),
+
+  updateUser: (id, data) =>
+    api.patch(`/admin/users/${id}`, data),
 };
 
 // ─── Enrichment (Bullish AI analysis via Claude) ──────────────────────────────

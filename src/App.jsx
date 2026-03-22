@@ -6,6 +6,8 @@ import RunScan from './components/RunScan';
 import Watchlist from './components/Watchlist';
 import AddSignal from './components/AddSignal';
 import ScheduledScans from './components/ScheduledScans';
+import Team from './components/Team';
+import AcceptInvite from './components/AcceptInvite';
 import Navigation from './components/Navigation';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './App.css';
@@ -43,6 +45,9 @@ function AppContent() {
         <Routes>
           <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
 
+          {/* Public — accept-invite doesn't require auth (creates the account) */}
+          <Route path="/accept-invite" element={<AcceptInvite />} />
+
           <Route
             path="/"
             element={
@@ -75,6 +80,15 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <AddSignal />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/team"
+            element={
+              <ProtectedRoute>
+                <Team />
               </ProtectedRoute>
             }
           />

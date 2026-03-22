@@ -97,12 +97,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Called after accept-invite — store tokens and set user without a separate API call
+  const loginWithTokens = (userData, accessToken, refreshToken) => {
+    localStorage.setItem('access_token', accessToken);
+    localStorage.setItem('refresh_token', refreshToken);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+  };
+
   const value = {
     user,
     loading,
     login,
     logout,
     register,
+    loginWithTokens,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

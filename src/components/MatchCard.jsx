@@ -509,18 +509,34 @@ export default function MatchCard({ match, onUpdate }) {
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-baseline gap-2 mb-1">
-              <Link
-                to={`/signal/${primarySignalId}`}
-                state={{ match }}
-                onClick={e => e.stopPropagation()}
-                className="font-display font-bold text-xl uppercase tracking-wide text-black leading-none hover:text-[#052EF0] transition-colors"
-              >
-                {match.name}
-              </Link>
-              <span className="text-xs font-medium text-neutral-400 uppercase tracking-wider whitespace-nowrap">
-                {match.category}
-              </span>
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <div className="flex flex-wrap items-baseline gap-2">
+                <Link
+                  to={`/signal/${primarySignalId}`}
+                  state={{ match }}
+                  onClick={e => e.stopPropagation()}
+                  className="font-display font-bold text-xl uppercase tracking-wide text-black leading-none hover:text-[#052EF0] transition-colors"
+                >
+                  {match.name}
+                </Link>
+                <span className="text-xs font-medium text-neutral-400 uppercase tracking-wider whitespace-nowrap">
+                  {match.category}
+                </span>
+              </div>
+              {(() => {
+                const fs = enrichment?.founder_score;
+                if (!fs?.gate_passed || !fs?.total || fs.total < 50) return null;
+                return (
+                  <span
+                    className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[10px] text-white shrink-0"
+                    style={{ backgroundColor: '#052EF0' }}
+                    title={`Founder: ${fs.tier?.replace(/_/g, ' ')} · ${fs.total}/100`}
+                  >
+                    <User className="w-3 h-3" />
+                    FOUNDER {fs.total}
+                  </span>
+                );
+              })()}
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -546,21 +562,6 @@ export default function MatchCard({ match, onUpdate }) {
               <span className="text-xs text-neutral-400">
                 {new Date(match.latestSignal).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </span>
-              {(() => {
-                const fs = enrichment?.founder_score;
-                if (!fs?.gate_passed || !fs?.total || fs.total < 50) return null;
-                const bg    = '#052EF0';
-                return (
-                  <span
-                    className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[10px] text-white shrink-0"
-                    style={{ backgroundColor: bg }}
-                    title={`Founder: ${fs.tier?.replace(/_/g, ' ')} · ${fs.total}/100`}
-                  >
-                    <User className="w-3 h-3" />
-                    JOCKEY {fs.total}
-                  </span>
-                );
-              })()}
             </div>
 
             {isEnriched && enrichment.one_line_thesis && (

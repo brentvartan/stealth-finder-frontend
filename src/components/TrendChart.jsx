@@ -108,7 +108,7 @@ function classifyTension(match) {
   const s = SELF_KEYS.filter(k => combined.includes(k)).length;
   const i = INDIVIDUALS_KEYS.filter(k => combined.includes(k)).length;
 
-  if (w === 0 && s === 0 && i === 0) return 'self'; // default: Uncompromising Self
+  if (w === 0 && s === 0 && i === 0) return 'individuals'; // default: Individuals > Institutions (every brand exists because of Industry Calcification)
   if (w >= s && w >= i) return 'wellness';
   if (s >= i) return 'self';
   return 'individuals';

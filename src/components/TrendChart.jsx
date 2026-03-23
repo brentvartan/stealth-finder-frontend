@@ -6,8 +6,12 @@ import {
 /**
  * Theme Tracker
  * Tracks 3 core cultural tensions over the last 6 months (~180 days).
- * Y-axis = unique brand count per theme per month (not score sum).
- * Hover tooltip lists brand names; confluence brands (2+ signal types) are bolded.
+ * Y-axis = total signal events per theme per month.
+ *   Each detected signal counts as 1 unit — so a brand filing a trademark in Oct
+ *   and an EDGAR in Dec adds 1 in Oct AND 1 in Dec, showing accumulating momentum.
+ *   Two signals in the same month from the same brand = 2 units.
+ * Hover tooltip lists contributing brands with per-brand signal counts.
+ * Confluence brands (2+ distinct signal types) are highlighted in blue.
  *
  * Tensions (from Bullish 2026 Cultural Themes deck):
  *   - Ubiquitous Wellness  ($7.3T) — health optimisation, GLP-1, longevity, Presently Offline,
@@ -122,9 +126,9 @@ function BrandTooltip({ active, payload, label }) {
         return (
           <div key={themeLabel} style={{ marginBottom: 8 }}>
             <div style={{ color, fontWeight: 600, marginBottom: 3, fontSize: 11 }}>
-              {themeLabel} — {brands.length} brand{brands.length !== 1 ? 's' : ''}
+              {themeLabel} — {brands.reduce((s, b) => s + b.signalCount, 0)} signal{brands.reduce((s, b) => s + b.signalCount, 0) !== 1 ? 's' : ''} · {brands.length} brand{brands.length !== 1 ? 's' : ''}
             </div>
-            {brands.map(({ name, confluence }) => (
+            {brands.map(({ name, signalCount, confluence }) => (
               <div key={name} style={{
                 paddingLeft: 8,
                 color: confluence ? '#052EF0' : '#374151',
@@ -144,7 +148,7 @@ function BrandTooltip({ active, payload, label }) {
                     flexShrink: 0,
                   }} />
                 )}
-                {name}
+                {name}{signalCount > 1 ? <span style={{ color: '#9CA3AF', fontWeight: 400, fontSize: 10 }}> ×{signalCount}</span> : null}
               </div>
             ))}
           </div>
@@ -206,14 +210,17 @@ export default function TrendChart({ signals = [] }) {
       for (const themeKey of ['wellness', 'self', 'individuals']) {
         const themeLabel = THEMES[themeKey].label;
         const brandMap   = bucket[themeKey];
-        const count      = brandMap.size;
+        // Count total signal events (each signal = 1 unit, not unique brands)
+        const count = [...brandMap.values()].reduce((sum, sigs) => sum + sigs.length, 0);
 
-        // Build sorted brand list: confluence brands first, then alpha
+        // Build sorted brand list: confluence brands first, then by signal count desc, then alpha
         const brands = [...brandMap.entries()].map(([name, sigs]) => ({
           name,
+          signalCount: sigs.length,
           confluence: isConfluence(sigs),
         })).sort((a, b) => {
           if (a.confluence !== b.confluence) return b.confluence - a.confluence;
+          if (a.signalCount !== b.signalCount) return b.signalCount - a.signalCount;
           return a.name.localeCompare(b.name);
         });
 
@@ -246,7 +253,7 @@ export default function TrendChart({ signals = [] }) {
           tickLine={false}
           axisLine={false}
           label={{
-            value: 'brands',
+            value: 'signals',
             angle: -90,
             position: 'insideLeft',
             offset: 16,

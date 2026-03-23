@@ -5,9 +5,9 @@ import {
 
 /**
  * Theme Tracker
- * Tracks the intensity of Bullish's 3 core cultural tensions over the last 12 weeks.
- * Intensity = sum of bullish_scores for all signals belonging to that tension that week.
- * (Unscored signals count as 30 — present but unvalidated.)
+ * Tracks 3 core cultural tensions over the last 6 months (~180 days).
+ * Y-axis = unique brand count per theme per month (not score sum).
+ * Hover tooltip lists brand names; confluence brands (2+ signal types) are bolded.
  *
  * Tensions (from Bullish 2026 Cultural Themes deck):
  *   - Ubiquitous Wellness  ($7.3T) — health optimisation, GLP-1, longevity, Presently Offline,
@@ -19,71 +19,49 @@ import {
  */
 
 const THEMES = {
-  wellness:     { label: 'Ubiquitous Wellness',        color: '#87B4F8' }, // VIS blue-light
-  self:         { label: 'Uncompromising Self',         color: '#052EF0' }, // VIS blue
-  individuals:  { label: 'Individuals > Institutions', color: '#020A52' }, // VIS navy
+  wellness:     { label: 'Ubiquitous Wellness',        color: '#87B4F8' },
+  self:         { label: 'Uncompromising Self',         color: '#052EF0' },
+  individuals:  { label: 'Individuals > Institutions', color: '#020A52' },
 };
 
-// Keywords that signal each tension — checked against cultural_theme + category + one_line_thesis
-// Sourced from Bullish 2026 Cultural Themes deck + sub-theme language
+// ── Keyword lists ──────────────────────────────────────────────────────────────
 
-// Ubiquitous Wellness: health optimisation, GLP-1, longevity protocols, Presently Offline
-// (digital detox/analog self-care), Healthy Hedonism (permissive wellness, guilt-free
-// indulgence), Long Live Longevity (biohacking, healthspan, performance tracking)
 const WELLNESS_KEYS = [
-  // Core wellness
   'wellness', 'health', 'glp', 'glp-1', 'weight', 'longevity', 'healthspan',
   'nutrition', 'supplement', 'vitamin', 'diet', 'dietary', 'food', 'beverage',
   'drink', 'gut', 'sleep', 'mental', 'anxiety', 'stress', 'fitness',
   'functional', 'medical', 'clinical', 'therapeutic', 'pet',
   'biohack', 'recovery', 'immune', 'metabolic', 'hormone',
-  // Presently Offline sub-theme
   'offline', 'detox', 'mindful', 'mindfulness', 'meditation', 'breathwork',
   'sauna', 'cold plunge', 'spa', 'retreat', 'unplugged', 'screen-free',
-  // Healthy Hedonism sub-theme
   'hedonism', 'permissive', 'indulge', 'guilt-free', 'pleasure', 'moderat',
-  // Long Live Longevity sub-theme
   'anti-aging', 'anti-ageing', 'peptide', 'lifespan', 'biomarker',
   'wearable', 'optimize', 'optimis', 'performance', 'protocol',
 ];
 
-// Uncompromising Self: identity expression, personal care as statement, Visible Values
-// (purpose-led consumption), Technically Natural (science + natural amplifying the self),
-// Boldly Intimate (taboo-breaking personal care, femtech, body positivity)
 const SELF_KEYS = [
-  // Core self/identity
   'beauty', 'skin', 'skincare', 'cosmetic', 'makeup', 'grooming', 'personal care',
   'haircare', 'fragrance', 'self', 'identity', 'expression', 'style', 'fashion',
   'apparel', 'authentic', 'unapologetic', 'gen alpha', 'genz', 'gen z',
   'transparency', 'clean label', 'sustainable', 'climate', 'body care', 'intimate',
-  // Visible Values sub-theme
   'values', 'purpose', 'ethical', 'conscious', 'cause', 'advocacy', 'empowerment',
   'self-care', 'statement',
-  // Technically Natural sub-theme
   'natural', 'science-backed', 'retinol', 'serum', 'derma', 'formul',
   'ingredient', 'efficacy', 'biotech', 'actives',
-  // Boldly Intimate sub-theme
   'taboo', 'femcare', 'femtech', 'period', 'menstrual', 'libido',
   'body positive', 'bold', 'confidence', 'sexual wellness',
 ];
 
-// Individuals > Institutions: micro-communities, bypassing gatekeepers, Communal Crafting
-// (local/niche passion communities, third places), Micro Moguls (indie founders, DTC,
-// solopreneurs), Creator Legitimacy (platform independence, audience ownership)
 const INDIVIDUALS_KEYS = [
-  // Core anti-institution
   'individual', 'institution', 'community', 'creator', 'indie', 'craft', 'local',
   'independent', 'decentrali', 'direct', 'dtc', 'analog', 'revival', 'physical',
   'third place', 'third-place', 'running', 'sport', 'outdoor', 'finance', 'banking',
   'education', 'media', 'social', 'connection', 'rebellion', 'anti-corporate',
   'small batch', 'maker', 'handcraft',
-  // Communal Crafting sub-theme
   'communal', 'collective', 'niche', 'artisan', 'micro-community', 'gathering',
   'club', 'hobby', 'workshop', 'co-op',
-  // Micro Moguls sub-theme
   'entrepreneur', 'founder', 'startup', 'solopreneur', 'side hustle',
   'micro-brand', 'mogul', 'brand builder',
-  // Creator Legitimacy sub-theme
   'gatekeeper', 'influencer', 'podcast', 'newsletter', 'substack',
   'audience', 'subscriber', 'legitimacy', 'platform independence',
 ];
@@ -91,12 +69,10 @@ const INDIVIDUALS_KEYS = [
 function classifyTension(match) {
   const e = match.enrichment || {};
 
-  // Use server-side tension if available (set by Claude at enrichment time)
   if (e.tension && ['wellness', 'self', 'individuals'].includes(e.tension)) {
     return e.tension;
   }
 
-  // Fallback: keyword matching for signals enriched before server-side tension was added
   const combined = [
     e.cultural_theme || '',
     match.category || '',
@@ -108,56 +84,145 @@ function classifyTension(match) {
   const s = SELF_KEYS.filter(k => combined.includes(k)).length;
   const i = INDIVIDUALS_KEYS.filter(k => combined.includes(k)).length;
 
-  if (w === 0 && s === 0 && i === 0) return 'individuals'; // default: Individuals > Institutions (every brand exists because of Industry Calcification)
+  if (w === 0 && s === 0 && i === 0) return 'individuals';
   if (w >= s && w >= i) return 'wellness';
   if (s >= i) return 'self';
   return 'individuals';
 }
 
+/** Returns true if a signal has 2+ distinct signal types (trademark + EDGAR, etc.) */
+function isConfluence(brandSignals) {
+  const types = new Set(brandSignals.map(s => s.signalType || s.signal_type || s.category || ''));
+  return types.size >= 2;
+}
+
+// ── Custom tooltip ─────────────────────────────────────────────────────────────
+
+function BrandTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+
+  // Gather brand lists from the data point
+  const point = payload[0]?.payload || {};
+
+  return (
+    <div style={{
+      backgroundColor: '#fff',
+      border: '1px solid #E5E5E0',
+      borderRadius: 8,
+      padding: '10px 14px',
+      fontSize: 12,
+      maxWidth: 260,
+      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+    }}>
+      <div style={{ fontWeight: 700, marginBottom: 8, color: '#000' }}>{label}</div>
+
+      {Object.values(THEMES).map(({ label: themeLabel, color }) => {
+        const brands = point[`_brands_${themeLabel}`] || [];
+        if (brands.length === 0) return null;
+        return (
+          <div key={themeLabel} style={{ marginBottom: 8 }}>
+            <div style={{ color, fontWeight: 600, marginBottom: 3, fontSize: 11 }}>
+              {themeLabel} — {brands.length} brand{brands.length !== 1 ? 's' : ''}
+            </div>
+            {brands.map(({ name, confluence }) => (
+              <div key={name} style={{
+                paddingLeft: 8,
+                color: confluence ? '#052EF0' : '#374151',
+                fontWeight: confluence ? 700 : 400,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                marginBottom: 1,
+              }}>
+                {confluence && (
+                  <span style={{
+                    display: 'inline-block',
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    backgroundColor: '#052EF0',
+                    flexShrink: 0,
+                  }} />
+                )}
+                {name}
+              </div>
+            ))}
+          </div>
+        );
+      })}
+
+      <div style={{ color: '#9CA3AF', fontSize: 10, marginTop: 6, borderTop: '1px solid #F3F4F6', paddingTop: 6 }}>
+        ● = 2+ signal types
+      </div>
+    </div>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
+
 export default function TrendChart({ signals = [] }) {
   const chartData = useMemo(() => {
-    // Build last 26 Monday-anchored week buckets (~180 days)
     const now = new Date();
-    const dayOfWeek = now.getDay();
-    const daysToLastMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    const lastMonday = new Date(now);
-    lastMonday.setDate(now.getDate() - daysToLastMonday);
-    lastMonday.setHours(0, 0, 0, 0);
 
-    const weeks = [];
-    for (let i = 25; i >= 0; i--) {
-      const weekStart = new Date(lastMonday);
-      weekStart.setDate(lastMonday.getDate() - i * 7);
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 7);
-      // Show month label only on first week of each month to keep x-axis clean
-      const isFirstOfMonth = weekStart.getDate() <= 7;
-      const label = isFirstOfMonth
-        ? weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-        : weekStart.toLocaleDateString('en-US', { day: 'numeric' });
-      weeks.push({ label, weekStart, weekEnd, wellness: 0, self: 0, individuals: 0 });
+    // Build 6 monthly buckets: current month + 5 prior months
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const label = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      months.push({
+        label,
+        year:  d.getFullYear(),
+        month: d.getMonth(),          // 0-indexed
+        // theme key → Map<brandName, signal[]>
+        wellness:    new Map(),
+        self:        new Map(),
+        individuals: new Map(),
+      });
     }
 
-    // Bucket each signal — intensity = bullish_score (default 30 if unscored)
+    // Bucket each signal by month + theme, keyed by brand name
     signals.forEach(signal => {
       const date = new Date(signal.savedAt);
       if (isNaN(date.getTime())) return;
+
+      const y = date.getFullYear();
+      const m = date.getMonth();
+      const bucket = months.find(b => b.year === y && b.month === m);
+      if (!bucket) return;
+
       const tension = classifyTension(signal);
-      const score = signal.enrichment?.bullish_score || 30;
-      for (const week of weeks) {
-        if (date >= week.weekStart && date < week.weekEnd) {
-          week[tension] += score;
-          break;
-        }
+      const brandName = signal.name || signal.title || 'Unknown';
+
+      if (!bucket[tension].has(brandName)) {
+        bucket[tension].set(brandName, []);
       }
+      bucket[tension].get(brandName).push(signal);
     });
 
-    return weeks.map(({ label, wellness, self, individuals }) => ({
-      label,
-      [THEMES.wellness.label]:    wellness    || null,
-      [THEMES.self.label]:        self        || null,
-      [THEMES.individuals.label]: individuals || null,
-    }));
+    // Convert to Recharts-friendly rows
+    return months.map(bucket => {
+      const row = { label: bucket.label };
+
+      for (const themeKey of ['wellness', 'self', 'individuals']) {
+        const themeLabel = THEMES[themeKey].label;
+        const brandMap   = bucket[themeKey];
+        const count      = brandMap.size;
+
+        // Build sorted brand list: confluence brands first, then alpha
+        const brands = [...brandMap.entries()].map(([name, sigs]) => ({
+          name,
+          confluence: isConfluence(sigs),
+        })).sort((a, b) => {
+          if (a.confluence !== b.confluence) return b.confluence - a.confluence;
+          return a.name.localeCompare(b.name);
+        });
+
+        row[themeLabel] = count || null;           // null keeps the line gap (no false 0s)
+        row[`_brands_${themeLabel}`] = brands;     // hidden key for tooltip
+      }
+
+      return row;
+    });
   }, [signals]);
 
   const hasData = chartData.some(d =>
@@ -180,16 +245,15 @@ export default function TrendChart({ signals = [] }) {
           tick={{ fontSize: 10, fill: '#9CA3AF' }}
           tickLine={false}
           axisLine={false}
-        />
-        <Tooltip
-          contentStyle={{
-            backgroundColor: '#fff',
-            border: '1px solid #E5E5E0',
-            borderRadius: 6,
-            fontSize: 12,
+          label={{
+            value: 'brands',
+            angle: -90,
+            position: 'insideLeft',
+            offset: 16,
+            style: { fontSize: 9, fill: '#D1D5DB' },
           }}
-          labelStyle={{ fontWeight: 600, color: '#000', marginBottom: 4 }}
         />
+        <Tooltip content={<BrandTooltip />} />
         <Legend
           iconType="circle"
           iconSize={8}
@@ -202,8 +266,8 @@ export default function TrendChart({ signals = [] }) {
             dataKey={label}
             stroke={color}
             strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 4 }}
+            dot={{ r: 3, fill: color, strokeWidth: 0 }}
+            activeDot={{ r: 5 }}
             connectNulls
           />
         ))}

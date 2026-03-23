@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { auth } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
@@ -18,12 +19,14 @@ export default function AcceptInvite() {
 
   const token = searchParams.get('token') || '';
 
-  const [firstName, setFirstName] = useState('');
-  const [lastName,  setLastName]  = useState('');
-  const [password,  setPassword]  = useState('');
-  const [confirm,   setConfirm]   = useState('');
-  const [loading,   setLoading]   = useState(false);
-  const [error,     setError]     = useState('');
+  const [firstName,    setFirstName]    = useState('');
+  const [lastName,     setLastName]     = useState('');
+  const [password,     setPassword]     = useState('');
+  const [confirm,      setConfirm]      = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm,  setShowConfirm]  = useState(false);
+  const [loading,      setLoading]      = useState(false);
+  const [error,        setError]        = useState('');
 
   useEffect(() => {
     if (!token) setError('No invite token found. Ask your admin to resend the invite.');
@@ -55,46 +58,73 @@ export default function AcceptInvite() {
     }
   };
 
-  const inputClass = 'w-full border border-neutral-200 rounded px-3 py-2.5 text-sm focus:outline-none focus:border-[#052EF0] transition-colors bg-white';
-  const labelClass = 'block text-xs font-medium text-neutral-500 mb-1 uppercase tracking-wider';
+  const inputClass = [
+    'w-full px-4 py-3 rounded text-sm',
+    'bg-white/5 border border-white/15',
+    'text-white placeholder-white/30',
+    'focus:outline-none focus:border-[#052EF0] focus:bg-white/10',
+    'transition-all',
+  ].join(' ');
+
+  const labelClass = 'block text-xs font-medium text-white/50 mb-1.5 tracking-wide uppercase';
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-4"
-      style={{ backgroundColor: '#F5F0EB' }}
+      className="min-h-screen flex flex-col items-center justify-center px-4 py-12"
+      style={{
+        background: 'radial-gradient(ellipse at 50% 35%, #052EF0 0%, #020A52 45%, #010525 100%)',
+      }}
     >
-      <div className="w-full max-w-sm">
+      {/* ── Brand lockup (matches Login exactly) ── */}
+      <div className="mb-8 flex flex-col items-center gap-8">
+        <BullishIcon className="w-6 h-6 text-white/40" />
+        <div
+          style={{
+            border: '1.5px solid rgba(255,255,255,0.45)',
+            borderRadius: '50%',
+            width: 272,
+            height: 188,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div className="text-center leading-tight">
+            <span className="block font-editorial italic text-white text-[1.45rem] tracking-wide">Stealth</span>
+            <span className="block font-editorial italic text-white text-[1.45rem] tracking-wide">Startup</span>
+            <span className="block font-editorial italic text-white text-[1.45rem] tracking-wide">Finder</span>
+          </div>
+        </div>
+      </div>
 
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <BullishIcon className="w-10 h-10 text-black mb-3" />
-          <h1 className="font-display font-bold text-xl uppercase tracking-widest text-black">
-            Stealth Finder
-          </h1>
-          <p className="text-xs text-neutral-400 mt-1 font-editorial italic">
-            Bullish Intelligence
+      {/* ── Card ── */}
+      <div
+        className="w-full max-w-sm rounded-lg overflow-hidden"
+        style={{
+          background: 'rgba(1, 5, 37, 0.75)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          backdropFilter: 'blur(16px)',
+        }}
+      >
+        {/* Header bar */}
+        <div className="px-7 pt-6 pb-1 border-b border-white/10">
+          <p className="text-[10px] font-display font-semibold tracking-widest uppercase text-white/40 pb-3">
+            Join the Team
           </p>
         </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-xl p-8 shadow-sm" style={{ border: '1px solid #E5E5E0' }}>
-          <h2 className="font-display font-bold text-lg uppercase tracking-wide text-black mb-1">
-            Accept Invite
-          </h2>
-          <p className="text-sm text-neutral-400 mb-6">
-            Set up your account to join the team.
-          </p>
-
+        <div className="p-7">
           {error && (
-            <div className="mb-4 p-3 rounded text-xs text-red-700 bg-red-50 border border-red-200">
+            <div className="mb-5 p-3 rounded text-xs text-red-300 bg-red-900/30 border border-red-500/30">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Name row */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={labelClass}>First Name</label>
+                <label className={labelClass}>First</label>
                 <input
                   type="text"
                   placeholder="Brent"
@@ -103,10 +133,11 @@ export default function AcceptInvite() {
                   className={inputClass}
                   required
                   autoFocus
+                  disabled={loading}
                 />
               </div>
               <div>
-                <label className={labelClass}>Last Name</label>
+                <label className={labelClass}>Last</label>
                 <input
                   type="text"
                   placeholder="Vartan"
@@ -114,42 +145,70 @@ export default function AcceptInvite() {
                   onChange={e => setLastName(e.target.value)}
                   className={inputClass}
                   required
+                  disabled={loading}
                 />
               </div>
             </div>
 
+            {/* Password */}
             <div>
-              <label className={labelClass}>Password</label>
-              <input
-                type="password"
-                placeholder="8+ characters"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className={inputClass}
-                required
-              />
+              <label className={labelClass}>
+                Password <span className="normal-case font-sans font-normal text-white/25">(min 8 chars)</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className={inputClass + ' pr-11'}
+                  required
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-white rounded p-1 text-neutral-800 hover:text-black transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
+            {/* Confirm password */}
             <div>
               <label className={labelClass}>Confirm Password</label>
-              <input
-                type="password"
-                placeholder="Repeat password"
-                value={confirm}
-                onChange={e => setConfirm(e.target.value)}
-                className={inputClass}
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showConfirm ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={confirm}
+                  onChange={e => setConfirm(e.target.value)}
+                  className={inputClass + ' pr-11'}
+                  required
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(v => !v)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-white rounded p-1 text-neutral-800 hover:text-black transition-colors"
+                  tabIndex={-1}
+                >
+                  {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
+            {/* Submit */}
             <button
               type="submit"
               disabled={loading || !token || !firstName.trim() || !lastName.trim() || !password || !confirm}
-              className="w-full py-3 text-sm font-display font-bold tracking-widest uppercase text-white rounded transition-all flex items-center justify-center gap-2 mt-2"
+              className="w-full py-3 text-sm font-display font-semibold tracking-widest uppercase text-white rounded transition-all flex items-center justify-center gap-2 mt-2"
               style={{
                 backgroundColor:
                   loading || !token || !firstName.trim() || !lastName.trim() || !password || !confirm
-                    ? '#CCC'
+                    ? '#1a1a6e'
                     : '#052EF0',
               }}
             >
@@ -163,8 +222,11 @@ export default function AcceptInvite() {
               )}
             </button>
           </form>
-        </div>
 
+          <div className="mt-6 pt-5 border-t border-white/10 text-center">
+            <p className="text-[10px] text-white/20 tracking-wide">© 2026 Bullish. All rights reserved.</p>
+          </div>
+        </div>
       </div>
     </div>
   );

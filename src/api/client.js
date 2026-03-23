@@ -113,6 +113,9 @@ export const admin = {
 
   updateUser: (id, data) =>
     api.patch(`/admin/users/${id}`, data),
+
+  getSpend: () =>
+    api.get('/admin/spend'),
 };
 
 // ─── Enrichment (Bullish AI analysis via Claude) ──────────────────────────────

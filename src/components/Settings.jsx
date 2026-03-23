@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { settings as settingsApi } from '../api/client';
+import { settings as settingsApi, admin as adminApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { Plus, X, CheckCircle, Save, Bell, Slack, BarChart2, Clock, Users } from 'lucide-react';
+import { Plus, X, CheckCircle, Save, Bell, Slack, BarChart2, Clock, Users, CreditCard, RefreshCw, Linkedin, Zap } from 'lucide-react';
 import ScheduledScans from './ScheduledScans';
 import Team from './Team';
 
@@ -286,12 +286,141 @@ function AlertsTab({ isAdmin }) {
   );
 }
 
+// ─── Spend tab (admin only) ───────────────────────────────────────────────────
+
+function SpendStat({ label, value, sub }) {
+  return (
+    <div className="bg-white border border-neutral-100 rounded-lg p-4">
+      <p className="text-xs text-neutral-400 uppercase tracking-wider mb-1">{label}</p>
+      <p className="text-2xl font-display font-bold text-black">{value}</p>
+      {sub && <p className="text-xs text-neutral-400 mt-0.5">{sub}</p>}
+    </div>
+  );
+}
+
+function SpendTab() {
+  const [data,    setData]    = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await adminApi.getSpend();
+      setData(res.data);
+    } catch (e) {
+      setError('Could not load spend data.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const fmt  = (n) => n == null ? '—' : `$${n.toFixed(2)}`;
+  const fmtN = (n) => n == null ? '—' : n.toLocaleString();
+
+  if (loading) return <div className="py-12 text-center text-sm text-neutral-400">Loading spend data…</div>;
+  if (error)   return <div className="py-12 text-center text-sm text-red-400">{error}</div>;
+
+  const el = data.enrich_layer;
+  const an = data.anthropic;
+  const tot = data.totals;
+
+  return (
+    <div className="space-y-8">
+
+      {/* Total this month */}
+      <div>
+        <SectionHeader icon={CreditCard} title="This Month" subtitle="Estimated API spend since the 1st" />
+        <div className="grid grid-cols-3 gap-3">
+          <SpendStat
+            label="LinkedIn (Enrich Layer)"
+            value={fmt(el.estimated_cost_this_month)}
+            sub={`${fmtN(el.lookups_this_month)} lookups · ${fmt(el.cost_per_lookup)}/ea`}
+          />
+          <SpendStat
+            label="Claude (Anthropic)"
+            value={fmt(an.estimated_cost_this_month)}
+            sub={`${fmtN(an.enrichments_this_month)} enrichments · ~${fmt(an.cost_per_enrichment)}/ea`}
+          />
+          <SpendStat
+            label="Total Estimated"
+            value={fmt(tot.estimated_cost_this_month)}
+            sub="All API services combined"
+          />
+        </div>
+      </div>
+
+      {/* Enrich Layer detail */}
+      <div>
+        <SectionHeader icon={Linkedin} title="Enrich Layer (LinkedIn)" subtitle="Founder lookup credits and usage" />
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <SpendStat
+            label="Credits Remaining"
+            value={el.credits_available == null ? '—' : fmtN(el.credits_available)}
+            sub={el.error ? `Error: ${el.error}` : 'Live from Enrich Layer API'}
+          />
+          <SpendStat
+            label="All-Time Lookups"
+            value={fmtN(el.lookups_all_time)}
+            sub={`Est. total cost: ${fmt(el.estimated_cost_all_time)}`}
+          />
+        </div>
+        <p className="text-xs text-neutral-300">
+          LinkedIn enrichment fires automatically on WARM+ signals (score ≥ 50) with a known founder name.
+          ~{fmt(el.cost_per_lookup)} per lookup (search + profile fetch).
+        </p>
+      </div>
+
+      {/* Anthropic detail */}
+      <div>
+        <SectionHeader icon={Zap} title="Anthropic (Claude)" subtitle="Signal enrichment and founder re-scoring" />
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <SpendStat
+            label="All-Time Enrichments"
+            value={fmtN(an.enrichments_all_time)}
+            sub={`Est. total cost: ${fmt(an.estimated_cost_all_time)}`}
+          />
+          <SpendStat
+            label="Cost Per Signal"
+            value={fmt(an.cost_per_enrichment)}
+            sub="Claude Sonnet (full enrichment)"
+          />
+        </div>
+        <p className="text-xs text-neutral-300">
+          Estimates are based on average token usage. Check{' '}
+          <a href="https://console.anthropic.com/settings/billing" target="_blank" rel="noreferrer"
+            className="underline hover:text-neutral-500">console.anthropic.com</a>{' '}
+          for exact billing.
+        </p>
+      </div>
+
+      {/* Refresh + timestamp */}
+      <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
+        <p className="text-xs text-neutral-300">
+          Last refreshed: {data.generated_at ? new Date(data.generated_at).toLocaleTimeString() : '—'}
+        </p>
+        <button
+          onClick={load}
+          className="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-black transition-colors"
+        >
+          <RefreshCw className="w-3 h-3" /> Refresh
+        </button>
+      </div>
+
+    </div>
+  );
+}
+
 // ─── Main Settings page ───────────────────────────────────────────────────────
 
 const TABS = [
-  { id: 'alerts',    label: 'Alerts',    icon: Bell    },
-  { id: 'schedules', label: 'Schedules', icon: Clock   },
-  { id: 'team',      label: 'Team',      icon: Users   },
+  { id: 'alerts',    label: 'Alerts',    icon: Bell,       adminOnly: false },
+  { id: 'schedules', label: 'Schedules', icon: Clock,      adminOnly: false },
+  { id: 'team',      label: 'Team',      icon: Users,      adminOnly: false },
+  { id: 'spend',     label: 'Spend',     icon: CreditCard, adminOnly: true  },
 ];
 
 export default function Settings() {
@@ -310,7 +439,7 @@ export default function Settings() {
 
       {/* Tab bar */}
       <div className="flex items-center gap-0 border-b border-neutral-200 mb-7">
-        {TABS.map(tab => {
+        {TABS.filter(t => !t.adminOnly || isAdmin).map(tab => {
           const Icon = tab.icon;
           const active = activeTab === tab.id;
           return (
@@ -339,6 +468,7 @@ export default function Settings() {
       {activeTab === 'alerts'    && <AlertsTab isAdmin={isAdmin} />}
       {activeTab === 'schedules' && <ScheduledScans embedded />}
       {activeTab === 'team'      && <Team embedded />}
+      {activeTab === 'spend'     && isAdmin && <SpendTab />}
 
     </div>
   );

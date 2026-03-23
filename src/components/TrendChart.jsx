@@ -77,7 +77,7 @@ function classifyTension(match) {
     e.cultural_theme || '',
     match.category || '',
     e.one_line_thesis || '',
-    match.name || '',
+    match.companyName || match.name || '',
   ].join(' ').toLowerCase();
 
   const w = WELLNESS_KEYS.filter(k => combined.includes(k)).length;
@@ -191,7 +191,7 @@ export default function TrendChart({ signals = [] }) {
       if (!bucket) return;
 
       const tension = classifyTension(signal);
-      const brandName = signal.name || signal.title || 'Unknown';
+      const brandName = signal.companyName || signal.name || signal.title || 'Unknown';
 
       if (!bucket[tension].has(brandName)) {
         bucket[tension].set(brandName, []);

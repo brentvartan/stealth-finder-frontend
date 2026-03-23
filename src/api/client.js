@@ -114,6 +114,9 @@ export const admin = {
   updateUser: (id, data) =>
     api.patch(`/admin/users/${id}`, data),
 
+  forceResetPassword: (id, password) =>
+    api.post(`/admin/users/${id}/force-reset`, { password }),
+
   getSpend: () =>
     api.get('/admin/spend'),
 };

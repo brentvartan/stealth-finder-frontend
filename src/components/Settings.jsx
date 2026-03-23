@@ -397,6 +397,81 @@ function SpendTab() {
         </p>
       </div>
 
+      {/* Rate card */}
+      <div>
+        <SectionHeader icon={BarChart2} title="Rate Card" subtitle="Per-unit cost by data source — updated manually when pricing changes" />
+        <div className="bg-white rounded-lg overflow-hidden" style={{ border: '1px solid #E5E5E0' }}>
+          <table className="w-full text-xs">
+            <thead>
+              <tr style={{ backgroundColor: '#F9F9F8' }}>
+                {['Source', 'What it does', 'Triggers when', 'Unit cost', 'Status'].map(h => (
+                  <th key={h} className="text-left px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 border-b border-neutral-100">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-50">
+              {[
+                {
+                  source:   'USPTO TESS',
+                  what:     'New trademark filings',
+                  when:     'Every scheduled scan',
+                  cost:     'Free',
+                  active:   true,
+                },
+                {
+                  source:   'SEC EDGAR (Form D)',
+                  what:     'Reg D fundraise filings (all 50 states)',
+                  when:     'Every scheduled scan',
+                  cost:     'Free',
+                  active:   true,
+                },
+                {
+                  source:   'Product Hunt',
+                  what:     'New product launches',
+                  when:     'Every scheduled scan',
+                  cost:     'Free',
+                  active:   true,
+                },
+                {
+                  source:   'Anthropic (Claude Sonnet)',
+                  what:     'Full signal enrichment + scoring',
+                  when:     'Score button / batch enrich',
+                  cost:     `~${fmt(an.cost_per_enrichment)} / signal`,
+                  active:   true,
+                },
+                {
+                  source:   'Anthropic (Claude Haiku)',
+                  what:     'Founder re-score after LinkedIn',
+                  when:     'Auto after WARM+ LinkedIn hit',
+                  cost:     '~$0.005 / re-score',
+                  active:   true,
+                },
+                {
+                  source:   'Enrich Layer (LinkedIn)',
+                  what:     'Founder profile lookup',
+                  when:     'Auto on WARM+ signals (score ≥ 50)',
+                  cost:     `~${fmt(el.cost_per_lookup)} / founder`,
+                  active:   true,
+                },
+              ].map(row => (
+                <tr key={row.source} className="hover:bg-neutral-50 transition-colors">
+                  <td className="px-4 py-3 font-semibold text-black">{row.source}</td>
+                  <td className="px-4 py-3 text-neutral-500">{row.what}</td>
+                  <td className="px-4 py-3 text-neutral-400">{row.when}</td>
+                  <td className="px-4 py-3 font-mono font-medium" style={{ color: row.cost === 'Free' ? '#16A34A' : '#374151' }}>{row.cost}</td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded uppercase tracking-wide ${row.active ? 'bg-green-50 text-green-600' : 'bg-neutral-100 text-neutral-400'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${row.active ? 'bg-green-500' : 'bg-neutral-300'}`} />
+                      {row.active ? 'On' : 'Off'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Refresh + timestamp */}
       <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
         <p className="text-xs text-neutral-300">

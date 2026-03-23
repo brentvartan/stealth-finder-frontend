@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 // Bullish logo mark — square border + two parallelogram bars
@@ -18,8 +19,9 @@ export default function Login() {
   const [password,  setPassword]  = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName,  setLastName]  = useState('');
-  const [error,     setError]     = useState('');
-  const [loading,   setLoading]   = useState(false);
+  const [error,       setError]       = useState('');
+  const [loading,     setLoading]     = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { login, register } = useAuth();
 
@@ -144,15 +146,25 @@ export default function Login() {
               </div>
               <div>
                 <label className={labelClass}>Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={inputClass}
-                  placeholder="••••••••"
-                  required
-                  disabled={loading}
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={inputClass + ' pr-11'}
+                    placeholder="••••••••"
+                    required
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
               <button
                 type="submit"
@@ -199,8 +211,26 @@ export default function Login() {
                 <label className={labelClass}>
                   Password <span className="normal-case font-sans font-normal text-white/25">(min 8 chars)</span>
                 </label>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                  className={inputClass} placeholder="••••••••" required minLength={8} disabled={loading} />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={inputClass + ' pr-11'}
+                    placeholder="••••••••"
+                    required
+                    minLength={8}
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
               <button
                 type="submit"

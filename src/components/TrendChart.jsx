@@ -116,7 +116,7 @@ function classifyTension(match) {
 
 export default function TrendChart({ signals = [] }) {
   const chartData = useMemo(() => {
-    // Build last 12 Monday-anchored week buckets
+    // Build last 26 Monday-anchored week buckets (~180 days)
     const now = new Date();
     const dayOfWeek = now.getDay();
     const daysToLastMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
@@ -125,12 +125,16 @@ export default function TrendChart({ signals = [] }) {
     lastMonday.setHours(0, 0, 0, 0);
 
     const weeks = [];
-    for (let i = 11; i >= 0; i--) {
+    for (let i = 25; i >= 0; i--) {
       const weekStart = new Date(lastMonday);
       weekStart.setDate(lastMonday.getDate() - i * 7);
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 7);
-      const label = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      // Show month label only on first week of each month to keep x-axis clean
+      const isFirstOfMonth = weekStart.getDate() <= 7;
+      const label = isFirstOfMonth
+        ? weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        : weekStart.toLocaleDateString('en-US', { day: 'numeric' });
       weeks.push({ label, weekStart, weekEnd, wellness: 0, self: 0, individuals: 0 });
     }
 
@@ -163,7 +167,7 @@ export default function TrendChart({ signals = [] }) {
   if (!hasData) return null;
 
   return (
-    <ResponsiveContainer width="100%" height={200}>
+    <ResponsiveContainer width="100%" height={220}>
       <LineChart data={chartData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
         <XAxis
           dataKey="label"

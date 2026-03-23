@@ -51,7 +51,7 @@ function FounderPanel({ founder, brandName, founderScore }) {
     <div className="rounded-lg p-4 space-y-2.5" style={{ backgroundColor: '#fff', border: '1px solid #E5E5E0' }}>
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-display font-bold uppercase tracking-widest text-neutral-400 flex items-center gap-1.5">
-          <User className="w-3 h-3" /> Jockey
+          <User className="w-3 h-3" /> Founder
         </span>
         <a
           href={linkedinSearch}
@@ -313,7 +313,7 @@ function EnrichmentPanel({ enrichment, brandName }) {
         </div>
       )}
 
-      {/* Founder / Jockey */}
+      {/* Founder */}
       <FounderPanel founder={founder} brandName={brandName} founderScore={founder_score} />
     </div>
   );

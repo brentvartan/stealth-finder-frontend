@@ -592,12 +592,12 @@ export default function SignalDetail() {
         </div>
       )}
 
-      {/* ── Founder / Jockey ── */}
+      {/* ── Founder ── */}
       {isEnriched && (
         <div className="bg-white rounded-lg p-5" style={{ border: '1px solid #E5E5E0' }}>
           <div className="flex items-center justify-between mb-4">
             <h3 className="flex items-center gap-2 font-display font-bold text-xs uppercase tracking-widest text-neutral-400">
-              <User className="w-3.5 h-3.5" /> Jockey
+              <User className="w-3.5 h-3.5" /> Founder
             </h3>
             <a href={linkedinSearch} target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-1 text-xs font-medium text-neutral-400 hover:text-[#0077B5] transition-colors">

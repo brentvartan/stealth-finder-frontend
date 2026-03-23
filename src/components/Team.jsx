@@ -16,6 +16,7 @@ export default function Team({ embedded = false }) {
   const [inviteError, setInviteError] = useState('');
 
   const loadMembers = useCallback(async () => {
+    if (!isAdmin) { setLoading(false); return; }
     try {
       setLoading(true);
       setError('');
@@ -26,7 +27,7 @@ export default function Team({ embedded = false }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => { loadMembers(); }, [loadMembers]);
 
@@ -155,6 +156,12 @@ export default function Team({ embedded = false }) {
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-7 w-7 border-b-2" style={{ borderColor: '#052EF0' }} />
+            </div>
+          ) : !isAdmin ? (
+            <div className="text-center py-12">
+              <ShieldCheck className="w-10 h-10 text-neutral-200 mx-auto mb-3" />
+              <p className="text-sm text-neutral-400">Admin access required to view team members.</p>
+              <p className="text-xs text-neutral-300 mt-1">Contact your admin to manage team access.</p>
             </div>
           ) : members.length === 0 ? (
             <div className="text-center py-12">

@@ -12,6 +12,46 @@ const SUGGESTIONS = [
   "Any functional beverage brands worth watching?",
 ];
 
+// Render inline markdown: **bold**
+function renderInline(text, key) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+      return <strong key={`${key}-b${i}`} className="font-semibold">{part.slice(2, -2)}</strong>;
+    }
+    return part || null;
+  });
+}
+
+// Render assistant markdown responses as structured elements
+function renderMarkdown(text) {
+  return text.split('\n').map((line, i) => {
+    if (line.startsWith('### '))
+      return <p key={i} className="font-semibold mt-3 mb-0.5">{renderInline(line.slice(4), i)}</p>;
+    if (line.startsWith('## '))
+      return <p key={i} className="font-bold mt-3 mb-0.5">{renderInline(line.slice(3), i)}</p>;
+    if (line.trim() === '---')
+      return <hr key={i} className="border-neutral-200 my-2" />;
+    const numberedMatch = line.match(/^(\d+)\.\s(.*)/);
+    if (numberedMatch)
+      return (
+        <div key={i} className="flex gap-2">
+          <span className="text-neutral-400 shrink-0">{numberedMatch[1]}.</span>
+          <span>{renderInline(numberedMatch[2], i)}</span>
+        </div>
+      );
+    if (/^[-*]\s/.test(line))
+      return (
+        <div key={i} className="flex gap-2">
+          <span className="text-neutral-400 shrink-0">·</span>
+          <span>{renderInline(line.slice(2), i)}</span>
+        </div>
+      );
+    if (line.trim() === '') return <div key={i} className="h-1" />;
+    return <p key={i}>{renderInline(line, i)}</p>;
+  });
+}
+
 function MessageBubble({ msg }) {
   const isUser = msg.role === 'user';
   return (
@@ -28,15 +68,15 @@ function MessageBubble({ msg }) {
       </div>
       {/* Bubble */}
       <div
-        className={`max-w-[80%] rounded-xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
-          isUser ? 'text-white' : 'text-neutral-800'
+        className={`max-w-[80%] rounded-xl px-4 py-3 text-sm leading-relaxed ${
+          isUser ? 'text-white whitespace-pre-wrap' : 'text-neutral-800 space-y-0.5'
         }`}
         style={{
           backgroundColor: isUser ? '#052EF0' : '#fff',
           border: isUser ? 'none' : '1px solid #E5E5E0',
         }}
       >
-        {msg.content}
+        {isUser ? msg.content : renderMarkdown(msg.content)}
       </div>
     </div>
   );

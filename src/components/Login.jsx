@@ -19,15 +19,18 @@ export default function Login() {
   const [password,  setPassword]  = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName,  setLastName]  = useState('');
-  const [error,       setError]       = useState('');
-  const [loading,     setLoading]     = useState(false);
+  const [error,        setError]        = useState('');
+  const [loading,      setLoading]      = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const isBullishEmail = (e) => e.toLowerCase().endsWith('@bullish.co');
 
   const { login, register } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+    if (!isBullishEmail(email)) { setError('Access is restricted to @bullish.co email addresses.'); return; }
     setLoading(true);
     const result = await login(email, password);
     if (!result.success) { setError(result.error); setLoading(false); }
@@ -36,6 +39,7 @@ export default function Login() {
   const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
+    if (!isBullishEmail(email)) { setError('Access is restricted to @bullish.co email addresses.'); return; }
     if (!firstName.trim() || !lastName.trim()) { setError('First name and last name are required.'); return; }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
     setLoading(true);
@@ -159,7 +163,7 @@ export default function Login() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-white rounded p-1 text-neutral-800 hover:text-black transition-colors"
                     tabIndex={-1}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -225,7 +229,7 @@ export default function Login() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-white rounded p-1 text-neutral-800 hover:text-black transition-colors"
                     tabIndex={-1}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

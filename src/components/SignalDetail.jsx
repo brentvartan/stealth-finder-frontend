@@ -56,8 +56,8 @@ function buildBrief(match) {
 
 const FOUNDER_TIER_CONFIG = {
   HIGH_PRIORITY: { label: 'High Priority', color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
-  WATCH_LIST:    { label: 'Watch List',    color: '#D97706', bg: '#fffbeb', border: '#fde68a' },
-  WEAK_SIGNAL:   { label: 'Weak Signal',   color: '#EA580C', bg: '#fff7ed', border: '#fed7aa' },
+  WATCH_LIST:    { label: 'Watch List',    color: '#052EF0', bg: '#EEF2FF', border: '#C7D2FE' },
+  WEAK_SIGNAL:   { label: 'Weak Signal',   color: '#87B4F8', bg: '#EEF2FF', border: '#C7D2FE' },
   PASS:          { label: 'Pass',          color: '#DC2626', bg: '#fef2f2', border: '#fecaca' },
 };
 

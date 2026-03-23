@@ -32,8 +32,8 @@ const WATCH_CONFIG = {
 
 const FOUNDER_TIER_BADGE = {
   HIGH_PRIORITY: { label: 'High Priority', color: '#16a34a', bg: '#f0fdf4' },
-  WATCH_LIST:    { label: 'Watch List',    color: '#D97706', bg: '#fffbeb' },
-  WEAK_SIGNAL:   { label: 'Weak Signal',   color: '#EA580C', bg: '#fff7ed' },
+  WATCH_LIST:    { label: 'Watch List',    color: '#052EF0', bg: '#EEF2FF' },
+  WEAK_SIGNAL:   { label: 'Weak Signal',   color: '#87B4F8', bg: '#EEF2FF' },
   PASS:          { label: 'Pass',          color: '#DC2626', bg: '#fef2f2' },
 };
 
@@ -549,8 +549,7 @@ export default function MatchCard({ match, onUpdate }) {
               {(() => {
                 const fs = enrichment?.founder_score;
                 if (!fs?.gate_passed || !fs?.total || fs.total < 50) return null;
-                const isTop = fs.tier === 'HIGH_PRIORITY';
-                const bg    = isTop ? '#052EF0' : '#D97706';
+                const bg    = '#052EF0';
                 return (
                   <span
                     className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[10px] text-white shrink-0"

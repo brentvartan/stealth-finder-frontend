@@ -103,7 +103,7 @@ export default function Watchlist() {
           Watchlist
         </h1>
         <p className="text-neutral-400 text-sm mt-1">
-          Track specific operators you'd want to back. Add ex-Glossier, Warby Parker, Dollar Shave Club founders.
+          Track specific founders, operators and talent - in a role or in stealth - that you think have a high probability of building a remarkable brand one day.
         </p>
       </div>
 

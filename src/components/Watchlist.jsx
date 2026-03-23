@@ -130,7 +130,7 @@ export default function Watchlist() {
             </div>
             <div>
               <label className={labelClass}>Company / Background</label>
-              <input type="text" placeholder="ex-Glossier VP Marketing" value={formData.company}
+              <input type="text" placeholder="e.g. VP Marketing at Seed-stage CPG brand" value={formData.company}
                 onChange={e => update('company', e.target.value)} className={inputClass} />
             </div>
             <div>

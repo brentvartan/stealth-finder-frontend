@@ -94,8 +94,8 @@ export const auth = {
   resetPassword: (token, password) =>
     api.post('/auth/reset-password', { token, password }),
 
-  invite: (email) =>
-    api.post('/auth/invite', { email }),
+  invite: (email, role = 'analyst') =>
+    api.post('/auth/invite', { email, role }),
 
   acceptInvite: (token, firstName, lastName, password) =>
     api.post('/auth/accept-invite', {
@@ -116,6 +116,9 @@ export const admin = {
 
   forceResetPassword: (id, password) =>
     api.post(`/admin/users/${id}/force-reset`, { password }),
+
+  sendResetLink: (id) =>
+    api.post(`/admin/users/${id}/send-reset`),
 
   getSpend: () =>
     api.get('/admin/spend'),

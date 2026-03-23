@@ -210,7 +210,7 @@ export default function Dashboard() {
     setEnriching(true);
     setEnrichMsg('');
     try {
-      const resp = await enrich.batch({ rescoreAll: true, limit: 50 });
+      const resp = await enrich.batch({ rescoreAll: true, limit: 25 });
       const { enriched } = resp.data;
       setEnrichMsg(enriched > 0
         ? `${enriched} signal${enriched !== 1 ? 's' : ''} scored`

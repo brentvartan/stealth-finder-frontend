@@ -209,16 +209,26 @@ export default function Dashboard() {
   const runEnrichment = useCallback(async () => {
     setEnriching(true);
     setEnrichMsg('');
+    let totalScored = 0;
+    let offset = 0;
+    const BATCH = 20;
     try {
-      const resp = await enrich.batch({ rescoreAll: true, limit: 25 });
-      const { enriched } = resp.data;
-      setEnrichMsg(enriched > 0
-        ? `${enriched} signal${enriched !== 1 ? 's' : ''} scored`
-        : 'Nothing to score'
+      // Loop through all signals in pages of 20 until none remain
+      while (true) {
+        const resp = await enrich.batch({ rescoreAll: true, limit: BATCH, offset });
+        const { enriched = 0, has_more = false } = resp.data;
+        totalScored += enriched;
+        setEnrichMsg(`Scoring… ${totalScored} done`);
+        if (!has_more) break;
+        offset += BATCH;
+      }
+      setEnrichMsg(totalScored > 0
+        ? `${totalScored} signal${totalScored !== 1 ? 's' : ''} scored`
+        : 'All signals up to date'
       );
       await loadSignals();
     } catch (err) {
-      setEnrichMsg('Scoring failed');
+      setEnrichMsg(totalScored > 0 ? `${totalScored} scored (stopped early)` : 'Scoring failed');
     } finally {
       setEnriching(false);
     }

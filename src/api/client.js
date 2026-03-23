@@ -120,12 +120,13 @@ export const enrich = {
   signal: (itemId) =>
     api.post(`/enrich/signal/${itemId}`),
 
-  batch: ({ itemIds, unenrichedOnly, rescoreAll, limit } = {}) =>
+  batch: ({ itemIds, unenrichedOnly, rescoreAll, limit, offset } = {}) =>
     api.post('/enrich/batch', {
       ...(itemIds        ? { item_ids: itemIds }      : {}),
       ...(unenrichedOnly ? { unenriched_only: true }  : {}),
       ...(rescoreAll     ? { rescore_all: true }       : {}),
       ...(limit          ? { limit }                  : {}),
+      ...(offset         ? { offset }                 : {}),
     }, { timeout: 300000 }),
 };
 

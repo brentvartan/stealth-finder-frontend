@@ -122,6 +122,9 @@ export const admin = {
 
   getSpend: () =>
     api.get('/admin/spend'),
+
+  deleteUser: (id) =>
+    api.delete(`/admin/users/${id}`),
 };
 
 // ─── Enrichment (Bullish AI analysis via Claude) ──────────────────────────────

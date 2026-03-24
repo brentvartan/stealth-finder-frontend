@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   Users, Mail, CheckCircle, ShieldCheck, Crown, Shield, Briefcase,
   ChevronDown, ChevronUp, Eye, EyeOff, UserCheck, UserX,
-  UserCircle, Plus, Key, RefreshCw, Send,
+  UserCircle, Plus, Key, RefreshCw, Send, Trash2, AlertTriangle,
 } from 'lucide-react';
 
 const inputClass = 'w-full border border-neutral-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#052EF0] transition-colors disabled:bg-neutral-50 disabled:text-neutral-400';
@@ -46,17 +46,20 @@ function StatusDot({ active }) {
 
 // ── Individual member row with expandable edit panel ──────────────────────────
 
-function MemberRow({ member: initialMember, currentUser, isCurrentUserAdmin }) {
-  const [member,     setMember]     = useState(initialMember);
-  const [expanded,   setExpanded]   = useState(false);
-  const [editFirst,  setEditFirst]  = useState(initialMember.first_name);
-  const [editLast,   setEditLast]   = useState(initialMember.last_name);
-  const [saving,     setSaving]     = useState(false);
-  const [linkSaving, setLinkSaving] = useState(false);
-  const [nameFb,     setNameFb]     = useState('');
-  const [roleFb,     setRoleFb]     = useState('');
-  const [statusFb,   setStatusFb]   = useState('');
-  const [linkFb,     setLinkFb]     = useState('');
+function MemberRow({ member: initialMember, currentUser, isCurrentUserAdmin, onDelete }) {
+  const [member,      setMember]      = useState(initialMember);
+  const [expanded,    setExpanded]    = useState(false);
+  const [editFirst,   setEditFirst]   = useState(initialMember.first_name);
+  const [editLast,    setEditLast]    = useState(initialMember.last_name);
+  const [saving,      setSaving]      = useState(false);
+  const [linkSaving,  setLinkSaving]  = useState(false);
+  const [nameFb,      setNameFb]      = useState('');
+  const [roleFb,      setRoleFb]      = useState('');
+  const [statusFb,    setStatusFb]    = useState('');
+  const [linkFb,      setLinkFb]      = useState('');
+  const [confirmDel,  setConfirmDel]  = useState(false);
+  const [deleting,    setDeleting]    = useState(false);
+  const [deleteFb,    setDeleteFb]    = useState('');
 
   const isSelf = member.id === currentUser?.id;
 
@@ -104,6 +107,19 @@ function MemberRow({ member: initialMember, currentUser, isCurrentUserAdmin }) {
       flashFb(setLinkFb, e.response?.data?.error || 'Failed to send');
     } finally {
       setLinkSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    setDeleteFb('');
+    try {
+      await admin.deleteUser(member.id);
+      onDelete(member.id);
+    } catch (e) {
+      setDeleteFb(e.response?.data?.error || 'Failed to delete');
+      setDeleting(false);
+      setConfirmDel(false);
     }
   };
 
@@ -292,6 +308,60 @@ function MemberRow({ member: initialMember, currentUser, isCurrentUserAdmin }) {
             </p>
           </div>
 
+          {/* ⑤ Delete user */}
+          {!isSelf && (
+            <div className="pt-4 border-t border-red-100">
+              <p className={labelClass + ' flex items-center gap-1.5 text-red-400'}>
+                <Trash2 className="w-3 h-3" /> Delete Account
+              </p>
+              {!confirmDel ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setConfirmDel(true)}
+                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded border transition-all"
+                    style={{ borderColor: '#FCA5A5', color: '#DC2626', backgroundColor: '#FFF5F5' }}
+                  >
+                    <Trash2 className="w-3 h-3" /> Delete {member.first_name}
+                  </button>
+                  {deleteFb && <span className="text-xs font-medium text-red-500">{deleteFb}</span>}
+                </div>
+              ) : (
+                <div className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: '#FFF5F5', border: '1px solid #FCA5A5' }}>
+                  <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-red-700 mb-1">
+                      Permanently delete {member.first_name} {member.last_name}?
+                    </p>
+                    <p className="text-[10px] text-red-400 mb-3">
+                      This removes their account and cannot be undone. They will lose all access immediately.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleDelete}
+                        disabled={deleting}
+                        className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded text-white transition-all disabled:opacity-50"
+                        style={{ backgroundColor: '#DC2626' }}
+                      >
+                        {deleting
+                          ? <><div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white/50" /> Deleting…</>
+                          : <><Trash2 className="w-3 h-3" /> Yes, Delete</>
+                        }
+                      </button>
+                      <button
+                        onClick={() => setConfirmDel(false)}
+                        disabled={deleting}
+                        className="text-xs font-medium px-3 py-1.5 rounded border transition-all"
+                        style={{ borderColor: '#E5E5E0', color: '#666' }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       )}
     </div>
@@ -313,6 +383,10 @@ export default function Team({ embedded = false }) {
   const [sentTo,      setSentTo]      = useState('');
   const [inviteError, setInviteError] = useState('');
   const [showInvite,  setShowInvite]  = useState(false);
+
+  const handleMemberDeleted = (deletedId) => {
+    setMembers(prev => prev.filter(m => m.id !== deletedId));
+  };
 
   const loadMembers = useCallback(async () => {
     if (!isAdmin) { setLoading(false); return; }
@@ -518,6 +592,7 @@ export default function Team({ embedded = false }) {
                     member={member}
                     currentUser={currentUser}
                     isCurrentUserAdmin={isAdmin}
+                    onDelete={handleMemberDeleted}
                   />
                 ))
               }

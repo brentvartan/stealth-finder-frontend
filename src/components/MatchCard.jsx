@@ -229,7 +229,7 @@ function EnrichmentPanel({ enrichment, brandName }) {
       {/* Header row */}
       <div className="flex items-center justify-between gap-3">
         <span className="text-[10px] font-display font-bold uppercase tracking-widest text-neutral-400">
-          Bullish AI Analysis
+          Investment Thesis Analysis
         </span>
         <div className="flex items-center gap-2 shrink-0">
           {/* Brand score */}

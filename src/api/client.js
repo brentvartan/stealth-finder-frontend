@@ -161,6 +161,7 @@ export const scheduledScans = {
   update:  (id, data) => api.patch(`/scheduled-scans/${id}`, data),
   delete:  (id)       => api.delete(`/scheduled-scans/${id}`),
   runNow:  (id)       => api.post(`/scheduled-scans/${id}/run`, {}, { timeout: 300000 }),
+  getRuns: (scanId)   => api.get(`/scheduled-scans/${scanId}/runs`),
 };
 
 // ─── Items (underlying storage for signals + watchlist) ───────────────────────

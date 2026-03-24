@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Play, Users, PlusCircle, LogOut, Download, Clock, UsersRound, Flame, MessageCircle, Settings as SettingsIcon, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Play, Users, PlusCircle, LogOut, Download, Clock, UsersRound, MessageCircle, Settings as SettingsIcon, Menu, X } from 'lucide-react';
 import { items } from '../api/client';
 
 // Bullish logo mark — square border + two parallelogram bars
@@ -148,15 +148,6 @@ export default function Navigation() {
                   )}
                   <Icon className="w-4 h-4" />
                   {item.label}
-                  {item.path === '/' && newHotCount > 0 && (
-                    <span
-                      className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none"
-                      style={{ backgroundColor: '#052EF0', color: '#fff' }}
-                    >
-                      <Flame className="w-2.5 h-2.5" />
-                      {newHotCount}
-                    </span>
-                  )}
                 </Link>
               );
             })}
@@ -245,15 +236,6 @@ export default function Navigation() {
                   >
                     <Icon className="w-4 h-4" />
                     {item.label}
-                    {item.path === '/' && newHotCount > 0 && (
-                      <span
-                        className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none"
-                        style={{ backgroundColor: '#052EF0', color: '#fff' }}
-                      >
-                        <Flame className="w-2.5 h-2.5" />
-                        {newHotCount}
-                      </span>
-                    )}
                   </Link>
                 );
               })}

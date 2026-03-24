@@ -285,7 +285,7 @@ function EnrichmentPanel({ enrichment, brandName }) {
         </div>
         {cultural_theme && (
           <div className="col-span-2">
-            <span className="text-neutral-400 uppercase tracking-wider text-[9px] font-medium">2026 Cultural Theme</span>
+            <span className="text-neutral-400 uppercase tracking-wider text-[9px] font-medium">Cultural Theme</span>
             <p className="font-medium mt-0.5" style={{ color: '#052EF0' }}>{cultural_theme}</p>
           </div>
         )}

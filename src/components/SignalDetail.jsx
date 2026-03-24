@@ -556,10 +556,10 @@ export default function SignalDetail() {
       {isEnriched && (
         <div className="grid grid-cols-2 gap-4">
 
-          {/* Consumer Brand + Repeat Potential */}
-          <div className="bg-white rounded-lg p-5 space-y-4" style={{ border: '1px solid #E5E5E0' }}>
-            <h3 className="font-display font-bold text-xs uppercase tracking-widest text-neutral-400">Signal Strength</h3>
-            <div className="space-y-3">
+          {/* Overview — consumer brand, repeat, theme, whitespace */}
+          <div className="col-span-2 bg-white rounded-lg p-5" style={{ border: '1px solid #E5E5E0' }}>
+            <h3 className="font-display font-bold text-xs uppercase tracking-widest text-neutral-400 mb-4">Overview</h3>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-4">
               <div>
                 <span className="text-[10px] uppercase tracking-wider text-neutral-300 font-medium">Consumer Brand</span>
                 <p className="text-sm font-bold text-black mt-0.5">
@@ -573,24 +573,19 @@ export default function SignalDetail() {
                   <p className="text-xs text-neutral-500 mt-1 leading-snug">{e.repeat_reason}</p>
                 )}
               </div>
+              {e.cultural_theme && (
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider text-neutral-300 font-medium">Cultural Theme</span>
+                  <p className="text-sm font-bold mt-0.5" style={{ color: '#052EF0' }}>{e.cultural_theme}</p>
+                </div>
+              )}
+              {e.advocacy_deficiency && (
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider text-neutral-300 font-medium">Category Whitespace</span>
+                  <p className="text-xs text-neutral-600 mt-0.5 leading-snug">{e.advocacy_deficiency}</p>
+                </div>
+              )}
             </div>
-          </div>
-
-          {/* Cultural Theme + Whitespace */}
-          <div className="bg-white rounded-lg p-5 space-y-4" style={{ border: '1px solid #E5E5E0' }}>
-            <h3 className="font-display font-bold text-xs uppercase tracking-widest text-neutral-400">Thesis</h3>
-            {e.cultural_theme && (
-              <div>
-                <span className="text-[10px] uppercase tracking-wider text-neutral-300 font-medium">2026 Theme</span>
-                <p className="text-sm font-bold mt-0.5" style={{ color: '#052EF0' }}>{e.cultural_theme}</p>
-              </div>
-            )}
-            {e.advocacy_deficiency && (
-              <div>
-                <span className="text-[10px] uppercase tracking-wider text-neutral-300 font-medium">Category Whitespace</span>
-                <p className="text-xs text-neutral-600 mt-0.5 leading-snug">{e.advocacy_deficiency}</p>
-              </div>
-            )}
           </div>
 
           {/* Remarkability drivers */}

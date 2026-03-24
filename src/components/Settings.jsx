@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { settings as settingsApi, admin as adminApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { Plus, X, CheckCircle, Save, Bell, Slack, BarChart2, Clock, Users, CreditCard, RefreshCw, Linkedin, Zap } from 'lucide-react';
+import { Plus, X, CheckCircle, Save, Bell, Slack, BarChart2, Clock, Users, CreditCard, RefreshCw, Linkedin, Zap, Search } from 'lucide-react';
 import ScheduledScans from './ScheduledScans';
 import Team from './Team';
 
@@ -324,8 +324,9 @@ function SpendTab() {
   if (loading) return <div className="py-12 text-center text-sm text-neutral-400">Loading spend data…</div>;
   if (error)   return <div className="py-12 text-center text-sm text-red-400">{error}</div>;
 
-  const el = data.enrich_layer;
-  const an = data.anthropic;
+  const pc  = data.proxycurl;
+  const sa  = data.serpapi;
+  const an  = data.anthropic;
   const tot = data.totals;
 
   return (
@@ -336,9 +337,9 @@ function SpendTab() {
         <SectionHeader icon={CreditCard} title="This Month" subtitle="Estimated API spend since the 1st" />
         <div className="grid grid-cols-3 gap-3">
           <SpendStat
-            label="LinkedIn (Enrich Layer)"
-            value={fmt(el.estimated_cost_this_month)}
-            sub={`${fmtN(el.lookups_this_month)} lookups · ${fmt(el.cost_per_lookup)}/ea`}
+            label="Founder APIs"
+            value={fmt((pc.estimated_cost_this_month || 0) + (sa.estimated_cost_this_month || 0))}
+            sub={`${fmtN((pc.lookups_this_month || 0) + (sa.searches_this_month || 0))} founder lookups + searches`}
           />
           <SpendStat
             label="Claude (Anthropic)"
@@ -353,24 +354,52 @@ function SpendTab() {
         </div>
       </div>
 
-      {/* Enrich Layer detail */}
+      {/* Proxycurl detail */}
       <div>
-        <SectionHeader icon={Linkedin} title="Enrich Layer (LinkedIn)" subtitle="Founder lookup credits and usage" />
+        <SectionHeader icon={Linkedin} title="Proxycurl (LinkedIn)" subtitle="Founder LinkedIn profile lookups via NinjaPear" />
         <div className="grid grid-cols-2 gap-3 mb-3">
           <SpendStat
             label="Credits Remaining"
-            value={el.credits_available == null ? '—' : fmtN(el.credits_available)}
-            sub={el.error ? `Error: ${el.error}` : 'Live from Enrich Layer API'}
+            value={pc.credits_available == null ? '—' : fmtN(pc.credits_available)}
+            sub={pc.error ? `Error: ${pc.error}` : 'Live from Proxycurl API'}
           />
           <SpendStat
             label="All-Time Lookups"
-            value={fmtN(el.lookups_all_time)}
-            sub={`Est. total cost: ${fmt(el.estimated_cost_all_time)}`}
+            value={fmtN(pc.lookups_all_time)}
+            sub={`${fmtN(pc.lookups_this_month)} this month · est. ${fmt(pc.estimated_cost_all_time)} total`}
           />
         </div>
         <p className="text-xs text-neutral-300">
-          LinkedIn enrichment fires automatically on WARM+ signals (score ≥ 50) with a known founder name.
-          ~{fmt(el.cost_per_lookup)} per lookup (search + profile fetch).
+          LinkedIn profile fetch fires on HOT signals (score ≥ 70) with a discovered founder.
+          ~{fmt(pc.cost_per_lookup)} per profile lookup.{' '}
+          <a href="https://nubela.co/proxycurl" target="_blank" rel="noreferrer" className="underline hover:text-neutral-500">nubela.co/proxycurl</a>
+        </p>
+      </div>
+
+      {/* SerpAPI detail */}
+      <div>
+        <SectionHeader icon={Search} title="SerpAPI (Founder Discovery)" subtitle="Web search to identify founders behind new brands" />
+        <div className="grid grid-cols-3 gap-3 mb-3">
+          <SpendStat
+            label="Searches Left This Month"
+            value={sa.searches_left == null ? '—' : fmtN(sa.searches_left)}
+            sub={sa.error ? `Error: ${sa.error}` : `Plan: ${sa.plan_name || 'Free'}`}
+          />
+          <SpendStat
+            label="Monthly Allowance"
+            value={sa.searches_per_month == null ? '—' : fmtN(sa.searches_per_month)}
+            sub={`${fmtN(sa.this_month_usage || 0)} used so far this month`}
+          />
+          <SpendStat
+            label="App-Tracked Searches"
+            value={fmtN(sa.searches_this_month)}
+            sub={`${fmtN(sa.searches_all_time)} all-time founder discoveries`}
+          />
+        </div>
+        <p className="text-xs text-neutral-300">
+          SerpAPI fires on HOT signals to find founder names via web + Product Hunt search.
+          Free plan: 250 searches/month.{' '}
+          <a href="https://serpapi.com/manage-api-key" target="_blank" rel="noreferrer" className="underline hover:text-neutral-500">serpapi.com</a>
         </p>
       </div>
 
@@ -412,53 +441,60 @@ function SpendTab() {
             <tbody className="divide-y divide-neutral-50">
               {[
                 {
-                  source:   'USPTO TESS',
-                  what:     'New trademark filings',
-                  when:     'Every scheduled scan',
-                  cost:     'Free',
-                  active:   true,
+                  source: 'USPTO TESS',
+                  what:   'New trademark filings',
+                  when:   'Every scheduled scan',
+                  cost:   'Free',
+                  active: true,
                 },
                 {
-                  source:   'SEC EDGAR (Form D)',
-                  what:     'Reg D fundraise filings (all 50 states)',
-                  when:     'Every scheduled scan',
-                  cost:     'Free',
-                  active:   true,
+                  source: 'SEC EDGAR (Form D)',
+                  what:   'Reg D fundraise filings (all 50 states)',
+                  when:   'Every scheduled scan',
+                  cost:   'Free',
+                  active: true,
                 },
                 {
-                  source:   'Product Hunt',
-                  what:     'New product launches',
-                  when:     'Every scheduled scan',
-                  cost:     'Free',
-                  active:   true,
+                  source: 'Product Hunt',
+                  what:   'New product launches',
+                  when:   'Every scheduled scan',
+                  cost:   'Free',
+                  active: true,
                 },
                 {
-                  source:   'Anthropic (Claude Sonnet)',
-                  what:     'Full signal enrichment + scoring',
-                  when:     'Score button / batch enrich',
-                  cost:     `~${fmt(an.cost_per_enrichment)} / signal`,
-                  active:   true,
+                  source: 'SerpAPI',
+                  what:   'Founder name discovery (web + Product Hunt search)',
+                  when:   'Auto on HOT signals (score ≥ 70)',
+                  cost:   'Free (250/mo) · ~$0.01 overage',
+                  active: true,
                 },
                 {
-                  source:   'Anthropic (Claude Haiku)',
-                  what:     'Founder re-score after LinkedIn',
-                  when:     'Auto after WARM+ LinkedIn hit',
-                  cost:     '~$0.005 / re-score',
-                  active:   true,
+                  source: 'Proxycurl (NinjaPear)',
+                  what:   'LinkedIn founder profile lookup',
+                  when:   'Auto on HOT signals with discovered founder',
+                  cost:   `~${fmt(pc.cost_per_lookup)} / profile`,
+                  active: true,
                 },
                 {
-                  source:   'Enrich Layer (LinkedIn)',
-                  what:     'Founder profile lookup',
-                  when:     'Auto on WARM+ signals (score ≥ 50)',
-                  cost:     `~${fmt(el.cost_per_lookup)} / founder`,
-                  active:   true,
+                  source: 'Anthropic (Claude Sonnet)',
+                  what:   'Full signal enrichment + scoring',
+                  when:   'Score button / batch enrich',
+                  cost:   `~${fmt(an.cost_per_enrichment)} / signal`,
+                  active: true,
+                },
+                {
+                  source: 'Anthropic (Claude Haiku)',
+                  what:   'Founder re-score after LinkedIn enrichment',
+                  when:   'Auto after HOT LinkedIn hit',
+                  cost:   '~$0.005 / re-score',
+                  active: true,
                 },
               ].map(row => (
                 <tr key={row.source} className="hover:bg-neutral-50 transition-colors">
                   <td className="px-4 py-3 font-semibold text-black">{row.source}</td>
                   <td className="px-4 py-3 text-neutral-500">{row.what}</td>
                   <td className="px-4 py-3 text-neutral-400">{row.when}</td>
-                  <td className="px-4 py-3 font-mono font-medium" style={{ color: row.cost === 'Free' ? '#16A34A' : '#374151' }}>{row.cost}</td>
+                  <td className="px-4 py-3 font-mono font-medium" style={{ color: row.cost === 'Free' || row.cost.startsWith('Free') ? '#16A34A' : '#374151' }}>{row.cost}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded uppercase tracking-wide ${row.active ? 'bg-green-50 text-green-600' : 'bg-neutral-100 text-neutral-400'}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${row.active ? 'bg-green-500' : 'bg-neutral-300'}`} />

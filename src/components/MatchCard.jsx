@@ -227,16 +227,40 @@ function EnrichmentPanel({ enrichment, brandName }) {
       style={{ backgroundColor: '#F5F0EB', border: '1px solid #E5E5E0' }}
     >
       {/* Header row */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <span className="text-[10px] font-display font-bold uppercase tracking-widest text-neutral-400">
           Bullish AI Analysis
         </span>
-        <div
-          className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-bold"
-          style={{ backgroundColor: watchCfg.bg, color: watchCfg.text }}
-        >
-          <span className="text-lg font-display leading-none">{bullish_score}</span>
-          <span className="text-[10px] tracking-wide opacity-70">/ 100</span>
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Brand score */}
+          <div
+            className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold"
+            style={{ backgroundColor: watchCfg.bg, color: watchCfg.text }}
+          >
+            <span className="text-[9px] uppercase tracking-wider opacity-70 font-medium">Brand</span>
+            <span className="text-base font-display leading-none">{bullish_score}</span>
+          </div>
+          {/* Founder score */}
+          {(() => {
+            const fs = founder_score;
+            const hasScore = fs?.gate_passed && fs?.total != null;
+            const tierColors = {
+              HIGH_PRIORITY: { bg: '#f0fdf4', text: '#16a34a' },
+              WATCH_LIST:    { bg: '#EEF2FF', text: '#052EF0' },
+              WEAK_SIGNAL:   { bg: '#EEF2FF', text: '#87B4F8' },
+              PASS:          { bg: '#fef2f2', text: '#DC2626' },
+            };
+            const tc = hasScore ? (tierColors[fs.tier] || { bg: '#F5F5F5', text: '#9CA3AF' }) : { bg: '#F5F5F5', text: '#9CA3AF' };
+            return (
+              <div
+                className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold"
+                style={{ backgroundColor: tc.bg, color: tc.text, border: `1px solid ${tc.text}22` }}
+              >
+                <span className="text-[9px] uppercase tracking-wider opacity-70 font-medium">Founder</span>
+                <span className="text-base font-display leading-none">{hasScore ? fs.total : '—'}</span>
+              </div>
+            );
+          })()}
         </div>
       </div>
 

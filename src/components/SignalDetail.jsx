@@ -161,7 +161,7 @@ function FounderScoreCard({ founderScore }) {
 
 // ─── Score ring ───────────────────────────────────────────────────────────────
 
-function ScoreBadge({ score, watchLevel }) {
+function ScoreRing({ score, watchLevel }) {
   const cfg = WATCH_CONFIG[watchLevel];
   if (!cfg) return null;
 
@@ -187,6 +187,48 @@ function ScoreBadge({ score, watchLevel }) {
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="font-display font-bold text-2xl leading-none" style={{ color: cfg.bg }}>{score}</span>
         <span className="text-[10px] font-bold uppercase tracking-widest mt-0.5" style={{ color: cfg.bg }}>{cfg.label}</span>
+      </div>
+    </div>
+  );
+}
+
+const FOUNDER_TIER_COLORS = {
+  HIGH_PRIORITY: '#16a34a',
+  WATCH_LIST:    '#052EF0',
+  WEAK_SIGNAL:   '#87B4F8',
+  PASS:          '#DC2626',
+};
+
+function DualScoreBadge({ enrichment, watchLevel }) {
+  const founderScore = enrichment?.founder_score;
+  const founderTotal = founderScore?.gate_passed && founderScore?.total != null ? founderScore.total : null;
+  const founderColor = founderTotal != null ? (FOUNDER_TIER_COLORS[founderScore?.tier] || '#9CA3AF') : '#D1D5DB';
+
+  return (
+    <div className="flex items-center gap-4 shrink-0">
+      {/* Brand score ring */}
+      <div className="flex flex-col items-center gap-1">
+        <ScoreRing score={enrichment?.bullish_score} watchLevel={watchLevel} />
+        <span className="text-[9px] font-bold uppercase tracking-widest text-neutral-400">Brand</span>
+      </div>
+
+      {/* Divider */}
+      <div className="w-px self-stretch bg-neutral-200 my-1" />
+
+      {/* Founder score */}
+      <div className="flex flex-col items-center justify-center gap-1" style={{ width: 72, height: 108 }}>
+        <span className="font-display font-bold text-2xl leading-none" style={{ color: founderColor }}>
+          {founderTotal ?? '—'}
+        </span>
+        {founderTotal != null && (
+          <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: founderColor }}>
+            {FOUNDER_TIER_CONFIG[founderScore?.tier]?.label || ''}
+          </span>
+        )}
+        {founderTotal == null && (
+          <span className="text-[9px] text-neutral-400 text-center leading-tight">Unknown</span>
+        )}
+        <span className="text-[9px] font-bold uppercase tracking-widest text-neutral-400">Founder</span>
       </div>
     </div>
   );
@@ -475,9 +517,7 @@ export default function SignalDetail() {
       <div className="bg-white rounded-lg p-6" style={{ border: `2px solid ${cfg?.bg || '#E5E5E0'}` }}>
         <div className="flex items-start gap-6">
           {isEnriched && cfg && (
-            <div className="shrink-0">
-              <ScoreBadge score={e.bullish_score} watchLevel={watchLevel} />
-            </div>
+            <DualScoreBadge enrichment={e} watchLevel={watchLevel} />
           )}
           <div className="flex-1 min-w-0">
             <h1 className="font-display font-bold text-3xl uppercase tracking-wide text-black leading-none mb-1">

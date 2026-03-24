@@ -307,7 +307,7 @@ export default function Dashboard() {
       {/* ── Stats ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <StatCard
-          label="Bullish Hot"
+          label="Hot"
           sublabel="Score ≥ 70 · Strong consumer signal, cultural tension, repeat potential"
           value={matches.filter(m => m.enrichment?.watch_level === 'hot').length}
           total={matches.filter(m => m.enrichment?.enriched).length}
@@ -317,7 +317,7 @@ export default function Dashboard() {
           active={tierFilter === 'hot'}
         />
         <StatCard
-          label="Bullish Warm"
+          label="Warm"
           sublabel="Score 50–69 · Interesting thesis, needs more signal or founder context"
           value={matches.filter(m => m.enrichment?.watch_level === 'warm').length}
           total={matches.filter(m => m.enrichment?.enriched).length}

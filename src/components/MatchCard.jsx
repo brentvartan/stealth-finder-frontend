@@ -489,7 +489,7 @@ export default function MatchCard({ match, onUpdate }) {
             {isCold && <TeamNotesPanel match={match} onSaved={onUpdate} />}
             {isUnenriched && (
               <p className="text-xs text-neutral-400 italic">
-                Not yet scored — click <strong>Bullish AI</strong> on the dashboard to analyse this brand.
+                Not yet scored — click <strong>Score</strong> on the dashboard to analyse this brand.
               </p>
             )}
           </div>
@@ -633,7 +633,7 @@ export default function MatchCard({ match, onUpdate }) {
               <button
                 onClick={handleReenrich}
                 disabled={reenriching}
-                title="Re-run Bullish AI analysis"
+                title="Re-run analysis"
                 className="p-1.5 rounded transition-colors"
                 style={{ color: reenriching ? '#CCC' : '#CCC' }}
               >

@@ -168,10 +168,7 @@ const SCAN_TYPES = [
   { value: 'trademark',    label: 'USPTO Trademarks Only'          },
   { value: 'delaware',     label: 'Delaware + Form D Only'         },
   { value: 'producthunt',  label: 'Product Hunt Launches Only'     },
-  { value: 'instagram',    label: 'Instagram Handles Only'         },
-  { value: 'shopify',      label: 'Shopify Stores Only'            },
   { value: 'domain',       label: 'Domain Registrations Only'      },
-  { value: 'social',       label: 'Social Media Only'              },
 ];
 
 const SOURCES = [

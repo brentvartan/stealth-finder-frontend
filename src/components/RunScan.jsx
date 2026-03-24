@@ -424,7 +424,7 @@ export default function RunScan() {
                             : { backgroundColor: '#EEEEEE', color: '#999' }
                         }
                       >
-                        {source.live ? 'Live' : 'Sim'}
+                        {source.live ? 'Live' : 'Coming Soon'}
                       </span>
                     </div>
                     <div className="text-xs text-neutral-400">{source.desc}</div>

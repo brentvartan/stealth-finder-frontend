@@ -184,9 +184,11 @@ export default function TrendChart({ signals = [] }) {
       });
     }
 
-    // Bucket each signal by month + theme, keyed by brand name
+    // Bucket each signal by month + theme, keyed by brand name.
+    // Use signal.timestamp (actual filing/event date) so historical signals
+    // appear in the month they occurred, not the month we added them.
     signals.forEach(signal => {
-      const date = new Date(signal.savedAt);
+      const date = new Date(signal.timestamp || signal.savedAt);
       if (isNaN(date.getTime())) return;
 
       const y = date.getFullYear();
@@ -253,11 +255,11 @@ export default function TrendChart({ signals = [] }) {
           tickLine={false}
           axisLine={false}
           label={{
-            value: 'signals',
+            value: 'brands',
             angle: -90,
             position: 'insideLeft',
-            offset: 16,
-            style: { fontSize: 9, fill: '#D1D5DB' },
+            offset: 20,
+            style: { fontSize: 10, fill: '#9CA3AF', fontWeight: 500 },
           }}
         />
         <Tooltip content={<BrandTooltip />} />

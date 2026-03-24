@@ -1,100 +1,256 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Clock, Play, Trash2, Plus, CheckCircle, AlertCircle, ToggleLeft, ToggleRight, Zap } from 'lucide-react';
+import { Clock, Play, Trash2, Plus, CheckCircle, AlertCircle, ToggleLeft, ToggleRight, Zap, Pencil, X, Check } from 'lucide-react';
 import { scheduledScans as scansApi } from '../api/client';
 
-// ─── Status badge ────────────────────────────────────────────────────────────
+// ─── Constants ───────────────────────────────────────────────────────────────
 
-function LastRunBadge({ scan }) {
-  if (!scan.last_run_at) {
-    return <span className="text-xs text-neutral-400">Never run</span>;
-  }
-  const date = new Date(scan.last_run_at);
-  const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+const SCAN_TYPES = [
+  { value: 'full',        label: 'All Sources'       },
+  { value: 'trademark',   label: 'USPTO Only'        },
+  { value: 'delaware',    label: 'Delaware + Form D' },
+  { value: 'producthunt', label: 'Product Hunt'      },
+];
+
+const inputClass  = 'w-full border border-neutral-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-black';
+const labelClass  = 'text-[10px] font-medium uppercase tracking-wider text-neutral-400 block mb-1';
+
+// ─── Next run helper ─────────────────────────────────────────────────────────
+
+function getNextRunLabel(scan) {
+  if (!scan.enabled) return null;
+  const now = new Date();
+  const cooldownMs = scan.frequency === 'weekly' ? 140 * 3600000 : 20 * 3600000;
+  const lastRun = scan.last_run_at ? new Date(scan.last_run_at) : new Date(0);
+  const earliestNext = new Date(lastRun.getTime() + cooldownMs);
+  // Roll forward to next 6 AM UTC at or after earliestNext
+  let candidate = new Date(earliestNext);
+  candidate.setUTCHours(6, 0, 0, 0);
+  if (candidate < earliestNext) candidate.setUTCDate(candidate.getUTCDate() + 1);
+  const diffMs = candidate - now;
+  if (diffMs <= 0) return 'Soon';
+  const diffH = Math.floor(diffMs / 3600000);
+  if (diffH < 1) return 'In < 1 hour';
+  if (diffH < 24) return `In ${diffH}h`;
+  const diffD = Math.floor(diffH / 24);
+  return diffD === 1 ? 'Tomorrow at 6am UTC' : `In ${diffD} days`;
+}
+
+// ─── Inline EditPanel ────────────────────────────────────────────────────────
+
+function EditPanel({ scan, onSave, onCancel, saving }) {
+  const [name,      setName]      = useState(scan.name);
+  const [frequency, setFrequency] = useState(scan.frequency || 'daily');
+  const [daysBack,  setDaysBack]  = useState(scan.days_back  || 7);
+  const [scanType,  setScanType]  = useState(scan.scan_type  || 'full');
+
+  const handleSave = () => {
+    if (!name.trim()) return;
+    onSave({ name: name.trim(), frequency, days_back: daysBack, scan_type: scanType });
+  };
+
   return (
-    <span className="text-xs text-neutral-400">
-      Last run {label}
-      {scan.last_run_new > 0 && (
-        <span className="ml-1.5 text-black font-semibold">+{scan.last_run_new} new</span>
-      )}
-    </span>
+    <div className="mt-3 pt-3 border-t border-neutral-100">
+      <div className="grid grid-cols-4 gap-3 mb-3">
+        <div className="col-span-4">
+          <label className={labelClass}>Scan Name</label>
+          <input
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+        <div className="col-span-2 sm:col-span-1">
+          <label className={labelClass}>Frequency</label>
+          <select value={frequency} onChange={e => setFrequency(e.target.value)} className={inputClass}>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+          </select>
+        </div>
+        <div className="col-span-2 sm:col-span-1">
+          <label className={labelClass}>Scan Type</label>
+          <select value={scanType} onChange={e => setScanType(e.target.value)} className={inputClass}>
+            {SCAN_TYPES.map(t => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="col-span-2 sm:col-span-2">
+          <label className={labelClass}>Window</label>
+          <select value={daysBack} onChange={e => setDaysBack(parseInt(e.target.value))} className={inputClass}>
+            <option value={3}>Last 3 days</option>
+            <option value={7}>Last 7 days</option>
+            <option value={14}>Last 14 days</option>
+            <option value={30}>Last 30 days</option>
+          </select>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={handleSave}
+          disabled={saving || !name.trim()}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-display font-bold uppercase tracking-wide text-white rounded disabled:opacity-40"
+          style={{ backgroundColor: '#052EF0' }}
+        >
+          <Check className="w-3 h-3" />
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+        <button
+          onClick={onCancel}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-neutral-400 hover:text-black transition-colors rounded"
+        >
+          <X className="w-3 h-3" />
+          Cancel
+        </button>
+      </div>
+    </div>
   );
 }
 
 // ─── Single scan card ─────────────────────────────────────────────────────────
 
-function ScanCard({ scan, onToggle, onRunNow, onDelete, running }) {
+function ScanCard({ scan, onToggle, onRunNow, onDelete, onEditSave, running }) {
+  const [editing, setEditing] = useState(false);
+  const [saving,  setSaving]  = useState(false);
+
+  const handleSave = async (data) => {
+    setSaving(true);
+    await onEditSave(scan.id, data);
+    setSaving(false);
+    setEditing(false);
+  };
+
+  const scanTypeLabel = SCAN_TYPES.find(t => t.value === (scan.scan_type || 'full'))?.label || 'All Sources';
+  const nextRunLabel  = getNextRunLabel(scan);
+
+  // Last run line
+  let lastRunLine = null;
+  if (!scan.last_run_at) {
+    lastRunLine = <span className="text-xs text-neutral-400">Never run</span>;
+  } else {
+    const date  = new Date(scan.last_run_at);
+    const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    lastRunLine = (
+      <span className="text-xs text-neutral-400">
+        Last run {label}
+        {scan.last_run_new > 0 && (
+          <span className="ml-1.5">
+            <span className="text-black font-semibold">+{scan.last_run_new} new</span>
+            {scan.last_run_hot  > 0 && <span className="ml-1 font-bold text-orange-500">🔥{scan.last_run_hot}</span>}
+            {scan.last_run_warm > 0 && <span className="ml-1 font-bold text-yellow-500">🌤{scan.last_run_warm}</span>}
+            {scan.last_run_cold > 0 && <span className="ml-1 text-neutral-400">❄{scan.last_run_cold}</span>}
+          </span>
+        )}
+      </span>
+    );
+  }
+
   return (
     <div
-      className="bg-white rounded-lg p-5 flex items-center gap-4 transition-shadow hover:shadow-sm"
+      className="bg-white rounded-lg p-5 transition-shadow hover:shadow-sm"
       style={{ border: `1px solid ${scan.enabled ? '#E5E5E0' : '#F0F0F0'}` }}
     >
-      {/* Status dot */}
-      <div
-        className="w-2.5 h-2.5 rounded-full shrink-0"
-        style={{ backgroundColor: scan.enabled ? '#16a34a' : '#D1D5DB' }}
-        title={scan.enabled ? 'Active' : 'Paused'}
-      />
+      <div className="flex items-center gap-4">
+        {/* Status dot */}
+        <div
+          className="w-2.5 h-2.5 rounded-full shrink-0"
+          style={{ backgroundColor: scan.enabled ? '#16a34a' : '#D1D5DB' }}
+          title={scan.enabled ? 'Active' : 'Paused'}
+        />
 
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-2 mb-1">
-          <h3 className="font-display font-bold text-sm uppercase tracking-wide text-black truncate">
-            {scan.name}
-          </h3>
-          <span className="text-[10px] font-medium uppercase tracking-wider text-neutral-300 shrink-0">
-            {scan.frequency}
-          </span>
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-2 mb-1">
+            <h3 className="font-display font-bold text-sm uppercase tracking-wide text-black truncate">
+              {scan.name}
+            </h3>
+            <span className="text-[10px] font-medium uppercase tracking-wider text-neutral-300 shrink-0">
+              {scan.frequency}
+            </span>
+            <span
+              className="text-[10px] font-medium uppercase tracking-wider shrink-0 px-1.5 py-0.5 rounded"
+              style={{ backgroundColor: '#F5F5F4', color: '#737373' }}
+            >
+              {scanTypeLabel}
+            </span>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-3">
+              {lastRunLine}
+              <span className="text-[10px] text-neutral-300">·</span>
+              <span className="text-xs text-neutral-300">
+                {scan.days_back}d window
+              </span>
+            </div>
+            {nextRunLabel && (
+              <span className="text-[10px] text-neutral-400">
+                Next: {nextRunLabel}
+              </span>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <LastRunBadge scan={scan} />
-          <span className="text-[10px] text-neutral-300">·</span>
-          <span className="text-xs text-neutral-300">
-            {scan.days_back}d window · {scan.max_results} max results
-          </span>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Run Now */}
+          <button
+            onClick={() => onRunNow(scan)}
+            disabled={running === scan.id}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-display font-semibold uppercase tracking-wide rounded transition-all disabled:opacity-40"
+            style={{
+              backgroundColor: running === scan.id ? '#E5E5E0' : '#000',
+              color: running === scan.id ? '#999' : '#fff',
+            }}
+            title="Run this scan now"
+          >
+            {running === scan.id ? (
+              <><Zap className="w-3 h-3 animate-pulse" /> Running...</>
+            ) : (
+              <><Play className="w-3 h-3" /> Run Now</>
+            )}
+          </button>
+
+          {/* Edit */}
+          <button
+            onClick={() => setEditing(v => !v)}
+            className={`p-1.5 rounded transition-colors ${editing ? 'text-black' : 'text-neutral-400 hover:text-black'}`}
+            title="Edit scan"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Toggle enabled */}
+          <button
+            onClick={() => onToggle(scan)}
+            className="p-1.5 rounded transition-colors text-neutral-400 hover:text-black"
+            title={scan.enabled ? 'Pause scan' : 'Enable scan'}
+          >
+            {scan.enabled
+              ? <ToggleRight className="w-5 h-5 text-green-600" />
+              : <ToggleLeft  className="w-5 h-5" />
+            }
+          </button>
+
+          {/* Delete */}
+          <button
+            onClick={() => onDelete(scan)}
+            className="p-1.5 rounded transition-colors text-neutral-300 hover:text-red-500"
+            title="Delete scan"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-2 shrink-0">
-        {/* Run Now */}
-        <button
-          onClick={() => onRunNow(scan)}
-          disabled={running === scan.id}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-display font-semibold uppercase tracking-wide rounded transition-all disabled:opacity-40"
-          style={{
-            backgroundColor: running === scan.id ? '#E5E5E0' : '#000',
-            color: running === scan.id ? '#999' : '#fff',
-          }}
-          title="Run this scan now"
-        >
-          {running === scan.id ? (
-            <><Zap className="w-3 h-3 animate-pulse" /> Running...</>
-          ) : (
-            <><Play className="w-3 h-3" /> Run Now</>
-          )}
-        </button>
-
-        {/* Toggle enabled */}
-        <button
-          onClick={() => onToggle(scan)}
-          className="p-1.5 rounded transition-colors text-neutral-400 hover:text-black"
-          title={scan.enabled ? 'Pause scan' : 'Enable scan'}
-        >
-          {scan.enabled
-            ? <ToggleRight className="w-5 h-5 text-green-600" />
-            : <ToggleLeft  className="w-5 h-5" />
-          }
-        </button>
-
-        {/* Delete */}
-        <button
-          onClick={() => onDelete(scan)}
-          className="p-1.5 rounded transition-colors text-neutral-300 hover:text-red-500"
-          title="Delete scan"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
-      </div>
+      {/* Inline edit panel */}
+      {editing && (
+        <EditPanel
+          scan={scan}
+          onSave={handleSave}
+          onCancel={() => setEditing(false)}
+          saving={saving}
+        />
+      )}
     </div>
   );
 }
@@ -106,13 +262,14 @@ function AddScanForm({ onAdd, onCancel }) {
   const [daysBack,   setDaysBack]   = useState(7);
   const [maxResults, setMaxResults] = useState(200);
   const [frequency,  setFrequency]  = useState('daily');
+  const [scanType,   setScanType]   = useState('full');
   const [saving,     setSaving]     = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) return;
     setSaving(true);
-    await onAdd({ name, days_back: daysBack, max_results: maxResults, frequency });
+    await onAdd({ name, days_back: daysBack, max_results: maxResults, frequency, scan_type: scanType });
     setSaving(false);
   };
 
@@ -126,35 +283,40 @@ function AddScanForm({ onAdd, onCancel }) {
 
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <label className="text-[10px] font-medium uppercase tracking-wider text-neutral-400 block mb-1">Scan Name</label>
+          <label className={labelClass}>Scan Name</label>
           <input
             type="text"
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder="e.g. Weekly Beauty Scan"
-            className="w-full border border-neutral-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-black"
+            className={inputClass}
             required
           />
         </div>
 
         <div>
-          <label className="text-[10px] font-medium uppercase tracking-wider text-neutral-400 block mb-1">Frequency</label>
-          <select
-            value={frequency}
-            onChange={e => setFrequency(e.target.value)}
-            className="w-full border border-neutral-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-black"
-          >
+          <label className={labelClass}>Frequency</label>
+          <select value={frequency} onChange={e => setFrequency(e.target.value)} className={inputClass}>
             <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
           </select>
         </div>
 
         <div>
-          <label className="text-[10px] font-medium uppercase tracking-wider text-neutral-400 block mb-1">Scan Window</label>
+          <label className={labelClass}>Scan Type</label>
+          <select value={scanType} onChange={e => setScanType(e.target.value)} className={inputClass}>
+            {SCAN_TYPES.map(t => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="col-span-2">
+          <label className={labelClass}>Scan Window</label>
           <select
             value={daysBack}
             onChange={e => setDaysBack(parseInt(e.target.value))}
-            className="w-full border border-neutral-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-black"
+            className={inputClass}
           >
             <option value={3}>Last 3 days</option>
             <option value={7}>Last 7 days</option>
@@ -224,8 +386,19 @@ export default function ScheduledScans({ embedded = false }) {
     setRunResult(null);
     try {
       const res = await scansApi.runNow(scan.id);
-      setRunResult(res.data);
-      setScans(prev => prev.map(s => s.id === scan.id ? (res.data.scan || s) : s));
+      const runData = res.data;
+      setRunResult(runData);
+      // Update the scan in the list, patching hot/warm/cold from run result
+      setScans(prev => prev.map(s => {
+        if (s.id !== scan.id) return s;
+        const updatedScan = runData.scan || s;
+        return {
+          ...updatedScan,
+          last_run_hot:  runData.hot_found  ?? updatedScan.last_run_hot,
+          last_run_warm: runData.warm_found ?? updatedScan.last_run_warm,
+          last_run_cold: runData.cold_found ?? updatedScan.last_run_cold,
+        };
+      }));
     } catch {
       setRunResult({ error: 'Scan failed. Please try again.' });
     } finally {
@@ -253,6 +426,15 @@ export default function ScheduledScans({ embedded = false }) {
     }
   };
 
+  const handleEditSave = async (scanId, data) => {
+    try {
+      const res = await scansApi.update(scanId, data);
+      setScans(prev => prev.map(s => s.id === scanId ? res.data : s));
+    } catch {
+      setError('Failed to update scan.');
+    }
+  };
+
   return (
     <div className={embedded ? 'space-y-5' : 'max-w-7xl mx-auto px-6 py-7 space-y-6'}>
 
@@ -265,7 +447,7 @@ export default function ScheduledScans({ embedded = false }) {
             </h1>
           )}
           <p className="text-sm text-neutral-400 mt-1">
-            Automatically scan USPTO daily for new consumer brand signals · HOT signals trigger an immediate email alert
+            Automatically scan for new consumer brand signals · HOT signals trigger an immediate email alert
           </p>
         </div>
         <button
@@ -315,6 +497,11 @@ export default function ScheduledScans({ embedded = false }) {
                   {runResult.alert_sent && ' — alert sent!'}
                 </span>
               )}
+              {runResult.warm_found > 0 && (
+                <span className="ml-1 font-bold text-yellow-600">
+                  · 🌤 {runResult.warm_found} WARM
+                </span>
+              )}
             </span>
           )}
           <button onClick={() => setRunResult(null)} className="ml-auto text-neutral-400 hover:text-black text-xs">✕</button>
@@ -349,6 +536,7 @@ export default function ScheduledScans({ embedded = false }) {
               onToggle={handleToggle}
               onRunNow={handleRunNow}
               onDelete={handleDelete}
+              onEditSave={handleEditSave}
               running={running}
             />
           ))}

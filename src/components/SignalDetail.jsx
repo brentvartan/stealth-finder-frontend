@@ -9,6 +9,11 @@ import { enrich, items as itemsApi } from '../api/client';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+function stripYearPrefix(theme) {
+  if (!theme) return theme;
+  return theme.replace(/^\d{4}\s*(Theme:?\s*)?/i, '').trim();
+}
+
 const WATCH_CONFIG = {
   hot:  { label: 'HOT',  bg: '#052EF0', text: '#fff', Icon: Flame      },
   warm: { label: 'WARM', bg: '#000',    text: '#fff', Icon: TrendingUp },
@@ -39,7 +44,7 @@ function buildBrief(match) {
     `STEALTH SIGNAL — ${match.name}`,
     `Category: ${match.category}`,
     e.bullish_score ? `Bullish Score: ${e.bullish_score}/100 (${lvl})` : `Status: ${lvl}`,
-    e.cultural_theme ? `Theme: ${e.cultural_theme}` : null,
+    e.cultural_theme ? `Theme: ${stripYearPrefix(e.cultural_theme)}` : null,
     e.one_line_thesis ? `\nThesis: ${e.one_line_thesis}` : null,
     founder ? `\nFounder: ${founder}` : '\nFounder: Unknown (confirmed stealth)',
     founderBio ? `Background: ${founderBio}` : null,
@@ -556,9 +561,33 @@ export default function SignalDetail() {
       {isEnriched && (
         <div className="grid grid-cols-2 gap-4">
 
-          {/* Overview — consumer brand, repeat, theme, whitespace */}
+          {/* Overview — signal strength, thesis, consumer brand, repeat, theme, whitespace */}
           <div className="col-span-2 bg-white rounded-lg p-5" style={{ border: '1px solid #E5E5E0' }}>
             <h3 className="font-display font-bold text-xs uppercase tracking-widest text-neutral-400 mb-4">Overview</h3>
+
+            {/* Signal strength + thesis */}
+            {(e.bullish_score != null || e.one_line_thesis) && (
+              <div className="mb-4 pb-4" style={{ borderBottom: '1px solid #F0F0F0' }}>
+                {e.bullish_score != null && cfg && (
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] uppercase tracking-wider text-neutral-300 font-medium">Signal Strength</span>
+                    <span
+                      className="text-xs font-bold px-2 py-0.5 rounded"
+                      style={{ backgroundColor: cfg.bg, color: cfg.text }}
+                    >
+                      {e.bullish_score} · {cfg.label}
+                    </span>
+                  </div>
+                )}
+                {e.one_line_thesis && (
+                  <p className="text-sm font-editorial italic text-neutral-700 leading-snug"
+                    style={{ borderLeft: `3px solid ${cfg?.bg || '#052EF0'}`, paddingLeft: '12px' }}>
+                    {e.one_line_thesis}
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-x-8 gap-y-4">
               <div>
                 <span className="text-[10px] uppercase tracking-wider text-neutral-300 font-medium">Consumer Brand</span>
@@ -576,7 +605,7 @@ export default function SignalDetail() {
               {e.cultural_theme && (
                 <div>
                   <span className="text-[10px] uppercase tracking-wider text-neutral-300 font-medium">Cultural Theme</span>
-                  <p className="text-sm font-bold mt-0.5" style={{ color: '#052EF0' }}>{e.cultural_theme}</p>
+                  <p className="text-sm font-bold mt-0.5" style={{ color: '#052EF0' }}>{stripYearPrefix(e.cultural_theme)}</p>
                 </div>
               )}
               {e.advocacy_deficiency && (

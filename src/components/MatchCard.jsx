@@ -7,6 +7,11 @@ import {
 } from 'lucide-react';
 import { enrich, items as itemsApi } from '../api/client';
 
+function stripYearPrefix(theme) {
+  if (!theme) return theme;
+  return theme.replace(/^\d{4}\s*(Theme:?\s*)?/i, '').trim();
+}
+
 export const SIGNAL_CONFIG = {
   trademark:    { icon: Award,       label: 'Trademark',    badge: 'TM'   },
   delaware:     { icon: Building2,   label: 'Delaware',     badge: 'DE'   },
@@ -286,7 +291,7 @@ function EnrichmentPanel({ enrichment, brandName }) {
         {cultural_theme && (
           <div className="col-span-2">
             <span className="text-neutral-400 uppercase tracking-wider text-[9px] font-medium">Cultural Theme</span>
-            <p className="font-medium mt-0.5" style={{ color: '#052EF0' }}>{cultural_theme}</p>
+            <p className="font-medium mt-0.5" style={{ color: '#052EF0' }}>{stripYearPrefix(cultural_theme)}</p>
           </div>
         )}
         {advocacy_deficiency && (
@@ -358,7 +363,7 @@ function buildBrief(match) {
     `STEALTH SIGNAL — ${match.name}`,
     `Category: ${match.category}`,
     e.bullish_score ? `Bullish Score: ${e.bullish_score}/100 (${lvl})` : `Status: ${lvl}`,
-    e.cultural_theme ? `Theme: ${e.cultural_theme}` : null,
+    e.cultural_theme ? `Theme: ${stripYearPrefix(e.cultural_theme)}` : null,
     e.one_line_thesis ? `\nThesis: ${e.one_line_thesis}` : null,
     founder ? `\nFounder: ${founder}` : '\nFounder: Unknown (confirmed stealth)',
     founderBio ? `Background: ${founderBio}` : null,

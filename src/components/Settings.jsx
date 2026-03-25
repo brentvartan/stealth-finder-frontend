@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { settings as settingsApi, admin as adminApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { Plus, X, CheckCircle, Save, Bell, Slack, BarChart2, Clock, Users, CreditCard, RefreshCw, Linkedin, Zap, Search } from 'lucide-react';
+import { Plus, X, CheckCircle, Save, Bell, Slack, BarChart2, Clock, Users, CreditCard, RefreshCw, Linkedin, Zap, Search, Database, Mail } from 'lucide-react';
 import ScheduledScans from './ScheduledScans';
 import Team from './Team';
 
@@ -328,6 +328,8 @@ function SpendTab() {
   const sa  = data.serpapi;
   const an  = data.anthropic;
   const tot = data.totals;
+  const cb  = data.crunchbase || {};
+  const rs  = data.resend     || {};
 
   return (
     <div className="space-y-8">
@@ -335,16 +337,21 @@ function SpendTab() {
       {/* Total this month */}
       <div>
         <SectionHeader icon={CreditCard} title="This Month" subtitle="Estimated API spend since the 1st" />
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 gap-3">
           <SpendStat
             label="Founder APIs"
             value={fmt((pc.estimated_cost_this_month || 0) + (sa.estimated_cost_this_month || 0))}
-            sub={`${fmtN((pc.lookups_this_month || 0) + (sa.searches_this_month || 0))} founder lookups + searches`}
+            sub={`${fmtN((pc.lookups_this_month || 0) + (sa.searches_this_month || 0))} Proxycurl + SerpAPI + Crunchbase lookups & searches`}
           />
           <SpendStat
             label="Claude (Anthropic)"
             value={fmt(an.estimated_cost_this_month)}
             sub={`${fmtN(an.enrichments_this_month)} enrichments · ~${fmt(an.cost_per_enrichment)}/ea`}
+          />
+          <SpendStat
+            label="Email Alerts"
+            value={rs.emails_this_month != null ? fmtN(rs.emails_this_month) : '—'}
+            sub={`${fmtN(rs.emails_all_time)} all-time HOT alerts sent`}
           />
           <SpendStat
             label="Total Estimated"
@@ -403,6 +410,38 @@ function SpendTab() {
         </p>
       </div>
 
+      {/* Crunchbase detail */}
+      <div>
+        <SectionHeader
+          icon={Database}
+          title="Crunchbase (Company Intelligence)"
+          subtitle="Company info, founder names, and funding history for HOT brands"
+        />
+        <div className="grid grid-cols-3 gap-3 mb-3">
+          <SpendStat
+            label="Status"
+            value={cb.active ? 'Active' : 'Not Configured'}
+            sub={cb.active ? 'API key set in Railway' : 'Add CRUNCHBASE_API_KEY to activate'}
+          />
+          <SpendStat
+            label="Lookups This Month"
+            value={fmtN(cb.lookups_this_month)}
+            sub={`${fmtN(cb.lookups_all_time)} all-time`}
+          />
+          <SpendStat
+            label="Est. Cost"
+            value={fmt(cb.estimated_cost_this_month)}
+            sub="Depends on Crunchbase plan tier"
+          />
+        </div>
+        <p className="text-xs text-neutral-300">
+          Crunchbase fires on HOT signals to retrieve company data, founder identities, and prior funding.
+          Active only when <code className="bg-neutral-100 px-1 rounded">CRUNCHBASE_API_KEY</code> is set.{' '}
+          <a href="https://data.crunchbase.com/docs/using-the-api" target="_blank" rel="noreferrer"
+             className="underline hover:text-neutral-500">data.crunchbase.com</a>
+        </p>
+      </div>
+
       {/* Anthropic detail */}
       <div>
         <SectionHeader icon={Zap} title="Anthropic (Claude)" subtitle="Signal enrichment and founder re-scoring" />
@@ -423,6 +462,33 @@ function SpendTab() {
           <a href="https://console.anthropic.com/settings/billing" target="_blank" rel="noreferrer"
             className="underline hover:text-neutral-500">console.anthropic.com</a>{' '}
           for exact billing.
+        </p>
+      </div>
+
+      {/* Resend detail */}
+      <div>
+        <SectionHeader
+          icon={Mail}
+          title="Resend (Email Alerts)"
+          subtitle="HOT signal alerts, founder enrichment notifications, weekly digests"
+        />
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <SpendStat
+            label="Alerts Sent This Month"
+            value={rs.emails_this_month != null ? fmtN(rs.emails_this_month) : '—'}
+            sub={rs.error ? `Error: ${rs.error}` : `Plan: ${rs.plan || 'Free (3,000/mo)'}`}
+          />
+          <SpendStat
+            label="All-Time Alerts"
+            value={fmtN(rs.emails_all_time)}
+            sub="HOT signal scan alerts only (excludes invites, resets)"
+          />
+        </div>
+        <p className="text-xs text-neutral-300">
+          Free plan covers 3,000 emails/month (100/day limit). Includes HOT brand alerts, founder enrichment
+          notifications, and Monday weekly digests.{' '}
+          <a href="https://resend.com/overview" target="_blank" rel="noreferrer"
+             className="underline hover:text-neutral-500">resend.com</a>
         </p>
       </div>
 
@@ -462,6 +528,20 @@ function SpendTab() {
                   active: true,
                 },
                 {
+                  source: 'Brand Website Scraping',
+                  what:   'About/Team page — direct founder name + LinkedIn URL extraction',
+                  when:   'Auto on HOT signals (before LinkedIn lookup)',
+                  cost:   'Free',
+                  active: true,
+                },
+                {
+                  source: 'Crunchbase',
+                  what:   'Company intel: founders, funding history, prior backing',
+                  when:   'Auto on HOT signals with discovered founder',
+                  cost:   cb.active ? 'Varies by plan' : 'Not configured',
+                  active: cb.active || false,
+                },
+                {
                   source: 'SerpAPI',
                   what:   'Founder name discovery (web + Product Hunt search)',
                   when:   'Auto on HOT signals (score ≥ 70)',
@@ -489,17 +569,31 @@ function SpendTab() {
                   cost:   '~$0.005 / re-score',
                   active: true,
                 },
+                {
+                  source: 'Resend',
+                  what:   'HOT alert emails, founder notifications, weekly digests',
+                  when:   'On HOT signals, founder score ≥ 75, every Monday',
+                  cost:   'Free (3,000/mo)',
+                  active: true,
+                },
               ].map(row => (
                 <tr key={row.source} className="hover:bg-neutral-50 transition-colors">
-                  <td className="px-4 py-3 font-semibold text-black">{row.source}</td>
-                  <td className="px-4 py-3 text-neutral-500">{row.what}</td>
-                  <td className="px-4 py-3 text-neutral-400">{row.when}</td>
-                  <td className="px-4 py-3 font-mono font-medium" style={{ color: row.cost === 'Free' || row.cost.startsWith('Free') ? '#16A34A' : '#374151' }}>{row.cost}</td>
+                  <td className={`px-4 py-3 font-semibold ${row.active === false ? 'text-neutral-300' : 'text-black'}`}>{row.source}</td>
+                  <td className={`px-4 py-3 ${row.active === false ? 'text-neutral-400' : 'text-neutral-500'}`}>{row.what}</td>
+                  <td className={`px-4 py-3 ${row.active === false ? 'text-neutral-400' : 'text-neutral-400'}`}>{row.when}</td>
+                  <td className="px-4 py-3 font-mono font-medium" style={{ color: row.cost === 'Free' || row.cost.startsWith('Free') ? '#16A34A' : row.active === false ? '#9CA3AF' : '#374151' }}>{row.cost}</td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded uppercase tracking-wide ${row.active ? 'bg-green-50 text-green-600' : 'bg-neutral-100 text-neutral-400'}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${row.active ? 'bg-green-500' : 'bg-neutral-300'}`} />
-                      {row.active ? 'On' : 'Off'}
-                    </span>
+                    {row.active === false ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded uppercase tracking-wide bg-neutral-100 text-neutral-400">
+                        <span className="w-1.5 h-1.5 rounded-full bg-neutral-300" />
+                        Inactive
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded uppercase tracking-wide bg-green-50 text-green-600">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                        On
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}

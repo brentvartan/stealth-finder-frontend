@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { items } from '../api/client';
-import { Linkedin, Twitter, Trash2, PlusCircle, Users, ExternalLink } from 'lucide-react';
+import { Linkedin, Trash2, PlusCircle, Users, ExternalLink, Newspaper, TrendingUp } from 'lucide-react';
 
 export default function Watchlist() {
   const [watchlist,   setWatchlist]   = useState([]);
@@ -11,7 +11,7 @@ export default function Watchlist() {
   const [successMsg,  setSuccessMsg]  = useState('');
 
   const [formData, setFormData] = useState({
-    name: '', company: '', linkedin: '', twitter: '', notes: '',
+    name: '', company: '', linkedin: '', notes: '',
   });
 
   const loadWatchlist = useCallback(async () => {
@@ -26,20 +26,37 @@ export default function Watchlist() {
           const meta = JSON.parse(item.description || '{}');
           if (meta._type === 'watchlist') {
             return [{
-              id:      item.id,
-              name:    meta.name || item.title,
-              company: meta.company || '',
-              linkedin: meta.linkedin || '',
-              twitter:  meta.twitter || '',
-              notes:   meta.notes || '',
-              addedAt: meta.added_at || item.created_at,
+              id:             item.id,
+              name:           meta.name || item.title,
+              company:        meta.company || '',
+              linkedin:       meta.linkedin || '',
+              notes:          meta.notes || '',
+              addedAt:        meta.added_at || item.created_at,
+              autoAdded:      meta.auto_added || false,
+              bullishScore:   meta.bullish_score || null,
+              founderScore:   meta.founder_score || null,
+              signalTypes:    meta.signal_types || [],
+              culturalTheme:  meta.cultural_theme || '',
+              thesis:         meta.thesis || '',
+              signalItemId:   meta.signal_item_id || null,
+              newsResults:    meta.news_results || [],
+              rescoreHistory: meta.rescore_history || [],
             }];
           }
         } catch (e) {}
         return [];
       });
 
-      parsed.sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt));
+      // Sort: auto-added HOT entries first (by score desc), then manual entries (by date desc)
+      parsed.sort((a, b) => {
+        if (a.autoAdded && !b.autoAdded) return -1;
+        if (!a.autoAdded && b.autoAdded) return 1;
+        if (a.autoAdded && b.autoAdded) {
+          return (b.bullishScore || 0) - (a.bullishScore || 0);
+        }
+        return new Date(b.addedAt) - new Date(a.addedAt);
+      });
+
       setWatchlist(parsed);
     } catch (err) {
       setError('Failed to load watchlist. Please try again.');
@@ -61,12 +78,16 @@ export default function Watchlist() {
         name:     formData.name.trim(),
         company:  formData.company.trim(),
         linkedin: formData.linkedin.trim(),
-        twitter:  formData.twitter.trim().replace(/^@/, ''),
+        twitter:  '',
         notes:    formData.notes.trim(),
         added_at: new Date().toISOString(),
+        auto_added: false,
+        signal_types: [],
+        news_results: [],
+        rescore_history: [],
       };
       await items.create(formData.name.trim(), JSON.stringify(meta));
-      setFormData({ name: '', company: '', linkedin: '', twitter: '', notes: '' });
+      setFormData({ name: '', company: '', linkedin: '', notes: '' });
       setSuccessMsg('Added to watchlist!');
       setTimeout(() => setSuccessMsg(''), 3000);
       await loadWatchlist();
@@ -139,11 +160,6 @@ export default function Watchlist() {
                 onChange={e => update('linkedin', e.target.value)} className={inputClass} />
             </div>
             <div>
-              <label className={labelClass}>Twitter / X Handle</label>
-              <input type="text" placeholder="@sarahchen" value={formData.twitter}
-                onChange={e => update('twitter', e.target.value)} className={inputClass} />
-            </div>
-            <div>
               <label className={labelClass}>Notes</label>
               <textarea
                 placeholder="Why you're watching them, connection, background..."
@@ -196,72 +212,190 @@ export default function Watchlist() {
               <p className="text-xs text-neutral-300 mt-1">Add someone using the form.</p>
             </div>
           ) : (
-            <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
               {watchlist.map(founder => (
-                <div
+                <WatchlistCard
                   key={founder.id}
-                  className="rounded p-3 transition-colors hover:bg-neutral-50"
-                  style={{ border: '1px solid #E5E5E0' }}
-                >
-                  <div className="flex items-start gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-black text-sm">{founder.name}</div>
-                      {founder.company && (
-                        <div className="text-xs text-neutral-400 mt-0.5">{founder.company}</div>
-                      )}
-                      {founder.notes && (
-                        <div className="text-xs text-neutral-500 mt-1 font-editorial italic">{founder.notes}</div>
-                      )}
-                      <div className="flex flex-wrap gap-3 mt-2">
-                        {founder.linkedin && (
-                          <a
-                            href={founder.linkedin}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs font-medium flex items-center gap-1 transition-colors"
-                            style={{ color: '#052EF0' }}
-                          >
-                            <Linkedin className="w-3 h-3" />
-                            LinkedIn
-                            <ExternalLink className="w-2.5 h-2.5" />
-                          </a>
-                        )}
-                        {founder.twitter && (
-                          <a
-                            href={`https://twitter.com/${founder.twitter.replace('@', '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs font-medium flex items-center gap-1 transition-colors"
-                            style={{ color: '#052EF0' }}
-                          >
-                            <Twitter className="w-3 h-3" />
-                            @{founder.twitter}
-                            <ExternalLink className="w-2.5 h-2.5" />
-                          </a>
-                        )}
-                      </div>
-                      <div className="text-[10px] text-neutral-300 mt-1.5 font-medium">
-                        Added {new Date(founder.addedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleRemove(founder.id)}
-                      disabled={removingId === founder.id}
-                      className="text-neutral-200 hover:text-red-400 disabled:opacity-40 transition-colors p-1 shrink-0"
-                      title="Remove from watchlist"
-                    >
-                      {removingId === founder.id
-                        ? <div className="animate-spin rounded-full h-4 w-4 border-b border-red-400" />
-                        : <Trash2 className="w-3.5 h-3.5" />
-                      }
-                    </button>
-                  </div>
-                </div>
+                  founder={founder}
+                  removingId={removingId}
+                  onRemove={handleRemove}
+                />
               ))}
             </div>
           )}
         </div>
 
+      </div>
+    </div>
+  );
+}
+
+
+function WatchlistCard({ founder, removingId, onRemove }) {
+  const isAuto = founder.autoAdded;
+  const borderStyle = isAuto
+    ? { border: '1px solid #E5E5E0', borderLeft: '3px solid #052EF0' }
+    : { border: '1px solid #E5E5E0' };
+
+  // Most recent rescore
+  const lastRescore = founder.rescoreHistory && founder.rescoreHistory.length > 0
+    ? founder.rescoreHistory[founder.rescoreHistory.length - 1]
+    : null;
+
+  // Most recent news article
+  const latestNews = founder.newsResults && founder.newsResults.length > 0
+    ? founder.newsResults[0]
+    : null;
+
+  return (
+    <div
+      className="rounded p-3 transition-colors hover:bg-neutral-50"
+      style={borderStyle}
+    >
+      <div className="flex items-start gap-2">
+        <div className="flex-1 min-w-0">
+
+          {/* Top row: name + badges */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="font-medium text-black text-sm">{founder.name || founder.company}</div>
+            {isAuto && (
+              <span className="text-[9px] font-bold tracking-widest uppercase text-neutral-400 bg-neutral-100 px-1.5 py-0.5 rounded">
+                AUTO
+              </span>
+            )}
+            {founder.bullishScore && (
+              <span
+                className="text-[10px] font-bold font-mono text-white px-2 py-0.5 rounded"
+                style={{ backgroundColor: '#052EF0' }}
+              >
+                {founder.bullishScore}
+              </span>
+            )}
+          </div>
+
+          {/* Company name */}
+          {founder.name && founder.company && (
+            <div className="text-xs text-neutral-400 mt-0.5">{founder.company}</div>
+          )}
+          {!founder.name && founder.company && (
+            <div className="text-xs text-neutral-400 mt-0.5">{founder.company}</div>
+          )}
+
+          {/* Cultural theme */}
+          {founder.culturalTheme && (
+            <div className="text-[10px] font-medium mt-1" style={{ color: '#052EF0' }}>
+              {founder.culturalTheme}
+            </div>
+          )}
+
+          {/* Thesis */}
+          {founder.thesis && (
+            <div
+              className="text-xs text-neutral-500 mt-1 font-editorial italic overflow-hidden"
+              style={{
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+              }}
+            >
+              {founder.thesis}
+            </div>
+          )}
+
+          {/* Notes (if no thesis, or if it's a manual entry) */}
+          {founder.notes && !founder.thesis && (
+            <div className="text-xs text-neutral-500 mt-1 font-editorial italic">{founder.notes}</div>
+          )}
+          {founder.notes && founder.thesis && !founder.autoAdded && (
+            <div className="text-xs text-neutral-500 mt-1 font-editorial italic">{founder.notes}</div>
+          )}
+
+          {/* Signal type chips */}
+          {founder.signalTypes && founder.signalTypes.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {founder.signalTypes.map(st => (
+                <span
+                  key={st}
+                  className="text-[9px] font-bold tracking-widest uppercase text-neutral-400 bg-neutral-100 px-1.5 py-0.5 rounded"
+                >
+                  {st}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Score history */}
+          {lastRescore && (
+            <div className="flex items-center gap-1 mt-1.5">
+              <TrendingUp className="w-3 h-3 text-green-500" />
+              <span className="text-[10px] font-medium text-green-600">
+                +{lastRescore.new_score - lastRescore.old_score} pts on{' '}
+                {new Date(lastRescore.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </span>
+            </div>
+          )}
+
+          {/* Latest news */}
+          {latestNews && (
+            <div className="mt-1.5 flex items-start gap-1">
+              <Newspaper className="w-3 h-3 text-neutral-300 shrink-0 mt-0.5" />
+              <a
+                href={latestNews.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] text-neutral-400 hover:text-[#052EF0] transition-colors leading-tight line-clamp-1"
+                title={latestNews.title}
+              >
+                {latestNews.title}
+                {latestNews.date && (
+                  <span className="text-neutral-300 ml-1">· {latestNews.date}</span>
+                )}
+              </a>
+            </div>
+          )}
+
+          {/* Links row */}
+          <div className="flex flex-wrap gap-3 mt-2">
+            {founder.linkedin && (
+              <a
+                href={founder.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-medium flex items-center gap-1 transition-colors"
+                style={{ color: '#052EF0' }}
+              >
+                <Linkedin className="w-3 h-3" />
+                LinkedIn
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+            )}
+            {founder.signalItemId && (
+              <button
+                onClick={() => {/* future: navigate to signal */}}
+                className="text-xs font-medium flex items-center gap-1 text-neutral-400 hover:text-neutral-600 transition-colors"
+              >
+                View signal
+                <ExternalLink className="w-2.5 h-2.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="text-[10px] text-neutral-300 mt-1.5 font-medium">
+            Added {new Date(founder.addedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </div>
+        </div>
+
+        <button
+          onClick={() => onRemove(founder.id)}
+          disabled={removingId === founder.id}
+          className="text-neutral-200 hover:text-red-400 disabled:opacity-40 transition-colors p-1 shrink-0"
+          title="Remove from watchlist"
+        >
+          {removingId === founder.id
+            ? <div className="animate-spin rounded-full h-4 w-4 border-b border-red-400" />
+            : <Trash2 className="w-3.5 h-3.5" />
+          }
+        </button>
       </div>
     </div>
   );

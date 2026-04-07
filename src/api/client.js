@@ -25,6 +25,9 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Holds an in-flight refresh promise so concurrent 401s share one refresh call
+let _refreshPromise = null;
+
 // Response interceptor — auto-refresh on 401, then retry
 api.interceptors.response.use(
   (response) => response,
@@ -34,26 +37,35 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (!refreshToken) {
+        return Promise.reject(error);
+      }
+
       try {
-        const refreshToken = localStorage.getItem('refresh_token');
-        if (refreshToken) {
-          // Flask-JWT-Extended expects the refresh token as a Bearer token
-          // in the Authorization header — NOT in the request body
-          const response = await axios.post(
-            `${API_BASE_URL}/auth/refresh`,
-            {},
-            { headers: { Authorization: `Bearer ${refreshToken}` } }
-          );
-
-          const { access_token } = response.data;
-          localStorage.setItem('access_token', access_token);
-
-          // Retry original request with new token
-          originalRequest.headers.Authorization = `Bearer ${access_token}`;
-          return api(originalRequest);
+        // If no refresh is already in flight, start one; otherwise reuse it
+        if (!_refreshPromise) {
+          _refreshPromise = axios
+            .post(
+              `${API_BASE_URL}/auth/refresh`,
+              {},
+              { headers: { Authorization: `Bearer ${refreshToken}` } }
+            )
+            .then((res) => {
+              localStorage.setItem('access_token', res.data.access_token);
+              return res.data.access_token;
+            })
+            .finally(() => {
+              _refreshPromise = null;
+            });
         }
+
+        const newAccessToken = await _refreshPromise;
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        return api(originalRequest);
       } catch (refreshError) {
         // Refresh failed — clear storage and redirect to login
+        _refreshPromise = null;
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');

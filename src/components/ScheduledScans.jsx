@@ -9,6 +9,7 @@ const SCAN_TYPES = [
   { value: 'trademark',   label: 'USPTO Only'        },
   { value: 'delaware',    label: 'Delaware + Form D' },
   { value: 'producthunt', label: 'Product Hunt'      },
+  { value: 'app_store',   label: 'App Store'         },
 ];
 
 const inputClass  = 'w-full border border-neutral-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-black';

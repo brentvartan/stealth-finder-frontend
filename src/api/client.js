@@ -164,6 +164,9 @@ export const scans = {
 
   producthunt: (daysBack = 14, maxResults = 100) =>
     api.post('/scans/producthunt', { days_back: daysBack, max_results: maxResults }),
+
+  appStore: (daysBack = 30, maxResults = 100) =>
+    api.post('/scans/app-store', { days_back: daysBack, max_results: maxResults }),
 };
 
 // ─── Scheduled Scans ──────────────────────────────────────────────────────────

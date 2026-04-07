@@ -10,7 +10,12 @@
     "axios": "^1.6.5",
     "lucide-react": "^0.309.0",
     "recharts": "^2.10.3",
-    "date-fns": "^3.0.6"
+    "date-fns": "^3.0.6",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/ios": "^6.0.0",
+    "@capacitor/app": "^6.0.0",
+    "@capacitor/status-bar": "^6.0.0",
+    "@capacitor/splash-screen": "^6.0.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",
@@ -19,13 +24,16 @@
     "postcss": "^8.4.33",
     "autoprefixer": "^10.4.16",
     "eslint": "^8.56.0",
-    "eslint-plugin-react": "^7.33.2"
+    "eslint-plugin-react": "^7.33.2",
+    "@capacitor/cli": "^6.0.0"
   },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint src --ext js,jsx"
+    "lint": "eslint src --ext js,jsx",
+    "build:ios": "vite build && npx cap sync ios",
+    "open:ios": "npx cap open ios"
   },
   "type": "module"
 }

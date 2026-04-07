@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { items, scans } from '../api/client';
 
-import { Play, RefreshCw, CheckCircle, AlertCircle, Award, Camera, ShoppingBag, Building2, Globe, Linkedin, Rocket } from 'lucide-react';
+import { Play, RefreshCw, CheckCircle, AlertCircle, Award, Camera, ShoppingBag, Building2, Globe, Linkedin, Rocket, Smartphone } from 'lucide-react';
 import { CONSUMER_CATEGORIES } from './Dashboard';
 
 // ─── Score boosts ──────────────────────────────────────────────────────────────
@@ -168,17 +168,19 @@ const SCAN_TYPES = [
   { value: 'trademark',    label: 'USPTO Trademarks Only'          },
   { value: 'delaware',     label: 'Delaware + Form D Only'         },
   { value: 'producthunt',  label: 'Product Hunt Launches Only'     },
+  { value: 'app_store',    label: 'App Store New Launches Only'    },
   { value: 'domain',       label: 'Domain Registrations Only'      },
 ];
 
 const SOURCES = [
-  { icon: Award,       label: 'USPTO Trademarks',    desc: 'Live — real filings from the last N days. Earliest brand signal before any public activity.',             live: true  },
-  { icon: Building2,   label: 'Delaware + Form D',   desc: 'Live — SEC Form D (Reg D exemption) + domain cross-reference. DE-incorporated and quietly raising.',     live: true  },
-  { icon: Globe,       label: 'Domain Registration', desc: 'Live — auto cross-referenced for every Delaware hit. Matching .com registered recently = compound.',     live: true  },
-  { icon: Rocket,      label: 'Product Hunt',         desc: 'Live — consumer product launches. Post-stealth but still early; use to validate or find new arrivals.',  live: true  },
-  { icon: Camera,      label: 'Instagram Handles',   desc: 'Consumer brands secure @handle before website',                                                           live: false },
-  { icon: ShoppingBag, label: 'Shopify Stores',      desc: 'New DTC stores with 0 products = stealth',                                                               live: false },
-  { icon: Linkedin,    label: 'Social Media',        desc: 'Founders announcing stealth mode',                                                                        live: false },
+  { icon: Award,       label: 'USPTO Trademarks',    desc: 'Live — real filings from the last N days. Earliest brand signal before any public activity.',                       live: true  },
+  { icon: Building2,   label: 'Delaware + Form D',   desc: 'Live — SEC Form D (Reg D exemption) + domain cross-reference. DE-incorporated and quietly raising.',           live: true  },
+  { icon: Globe,       label: 'Domain Registration', desc: 'Live — auto cross-referenced for every Delaware hit. Matching .com registered recently = compound.',           live: true  },
+  { icon: Rocket,      label: 'Product Hunt',        desc: 'Live — consumer product launches. Post-stealth but still early; use to validate or find new arrivals.',        live: true  },
+  { icon: Smartphone,  label: 'App Store',           desc: 'Live — new consumer app launches via iTunes Search API. Traction validator + confluence signal.',              live: true  },
+  { icon: Camera,      label: 'Instagram Handles',   desc: 'Consumer brands secure @handle before website',                                                               live: false },
+  { icon: ShoppingBag, label: 'Shopify Stores',      desc: 'New DTC stores with 0 products = stealth',                                                                   live: false },
+  { icon: Linkedin,    label: 'Social Media',        desc: 'Founders announcing stealth mode',                                                                            live: false },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -247,7 +249,7 @@ export default function RunScan() {
 
       // ── Live: Product Hunt consumer launches ──
       if (scanType === 'full' || scanType === 'producthunt') {
-        setStatus(s => ({ ...s, message: 'Live: scanning Product Hunt for consumer launches...', progress: 68 }));
+        setStatus(s => ({ ...s, message: 'Live: scanning Product Hunt for consumer launches...', progress: 65 }));
         const phResp = await scans.producthunt(Math.min(daysBack, 14), 100);
         const { fetched: phFetched, new_saved: phNew, skipped: phSkipped, error: phError } = phResp.data;
         if (phError) throw new Error(`Product Hunt: ${phError}`);
@@ -256,7 +258,22 @@ export default function RunScan() {
         setStatus(s => ({
           ...s,
           message: `Product Hunt: ${phFetched} consumer launches — ${phNew} new, ${phSkipped} already in database`,
-          progress: 75,
+          progress: 72,
+        }));
+      }
+
+      // ── Live: App Store new consumer app launches ──
+      if (scanType === 'full' || scanType === 'app_store') {
+        setStatus(s => ({ ...s, message: 'Live: scanning App Store for new consumer apps...', progress: 75 }));
+        const asResp = await scans.appStore(daysBack, 100);
+        const { fetched: asFetched, new_saved: asNew, skipped: asSkipped, error: asError } = asResp.data;
+        if (asError) throw new Error(`App Store: ${asError}`);
+        totalSaved   += asNew;
+        totalSkipped += (asSkipped || 0);
+        setStatus(s => ({
+          ...s,
+          message: `App Store: ${asFetched} consumer apps — ${asNew} new, ${asSkipped} already in database`,
+          progress: 82,
         }));
       }
 

@@ -28,6 +28,7 @@ const SIGNAL_CONFIG = {
   shopify:      { icon: ShoppingBag, label: 'Shopify Store',       badge: 'SHOP' },
   social:       { icon: Pencil,      label: 'Social Signal',       badge: 'SOC'  },
   producthunt:  { icon: Rocket,      label: 'Product Hunt',        badge: 'PH'   },
+  app_store:    { icon: Rocket,      label: 'App Store',           badge: 'APP'  },
   manual:       { icon: Pencil,      label: 'Manual Signal',       badge: 'MAN'  },
 };
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { items as itemsApi, enrich } from '../api/client';
 import MatchCard from './MatchCard';
 import TrendChart from './TrendChart';
+import PipelineChart from './PipelineChart';
 import { Search, RefreshCw, Award, ShoppingBag, CheckCircle, TrendingUp, Sparkles, Flame } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -271,6 +272,18 @@ export default function Dashboard() {
           <div className="bg-white rounded-lg p-5" style={{ border: '1px solid #E5E5E0' }}>
             <TrendChart signals={signals} />
           </div>
+        </>
+      )}
+
+      {/* ── Pipeline ── */}
+      {signals.length > 0 && (
+        <>
+          <div className="flex items-center justify-between">
+            <h1 className="font-display font-bold text-3xl uppercase tracking-wide text-black">
+              Pipeline
+            </h1>
+          </div>
+          <PipelineChart signals={signals} />
         </>
       )}
 

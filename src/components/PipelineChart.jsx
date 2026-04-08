@@ -3,6 +3,9 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
 
+const TOP_CATEGORIES = 8;
+const VELOCITY_WEEKS = 8;
+
 // ─── HOT Velocity ─────────────────────────────────────────────────────────────
 // Weekly HOT signal count over the last 8 weeks.
 
@@ -34,7 +37,7 @@ function HotVelocityChart({ signals }) {
   const data = useMemo(() => {
     const now = new Date();
     const weeks = [];
-    for (let i = 7; i >= 0; i--) {
+    for (let i = VELOCITY_WEEKS - 1; i >= 0; i--) {
       const start = new Date(now);
       start.setDate(now.getDate() - (i + 1) * 7);
       const end = new Date(now);
@@ -123,7 +126,7 @@ function CategoryChart({ signals }) {
       .map(([cat, { hot, warm }]) => ({ cat, hot, warm, total: hot + warm }))
       .filter(d => d.total > 0)
       .sort((a, b) => b.total - a.total)
-      .slice(0, 8);
+      .slice(0, TOP_CATEGORIES);
   }, [signals]);
 
   if (!data.length) return null;

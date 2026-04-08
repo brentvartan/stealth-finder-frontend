@@ -6,13 +6,7 @@ import {
   Award, Building2, Globe, Camera, ShoppingBag, Pencil, Rocket, Copy, CheckCheck,
 } from 'lucide-react';
 import { enrich, items as itemsApi } from '../api/client';
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function stripYearPrefix(theme) {
-  if (!theme) return theme;
-  return theme.replace(/^\d{4}\s*(Theme:?\s*)?/i, '').trim();
-}
+import { stripYearPrefix } from '../utils/formatting';
 
 const WATCH_CONFIG = {
   hot:  { label: 'HOT',  bg: '#052EF0', text: '#fff', Icon: Flame      },

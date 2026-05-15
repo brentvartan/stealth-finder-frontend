@@ -594,7 +594,7 @@ export default function MatchCard({ match, onUpdate }) {
 
             <div className="flex flex-wrap items-center gap-2">
               {SIGNAL_TYPE_ORDER.map(type => {
-                const key = `has${type.charAt(0).toUpperCase()}${type.slice(1)}`;
+                const key = 'has' + type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
                 if (!match[key]) return null;
                 const config = SIGNAL_CONFIG[type];
                 return (

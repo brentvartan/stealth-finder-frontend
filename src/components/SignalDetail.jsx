@@ -558,7 +558,7 @@ export default function SignalDetail() {
             {/* Signal type badges */}
             <div className="flex flex-wrap items-center gap-1.5 mb-3">
               {Object.entries(SIGNAL_CONFIG).map(([type, config]) => {
-                const key = `has${type.charAt(0).toUpperCase()}${type.slice(1)}`;
+                const key = 'has' + type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
                 if (!currentMatch[key]) return null;
                 return (
                   <span key={type} className="text-[10px] font-bold px-2 py-0.5 rounded-full"

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { settings as settingsApi, admin as adminApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { Plus, X, CheckCircle, Save, Bell, Slack, BarChart2, Clock, Users, CreditCard, RefreshCw, Linkedin, Zap, Search, Database, Mail } from 'lucide-react';
+import { Plus, X, CheckCircle, Save, Bell, Slack, BarChart2, Clock, Users, CreditCard, RefreshCw, Linkedin, Zap, Search, Database, Mail, Globe } from 'lucide-react';
 import ScheduledScans from './ScheduledScans';
 import Team from './Team';
 
@@ -619,6 +619,109 @@ function SpendTab() {
   );
 }
 
+// ─── Tools tab ───────────────────────────────────────────────────────────────
+
+function ToolsTab() {
+  const [pressRunning,    setPressRunning]    = useState(false);
+  const [pressMsg,        setPressMsg]        = useState('');
+  const [domainRunning,   setDomainRunning]   = useState(false);
+  const [domainMsg,       setDomainMsg]       = useState('');
+
+  const handleRunPress = async () => {
+    setPressRunning(true);
+    setPressMsg('');
+    try {
+      const res = await adminApi.runPressMonitor();
+      setPressMsg('✓ ' + res.data.message);
+    } catch (err) {
+      setPressMsg('✗ ' + (err.response?.data?.error || 'Request failed'));
+    } finally {
+      setPressRunning(false);
+    }
+  };
+
+  const handleCheckDomains = async () => {
+    setDomainRunning(true);
+    setDomainMsg('');
+    try {
+      const res = await adminApi.checkAllDomains();
+      setPressMsg('');
+      setDomainMsg('✓ ' + res.data.message);
+    } catch (err) {
+      setDomainMsg('✗ ' + (err.response?.data?.error || 'Request failed'));
+    } finally {
+      setDomainRunning(false);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+
+      {/* Press Monitor */}
+      <div className="bg-white rounded-lg p-6" style={{ border: '1px solid #E5E5E0' }}>
+        <SectionHeader
+          icon={Search}
+          title="Trade Press Monitor"
+          subtitle="Scan 21 consumer trade publications and cross-reference against all brands in your DB. Runs automatically every Thursday at 08:00 UTC."
+        />
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleRunPress}
+            disabled={pressRunning}
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-display font-semibold uppercase tracking-wider text-white rounded transition-all disabled:opacity-50"
+            style={{ backgroundColor: pressRunning ? '#999' : '#052EF0' }}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${pressRunning ? 'animate-spin' : ''}`} />
+            {pressRunning ? 'Starting…' : 'Run Press Scan Now'}
+          </button>
+          {pressMsg && (
+            <p className={`text-sm font-medium ${pressMsg.startsWith('✓') ? 'text-green-600' : 'text-red-500'}`}>
+              {pressMsg}
+            </p>
+          )}
+        </div>
+        <p className="text-xs text-neutral-400 mt-3">
+          Results appear in Signal Detail → Press Coverage within ~2 minutes. Brands with hits get a{' '}
+          <span className="font-bold" style={{ color: '#0A5C36' }}>PRESS</span> badge on their card.
+        </p>
+      </div>
+
+      {/* Domain Checker */}
+      <div className="bg-white rounded-lg p-6" style={{ border: '1px solid #E5E5E0' }}>
+        <SectionHeader
+          icon={Database}
+          title="Domain Status Checker"
+          subtitle="Retroactively check domain status for all existing domain signals that haven't been crawled yet. New domain signals are checked automatically."
+        />
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleCheckDomains}
+            disabled={domainRunning}
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-display font-semibold uppercase tracking-wider text-white rounded transition-all disabled:opacity-50"
+            style={{ backgroundColor: domainRunning ? '#999' : '#020A52' }}
+          >
+            <Globe className={`w-3.5 h-3.5 ${domainRunning ? 'animate-pulse' : ''}`} />
+            {domainRunning ? 'Queuing…' : 'Check All Domains'}
+          </button>
+          {domainMsg && (
+            <p className={`text-sm font-medium ${domainMsg.startsWith('✓') ? 'text-green-600' : 'text-red-500'}`}>
+              {domainMsg}
+            </p>
+          )}
+        </div>
+        <p className="text-xs text-neutral-400 mt-3">
+          Each domain is crawled in the background. Results appear in Signal Detail as{' '}
+          <span className="font-bold text-green-600">LIVE</span>{' '}
+          <span className="font-bold text-amber-600">COMING SOON</span>{' '}
+          <span className="font-bold text-neutral-400">PARKED</span>{' '}
+          badges on domain signal cards.
+        </p>
+      </div>
+
+    </div>
+  );
+}
+
 // ─── Main Settings page ───────────────────────────────────────────────────────
 
 const TABS = [
@@ -626,6 +729,7 @@ const TABS = [
   { id: 'schedules', label: 'Schedules', icon: Clock,      adminOnly: false },
   { id: 'team',      label: 'Team',      icon: Users,      adminOnly: false },
   { id: 'spend',     label: 'Spend',     icon: CreditCard, adminOnly: true  },
+  { id: 'tools',     label: 'Tools',     icon: Zap,        adminOnly: true  },
 ];
 
 export default function Settings() {
@@ -674,6 +778,7 @@ export default function Settings() {
       {activeTab === 'schedules' && <ScheduledScans embedded />}
       {activeTab === 'team'      && <Team embedded />}
       {activeTab === 'spend'     && isAdmin && <SpendTab />}
+      {activeTab === 'tools'     && isAdmin && <ToolsTab />}
 
     </div>
   );

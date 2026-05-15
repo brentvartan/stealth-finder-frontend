@@ -137,6 +137,12 @@ export const admin = {
 
   deleteUser: (id) =>
     api.delete(`/admin/users/${id}`),
+
+  runPressMonitor: () =>
+    api.post('/admin/run-press-monitor', {}, { timeout: 10000 }),
+
+  checkAllDomains: () =>
+    api.post('/admin/check-all-domains', {}, { timeout: 10000 }),
 };
 
 // ─── Enrichment (Bullish AI analysis via Claude) ──────────────────────────────

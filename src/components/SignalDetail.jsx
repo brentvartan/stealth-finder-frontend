@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, Flame, TrendingUp, Minus, User, Linkedin, ExternalLink,
   Sparkles, Bookmark, BookmarkCheck, MessageCircle, StickyNote, Save,
-  Award, Building2, Globe, Camera, ShoppingBag, Pencil, Rocket, Copy, CheckCheck,
+  Award, Building2, Globe, Camera, ShoppingBag, Pencil, Rocket, Copy, CheckCheck, Newspaper, EyeOff,
 } from 'lucide-react';
 import { enrich, items as itemsApi } from '../api/client';
 import { stripYearPrefix } from '../utils/formatting';
@@ -15,15 +15,16 @@ const WATCH_CONFIG = {
 };
 
 const SIGNAL_CONFIG = {
-  trademark: { icon: Award,       label: 'Trademark Filing', badge: 'TM'     },
-  delaware:  { icon: Building2,   label: 'Delaware Corp',    badge: 'DE'     },
-  domain:       { icon: Globe,       label: 'Domain Registration', badge: 'URL'  },
-  instagram:    { icon: Camera,      label: 'Instagram',           badge: 'IG'   },
-  shopify:      { icon: ShoppingBag, label: 'Shopify Store',       badge: 'SHOP' },
-  social:       { icon: Pencil,      label: 'Social Signal',       badge: 'SOC'  },
-  producthunt:  { icon: Rocket,      label: 'Product Hunt',        badge: 'PH'   },
-  app_store:    { icon: Rocket,      label: 'App Store',           badge: 'APP'  },
-  manual:       { icon: Pencil,      label: 'Manual Signal',       badge: 'MAN'  },
+  trademark:   { icon: Award,       label: 'Trademark Filing',    badge: 'TM'   },
+  delaware:    { icon: Building2,   label: 'Delaware Corp',       badge: 'DE'   },
+  domain:      { icon: Globe,       label: 'Domain Registration', badge: 'URL'  },
+  instagram:   { icon: Camera,      label: 'Instagram',           badge: 'IG'   },
+  shopify:     { icon: ShoppingBag, label: 'Shopify Store',       badge: 'SHOP' },
+  social:      { icon: Pencil,      label: 'Social Signal',       badge: 'SOC'  },
+  producthunt: { icon: Rocket,      label: 'Product Hunt',        badge: 'PH'   },
+  app_store:   { icon: Rocket,      label: 'App Store',           badge: 'APP'  },
+  newswire:    { icon: Newspaper,   label: 'Newswire',            badge: 'NW'   },
+  manual:      { icon: Pencil,      label: 'Manual Signal',       badge: 'MAN'  },
 };
 
 function buildBrief(match) {
@@ -358,6 +359,10 @@ export default function SignalDetail() {
             hasInstagram:    meta.signal_type === 'instagram',
             hasShopify:      meta.signal_type === 'shopify',
             hasSocial:       meta.signal_type === 'social',
+            hasProducthunt:  meta.signal_type === 'producthunt',
+            hasAppStore:     meta.signal_type === 'app_store',
+            hasNewswire:     meta.signal_type === 'newswire',
+            isStealth:       ['trademark', 'delaware', 'domain'].includes(meta.signal_type),
             score:           0,
           };
           setCurrentMatch(constructedMatch);
@@ -526,7 +531,7 @@ export default function SignalDetail() {
             <p className="text-sm text-neutral-400 font-medium uppercase tracking-wider mb-3">{category}</p>
 
             {/* Signal type badges */}
-            <div className="flex flex-wrap gap-1.5 mb-3">
+            <div className="flex flex-wrap items-center gap-1.5 mb-3">
               {Object.entries(SIGNAL_CONFIG).map(([type, config]) => {
                 const key = `has${type.charAt(0).toUpperCase()}${type.slice(1)}`;
                 if (!currentMatch[key]) return null;
@@ -537,6 +542,16 @@ export default function SignalDetail() {
                   </span>
                 );
               })}
+              {currentMatch.isStealth && (
+                <span
+                  className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[10px] text-white"
+                  style={{ backgroundColor: '#020A52' }}
+                  title="Stealth — detected via pre-launch signals only"
+                >
+                  <EyeOff className="w-3 h-3" />
+                  STEALTH
+                </span>
+              )}
               <span className="text-xs text-neutral-300 ml-1">
                 {signals.length} signal{signals.length !== 1 ? 's' : ''}
               </span>

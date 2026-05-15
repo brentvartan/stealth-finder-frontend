@@ -30,6 +30,7 @@ export const BULLISH_THEMES = [
 
 const SCORE_BOOSTS = {
   trademark: 15, delaware: 5, domain: 3, instagram: 8, shopify: 10, social: 2, manual: 5,
+  producthunt: 3, app_store: 3, newswire: 0,
 };
 
 // ─── Matching logic ────────────────────────────────────────────────────────────
@@ -65,12 +66,16 @@ function buildMatches(signals, filters) {
 
   return Object.values(groups)
     .map(group => {
-      const hasTrademark = group.signals.some(s => s.signal_type === 'trademark');
-      const hasDelaware  = group.signals.some(s => s.signal_type === 'delaware');
-      const hasDomain    = group.signals.some(s => s.signal_type === 'domain');
-      const hasInstagram = group.signals.some(s => s.signal_type === 'instagram');
-      const hasShopify   = group.signals.some(s => s.signal_type === 'shopify');
-      const hasSocial    = group.signals.some(s => s.signal_type === 'social');
+      const hasTrademark   = group.signals.some(s => s.signal_type === 'trademark');
+      const hasDelaware    = group.signals.some(s => s.signal_type === 'delaware');
+      const hasDomain      = group.signals.some(s => s.signal_type === 'domain');
+      const hasInstagram   = group.signals.some(s => s.signal_type === 'instagram');
+      const hasShopify     = group.signals.some(s => s.signal_type === 'shopify');
+      const hasSocial      = group.signals.some(s => s.signal_type === 'social');
+      const hasProducthunt = group.signals.some(s => s.signal_type === 'producthunt');
+      const hasAppStore    = group.signals.some(s => s.signal_type === 'app_store');
+      const hasNewswire    = group.signals.some(s => s.signal_type === 'newswire');
+      const isStealth      = (hasTrademark || hasDelaware || hasDomain) && !hasNewswire;
 
       let score = group.signals.reduce((sum, s) => sum + (SCORE_BOOSTS[s.signal_type] || 5), 0);
       if (hasTrademark && (hasDelaware || hasDomain)) score += 20;
@@ -87,6 +92,7 @@ function buildMatches(signals, filters) {
       return {
         ...group, score, enrichment,
         hasTrademark, hasDelaware, hasDomain, hasInstagram, hasShopify, hasSocial,
+        hasProducthunt, hasAppStore, hasNewswire, isStealth,
         latestSignal: new Date(Math.max(...group.signals.map(s => new Date(s.timestamp)))),
         primarySignalId: primarySignal?.id ?? null,
         team_notes: primarySignal?.team_notes || '',

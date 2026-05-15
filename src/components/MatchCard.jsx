@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Award, Building2, Globe, Camera, ShoppingBag, Linkedin, Rocket,
   ChevronDown, ChevronUp, ExternalLink, Pencil, Flame, TrendingUp, Minus, User,
-  Sparkles, Bookmark, BookmarkCheck, StickyNote, Save, Copy, CheckCheck,
+  Sparkles, Bookmark, BookmarkCheck, StickyNote, Save, Copy, CheckCheck, Newspaper, EyeOff,
 } from 'lucide-react';
 import { enrich, items as itemsApi } from '../api/client';
 
@@ -20,10 +20,11 @@ export const SIGNAL_CONFIG = {
   shopify:      { icon: ShoppingBag, label: 'Shopify',      badge: 'SHOP' },
   social:       { icon: Linkedin,    label: 'Social',       badge: 'SOC'  },
   producthunt:  { icon: Rocket,      label: 'Product Hunt', badge: 'PH'   },
+  newswire:     { icon: Newspaper,   label: 'Newswire',     badge: 'NW'   },
   manual:       { icon: Pencil,      label: 'Manual',       badge: 'MAN'  },
 };
 
-const SIGNAL_TYPE_ORDER = ['trademark', 'delaware', 'domain', 'instagram', 'shopify', 'social'];
+const SIGNAL_TYPE_ORDER = ['trademark', 'delaware', 'domain', 'instagram', 'shopify', 'social', 'newswire'];
 
 // ─── Watch-level helpers ─────────────────────────────────────────────────────
 
@@ -552,20 +553,32 @@ export default function MatchCard({ match, onUpdate }) {
                   {match.category}
                 </span>
               </div>
-              {(() => {
-                const fs = enrichment?.founder_score;
-                if (!fs?.gate_passed || !fs?.total || fs.total < 50) return null;
-                return (
+              <div className="flex items-center gap-1 shrink-0">
+                {match.isStealth && (
                   <span
-                    className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[10px] text-white shrink-0"
-                    style={{ backgroundColor: '#052EF0' }}
-                    title={`Founder: ${fs.tier?.replace(/_/g, ' ')} · ${fs.total}/100`}
+                    className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[10px] text-white"
+                    style={{ backgroundColor: '#020A52' }}
+                    title="Stealth — detected via pre-launch signals only"
                   >
-                    <User className="w-3 h-3" />
-                    FOUNDER {fs.total}
+                    <EyeOff className="w-3 h-3" />
+                    STEALTH
                   </span>
-                );
-              })()}
+                )}
+                {(() => {
+                  const fs = enrichment?.founder_score;
+                  if (!fs?.gate_passed || !fs?.total || fs.total < 50) return null;
+                  return (
+                    <span
+                      className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[10px] text-white"
+                      style={{ backgroundColor: '#052EF0' }}
+                      title={`Founder: ${fs.tier?.replace(/_/g, ' ')} · ${fs.total}/100`}
+                    >
+                      <User className="w-3 h-3" />
+                      FOUNDER {fs.total}
+                    </span>
+                  );
+                })()}
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">

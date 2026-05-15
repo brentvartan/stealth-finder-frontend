@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { items, scans } from '../api/client';
 
-import { Play, RefreshCw, CheckCircle, AlertCircle, Award, Camera, ShoppingBag, Building2, Globe, Linkedin, Rocket, Smartphone } from 'lucide-react';
+import { Play, RefreshCw, CheckCircle, AlertCircle, Award, Camera, ShoppingBag, Building2, Globe, Linkedin, Rocket, Smartphone, Newspaper } from 'lucide-react';
 import { CONSUMER_CATEGORIES } from './Dashboard';
 
 // ─── Score boosts ──────────────────────────────────────────────────────────────
@@ -169,18 +169,20 @@ const SCAN_TYPES = [
   { value: 'delaware',     label: 'Delaware + Form D Only'         },
   { value: 'producthunt',  label: 'Product Hunt Launches Only'     },
   { value: 'app_store',    label: 'App Store New Launches Only'    },
+  { value: 'newswire',     label: 'Newswire (PR + BusinessWire)'   },
   { value: 'domain',       label: 'Domain Registrations Only'      },
 ];
 
 const SOURCES = [
-  { icon: Award,       label: 'USPTO Trademarks',    desc: 'Live — real filings from the last N days. Earliest brand signal before any public activity.',                       live: true  },
-  { icon: Building2,   label: 'Delaware + Form D',   desc: 'Live — SEC Form D (Reg D exemption) + domain cross-reference. DE-incorporated and quietly raising.',           live: true  },
-  { icon: Globe,       label: 'Domain Registration', desc: 'Live — auto cross-referenced for every Delaware hit. Matching .com registered recently = compound.',           live: true  },
-  { icon: Rocket,      label: 'Product Hunt',        desc: 'Live — consumer product launches. Post-stealth but still early; use to validate or find new arrivals.',        live: true  },
-  { icon: Smartphone,  label: 'App Store',           desc: 'Live — new consumer app launches via iTunes Search API. Traction validator + confluence signal.',              live: true  },
-  { icon: Camera,      label: 'Instagram Handles',   desc: 'Consumer brands secure @handle before website',                                                               live: false },
-  { icon: ShoppingBag, label: 'Shopify Stores',      desc: 'New DTC stores with 0 products = stealth',                                                                   live: false },
-  { icon: Linkedin,    label: 'Social Media',        desc: 'Founders announcing stealth mode',                                                                            live: false },
+  { icon: Award,       label: 'USPTO Trademarks',    desc: 'Live — real filings from the last N days. Earliest brand signal before any public activity.',                                      live: true  },
+  { icon: Building2,   label: 'Delaware + Form D',   desc: 'Live — SEC Form D (Reg D exemption) + domain cross-reference. DE-incorporated and quietly raising.',                          live: true  },
+  { icon: Globe,       label: 'Domain Registration', desc: 'Live — auto cross-referenced for every Delaware hit. Matching .com registered recently = compound.',                          live: true  },
+  { icon: Rocket,      label: 'Product Hunt',        desc: 'Live — consumer product launches. Post-stealth but still early; use to validate or find new arrivals.',                       live: true  },
+  { icon: Smartphone,  label: 'App Store',           desc: 'Live — new consumer app launches via iTunes Search API. Traction validator + confluence signal.',                             live: true  },
+  { icon: Newspaper,   label: 'Newswire',            desc: 'Live — PR Newswire + BusinessWire RSS. Brands breaking stealth via press release: seed announces, launches, funding rounds.', live: true  },
+  { icon: Camera,      label: 'Instagram Handles',   desc: 'Consumer brands secure @handle before website',                                                                              live: false },
+  { icon: ShoppingBag, label: 'Shopify Stores',      desc: 'New DTC stores with 0 products = stealth',                                                                                  live: false },
+  { icon: Linkedin,    label: 'Social Media',        desc: 'Founders announcing stealth mode',                                                                                           live: false },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -277,6 +279,21 @@ export default function RunScan() {
         }));
       }
 
+      // ── Live: Newswire — PR Newswire + BusinessWire press releases ──
+      if (scanType === 'full' || scanType === 'newswire') {
+        setStatus(s => ({ ...s, message: 'Live: scanning PR Newswire + BusinessWire for consumer brand releases...', progress: 86 }));
+        const nwResp = await scans.newswire(Math.min(daysBack, 14), 100);
+        const { fetched: nwFetched, new_saved: nwNew, skipped: nwSkipped, error: nwError } = nwResp.data;
+        if (nwError && !nwFetched) throw new Error(`Newswire: ${nwError}`);
+        totalSaved   += nwNew;
+        totalSkipped += (nwSkipped || 0);
+        setStatus(s => ({
+          ...s,
+          message: `Newswire: ${nwFetched} press releases — ${nwNew} new, ${nwSkipped} already in database`,
+          progress: 90,
+        }));
+      }
+
       const simSteps = [];
       if (scanType === 'full' || scanType === 'instagram')
         simSteps.push({ type: 'instagram', label: 'Checking Instagram handles...',  progress: 78, data: () => getInstagramData() });
@@ -322,7 +339,7 @@ export default function RunScan() {
             Run Scan
           </h1>
           <p className="text-neutral-400 text-sm mt-1">
-            USPTO trademarks, Delaware/Form D filings, domain cross-references, and Product Hunt launches are all live.
+            USPTO trademarks, Delaware/Form D, domain cross-references, Product Hunt, App Store, and Newswire (PR + BusinessWire) are all live.
           </p>
         </div>
 

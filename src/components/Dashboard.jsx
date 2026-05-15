@@ -30,7 +30,7 @@ export const BULLISH_THEMES = [
 
 const SCORE_BOOSTS = {
   trademark: 15, delaware: 5, domain: 3, instagram: 8, shopify: 10, social: 2, manual: 5,
-  producthunt: 3, app_store: 3, newswire: 0,
+  producthunt: 3, app_store: 3, newswire: 8,
 };
 
 // ─── Matching logic ────────────────────────────────────────────────────────────
@@ -83,12 +83,18 @@ function buildMatches(signals, filters) {
       if (hasDelaware && hasDomain && hasSocial)       score += 10;
       if (hasShopify && hasInstagram)                  score += 15;
 
+      // Just-out-of-stealth combo bonuses — highest-conviction 'just-before-VC' signals
+      if ((hasTrademark || hasDelaware) && hasNewswire) score += 25;
+      if (hasPressHits && (hasTrademark || hasDelaware)) score += 20;
+      if (hasPressHits && hasNewswire)                   score += 12;
+      if (hasPressHits && hasDomain)                     score += 8;
+
       // Domain status modifier — how real is the domain?
       const domainSig = group.signals.find(s => s.signal_type === 'domain');
       const domainStatus = domainSig?.domain_status?.status;
-      if (domainStatus === 'coming_soon') score += 5;
-      else if (domainStatus === 'live')   score += 3;
-      else if (domainStatus === 'parked') score -= 3;
+      if (domainStatus === 'coming_soon') score += 8;
+      else if (domainStatus === 'live')   score += 5;
+      else if (domainStatus === 'parked') score -= 5;
 
       // Best enrichment: prefer trademark signal's enrichment, then any other
       const tmEnriched  = group.signals.find(s => s.signal_type === 'trademark' && s.enrichment?.enriched);

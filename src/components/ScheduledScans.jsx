@@ -10,7 +10,37 @@ const SCAN_TYPES = [
   { value: 'delaware',    label: 'Delaware + Form D' },
   { value: 'producthunt', label: 'Product Hunt'      },
   { value: 'app_store',   label: 'App Store'         },
+  { value: 'newswire',    label: 'Newswire'          },
 ];
+
+// ─── Source info ──────────────────────────────────────────────────────────────
+
+const SCAN_SOURCE_INFO = {
+  full: {
+    sources: ['USPTO (trademark filings)', 'Delaware Secretary of State', 'Product Hunt', 'App Store'],
+    description: 'Full daily discovery across all stealth signal sources.',
+  },
+  trademark: {
+    sources: ['USPTO TESS (Trademark Electronic Search System)'],
+    description: 'Early brand intent: the trademark filing is often the first public record a brand exists.',
+  },
+  delaware: {
+    sources: ['OpenCorporates (Delaware filings)', 'SEC EDGAR (Form D)'],
+    description: 'Entity formation signals — new LLCs and corps registered in Delaware + fundraise filings.',
+  },
+  producthunt: {
+    sources: ['Product Hunt (public launches API)'],
+    description: 'Consumer apps and DTC brands that have just publicly launched their product.',
+  },
+  app_store: {
+    sources: ['iTunes Search API (Apple App Store)'],
+    description: 'Newly released or recently updated consumer apps across Health, Beauty, CPG, and Fitness.',
+  },
+  newswire: {
+    sources: ['PR Newswire (RSS)', 'BusinessWire — Consumer Products', 'BusinessWire — Food & Beverage', 'BusinessWire — Health'],
+    description: 'Brands just breaking stealth via press release: seed announces, product launches, and funding rounds.',
+  },
+};
 
 const inputClass  = 'w-full border border-neutral-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-black';
 const labelClass  = 'text-[10px] font-medium uppercase tracking-wider text-neutral-400 block mb-1';
@@ -20,9 +50,11 @@ const labelClass  = 'text-[10px] font-medium uppercase tracking-wider text-neutr
 function formatSourcesRan(sources) {
   if (!sources) return 'All Sources';
   const map = {
-    trademark: 'USPTO',
-    delaware:  'Delaware',
+    trademark:   'USPTO',
+    delaware:    'Delaware',
     producthunt: 'Product Hunt',
+    app_store:   'App Store',
+    newswire:    'Newswire',
   };
   return sources.split(',').map(s => map[s.trim()] || s.trim()).join(', ');
 }
@@ -383,6 +415,28 @@ function ScanCard({ scan, onToggle, onRunNow, onDelete, onEditSave, running }) {
           </div>
         )}
 
+        {/* Source info */}
+        {(() => {
+          const info = SCAN_SOURCE_INFO[scan.scan_type || 'full'];
+          if (!info) return null;
+          return (
+            <div className="mt-3 pt-3 border-t border-neutral-100">
+              <p className="text-[10px] text-neutral-400 mb-1">{info.description}</p>
+              <div className="flex flex-wrap gap-1">
+                {info.sources.map(src => (
+                  <span
+                    key={src}
+                    className="text-[10px] px-1.5 py-0.5 rounded font-mono"
+                    style={{ backgroundColor: '#F5F5F4', color: '#737373' }}
+                  >
+                    {src}
+                  </span>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Inline edit panel */}
         {editing && (
           <EditPanel
@@ -457,6 +511,24 @@ function AddScanForm({ onAdd, onCancel }) {
             ))}
           </select>
         </div>
+
+        {/* Source info for selected scan type */}
+        {SCAN_SOURCE_INFO[scanType] && (
+          <div className="col-span-2 rounded p-2.5" style={{ backgroundColor: '#F9F9F8' }}>
+            <p className="text-[10px] text-neutral-500 mb-1.5">{SCAN_SOURCE_INFO[scanType].description}</p>
+            <div className="flex flex-wrap gap-1">
+              {SCAN_SOURCE_INFO[scanType].sources.map(src => (
+                <span
+                  key={src}
+                  className="text-[10px] px-1.5 py-0.5 rounded font-mono"
+                  style={{ backgroundColor: '#EBEBEA', color: '#737373' }}
+                >
+                  {src}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="col-span-2">
           <label className={labelClass}>Scan Window</label>

@@ -173,6 +173,9 @@ export const scans = {
 
   appStore: (daysBack = 30, maxResults = 100) =>
     api.post('/scans/app-store', { days_back: daysBack, max_results: maxResults }),
+
+  newswire: (daysBack = 14, maxResults = 100) =>
+    api.post('/scans/newswire', { days_back: daysBack, max_results: maxResults }),
 };
 
 // ─── Scheduled Scans ──────────────────────────────────────────────────────────

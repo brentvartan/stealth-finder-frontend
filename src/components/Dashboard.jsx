@@ -76,11 +76,19 @@ function buildMatches(signals, filters) {
       const hasAppStore    = group.signals.some(s => s.signal_type === 'app_store');
       const hasNewswire    = group.signals.some(s => s.signal_type === 'newswire');
       const isStealth      = (hasTrademark || hasDelaware || hasDomain) && !hasNewswire;
+      const hasPressHits   = group.signals.some(s => s.press_mentions?.length > 0);
 
       let score = group.signals.reduce((sum, s) => sum + (SCORE_BOOSTS[s.signal_type] || 5), 0);
       if (hasTrademark && (hasDelaware || hasDomain)) score += 20;
       if (hasDelaware && hasDomain && hasSocial)       score += 10;
       if (hasShopify && hasInstagram)                  score += 15;
+
+      // Domain status modifier — how real is the domain?
+      const domainSig = group.signals.find(s => s.signal_type === 'domain');
+      const domainStatus = domainSig?.domain_status?.status;
+      if (domainStatus === 'coming_soon') score += 5;
+      else if (domainStatus === 'live')   score += 3;
+      else if (domainStatus === 'parked') score -= 3;
 
       // Best enrichment: prefer trademark signal's enrichment, then any other
       const tmEnriched  = group.signals.find(s => s.signal_type === 'trademark' && s.enrichment?.enriched);
@@ -92,7 +100,7 @@ function buildMatches(signals, filters) {
       return {
         ...group, score, enrichment,
         hasTrademark, hasDelaware, hasDomain, hasInstagram, hasShopify, hasSocial,
-        hasProducthunt, hasAppStore, hasNewswire, isStealth,
+        hasProducthunt, hasAppStore, hasNewswire, isStealth, hasPressHits,
         latestSignal: new Date(Math.max(...group.signals.map(s => new Date(s.timestamp)))),
         primarySignalId: primarySignal?.id ?? null,
         team_notes: primarySignal?.team_notes || '',
@@ -124,11 +132,13 @@ function parseSignalsFromItems(allItems) {
           description: meta.description || '',
           url:         meta.url || '',
           notes:       meta.notes || '',
-          timestamp:   meta.timestamp || item.created_at,
-          savedAt:     item.created_at,   // when WE discovered it (used for date filter)
-          enrichment:  meta.enrichment || null,
-          team_notes:  meta.team_notes || '',
-          fp:          meta.fp || '',
+          timestamp:      meta.timestamp || item.created_at,
+          savedAt:        item.created_at,
+          enrichment:     meta.enrichment || null,
+          team_notes:     meta.team_notes || '',
+          fp:             meta.fp || '',
+          domain_status:  meta.domain_status || null,
+          press_mentions: meta.press_mentions || [],
         }];
       }
     } catch (e) {}

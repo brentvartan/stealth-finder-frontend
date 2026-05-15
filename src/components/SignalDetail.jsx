@@ -5,6 +5,28 @@ import {
   Sparkles, Bookmark, BookmarkCheck, MessageCircle, StickyNote, Save,
   Award, Building2, Globe, Camera, ShoppingBag, Pencil, Rocket, Copy, CheckCheck, Newspaper, EyeOff,
 } from 'lucide-react';
+
+const DOMAIN_STATUS_CONFIG = {
+  live:        { label: 'LIVE',        color: '#16a34a', bg: '#f0fdf4' },
+  coming_soon: { label: 'COMING SOON', color: '#D97706', bg: '#FFF7ED' },
+  parked:      { label: 'PARKED',      color: '#9CA3AF', bg: '#F5F5F5' },
+  error:       { label: 'UNRESOLVED',  color: '#9CA3AF', bg: '#F5F5F5' },
+};
+
+function DomainStatusBadge({ domainStatus }) {
+  if (!domainStatus?.status) return null;
+  const cfg = DOMAIN_STATUS_CONFIG[domainStatus.status] || DOMAIN_STATUS_CONFIG.error;
+  return (
+    <span
+      className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded ml-2"
+      style={{ backgroundColor: cfg.bg, color: cfg.color }}
+      title={domainStatus.page_title || cfg.label}
+    >
+      <Globe className="w-3 h-3" />
+      {cfg.label}
+    </span>
+  );
+}
 import { enrich, items as itemsApi } from '../api/client';
 import { stripYearPrefix } from '../utils/formatting';
 
@@ -339,16 +361,18 @@ export default function SignalDetail() {
             name:            meta.company_name || item.title,
             category:        meta.category,
             signals: [{
-              id:          item.id,
-              companyName: meta.company_name,
-              signal_type: meta.signal_type,
-              category:    meta.category,
-              description: meta.description,
-              url:         meta.url,
-              notes:       meta.notes,
-              timestamp:   meta.timestamp,
-              enrichment:  meta.enrichment,
-              team_notes:  meta.team_notes,
+              id:             item.id,
+              companyName:    meta.company_name,
+              signal_type:    meta.signal_type,
+              category:       meta.category,
+              description:    meta.description,
+              url:            meta.url,
+              notes:          meta.notes,
+              timestamp:      meta.timestamp,
+              enrichment:     meta.enrichment,
+              team_notes:     meta.team_notes,
+              domain_status:  meta.domain_status || null,
+              press_mentions: meta.press_mentions || [],
             }],
             enrichment:      meta.enrichment || null,
             primarySignalId: item.id,
@@ -363,6 +387,7 @@ export default function SignalDetail() {
             hasAppStore:     meta.signal_type === 'app_store',
             hasNewswire:     meta.signal_type === 'newswire',
             isStealth:       ['trademark', 'delaware', 'domain'].includes(meta.signal_type),
+            hasPressHits:    (meta.press_mentions || []).length > 0,
             score:           0,
           };
           setCurrentMatch(constructedMatch);
@@ -754,11 +779,68 @@ export default function SignalDetail() {
                     View Source <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
+                {signal.signal_type === 'domain' && signal.domain_status && (
+                  <div className="mt-2">
+                    <DomainStatusBadge domainStatus={signal.domain_status} />
+                    {signal.domain_status.has_email_capture && (
+                      <span className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded ml-1"
+                        style={{ backgroundColor: '#EEF2FF', color: '#052EF0' }}>
+                        Email capture detected
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       </div>
+
+      {/* ── Press Coverage ── */}
+      {(() => {
+        const allMentions = (sortedSignals || [])
+          .flatMap(s => s.press_mentions || [])
+          .filter((a, i, arr) => arr.findIndex(x => x.url === a.url) === i)  // dedupe by URL
+          .slice(0, 20);
+        if (!allMentions.length) return null;
+        return (
+          <div>
+            <h3 className="font-display font-bold text-xs uppercase tracking-widest text-neutral-400 mb-3 flex items-center gap-2">
+              <Newspaper className="w-3.5 h-3.5" style={{ color: '#0A5C36' }} />
+              Press Coverage
+              <span className="font-normal text-neutral-300 normal-case tracking-normal">
+                — found in consumer trade press
+              </span>
+            </h3>
+            <div className="space-y-2">
+              {allMentions.map((article, i) => (
+                <div key={i} className="bg-white rounded-lg p-4" style={{ border: '1px solid #E5E5E0' }}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider"
+                      style={{ color: '#0A5C36' }}>
+                      {article.pub}
+                    </span>
+                    {article.date && (
+                      <span className="text-[10px] text-neutral-400">{article.date}</span>
+                    )}
+                  </div>
+                  <p className="text-sm font-medium text-neutral-800 leading-snug mb-1">{article.title}</p>
+                  {article.snippet && (
+                    <p className="text-xs text-neutral-500 leading-relaxed">{article.snippet}</p>
+                  )}
+                  {article.url && (
+                    <a href={article.url} target="_blank" rel="noopener noreferrer"
+                      className="text-xs mt-2 inline-flex items-center gap-1 font-medium transition-colors"
+                      style={{ color: '#052EF0' }}>
+                      Read Article <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );

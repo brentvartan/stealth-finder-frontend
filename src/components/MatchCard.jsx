@@ -20,11 +20,12 @@ export const SIGNAL_CONFIG = {
   shopify:      { icon: ShoppingBag, label: 'Shopify',      badge: 'SHOP' },
   social:       { icon: Linkedin,    label: 'Social',       badge: 'SOC'  },
   producthunt:  { icon: Rocket,      label: 'Product Hunt', badge: 'PH'   },
+  app_store:    { icon: Rocket,      label: 'App Store',    badge: 'APP'  },
   newswire:     { icon: Newspaper,   label: 'Newswire',     badge: 'NW'   },
   manual:       { icon: Pencil,      label: 'Manual',       badge: 'MAN'  },
 };
 
-const SIGNAL_TYPE_ORDER = ['trademark', 'delaware', 'domain', 'instagram', 'shopify', 'social', 'newswire'];
+const SIGNAL_TYPE_ORDER = ['trademark', 'delaware', 'domain', 'instagram', 'shopify', 'social', 'producthunt', 'app_store', 'newswire'];
 
 // ─── Watch-level helpers ─────────────────────────────────────────────────────
 
@@ -562,6 +563,16 @@ export default function MatchCard({ match, onUpdate }) {
                   >
                     <EyeOff className="w-3 h-3" />
                     STEALTH
+                  </span>
+                )}
+                {match.hasPressHits && (
+                  <span
+                    className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[10px] text-white"
+                    style={{ backgroundColor: '#0A5C36' }}
+                    title="Mentioned in consumer trade press"
+                  >
+                    <Newspaper className="w-3 h-3" />
+                    PRESS
                   </span>
                 )}
                 {(() => {

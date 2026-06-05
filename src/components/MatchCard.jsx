@@ -16,6 +16,7 @@ export const SIGNAL_CONFIG = {
   trademark:    { icon: Award,       label: 'Trademark',    badge: 'TM'   },
   delaware:     { icon: Building2,   label: 'Delaware',     badge: 'DE'   },
   domain:       { icon: Globe,       label: 'Domain',       badge: 'URL'  },
+  domain_ct:    { icon: Globe,       label: 'CT Log',       badge: 'CT'   },
   instagram:    { icon: Camera,      label: 'Instagram',    badge: 'IG'   },
   shopify:      { icon: ShoppingBag, label: 'Shopify',      badge: 'SHOP' },
   social:       { icon: Linkedin,    label: 'Social',       badge: 'SOC'  },
@@ -25,7 +26,7 @@ export const SIGNAL_CONFIG = {
   manual:       { icon: Pencil,      label: 'Manual',       badge: 'MAN'  },
 };
 
-const SIGNAL_TYPE_ORDER = ['trademark', 'delaware', 'domain', 'instagram', 'shopify', 'social', 'producthunt', 'app_store', 'newswire'];
+const SIGNAL_TYPE_ORDER = ['trademark', 'delaware', 'domain', 'domain_ct', 'instagram', 'shopify', 'social', 'producthunt', 'app_store', 'newswire'];
 
 // ─── Watch-level helpers ─────────────────────────────────────────────────────
 
@@ -555,6 +556,17 @@ export default function MatchCard({ match, onUpdate }) {
                 </span>
               </div>
               <div className="flex items-center gap-1 shrink-0">
+                {match.hasConviction && (
+                  <span
+                    className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[10px] text-white"
+                    style={{ backgroundColor: '#7C3AED' }}
+                    title={match.convictionMatch
+                      ? `Conviction founder: ${match.convictionMatch.name} — ${match.convictionMatch.reason}`
+                      : 'Conviction founder match'}
+                  >
+                    ⚡ CONVICTION
+                  </span>
+                )}
                 {match.isStealth && (
                   <span
                     className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[10px] text-white"

@@ -11,13 +11,14 @@ const SCAN_TYPES = [
   { value: 'producthunt', label: 'Product Hunt'      },
   { value: 'app_store',   label: 'App Store'         },
   { value: 'newswire',    label: 'Newswire'          },
+  { value: 'ctlogs',      label: 'CT Logs'           },
 ];
 
 // ─── Source info ──────────────────────────────────────────────────────────────
 
 const SCAN_SOURCE_INFO = {
   full: {
-    sources: ['USPTO (trademark filings)', 'Delaware Secretary of State', 'Product Hunt', 'App Store'],
+    sources: ['USPTO (trademark filings)', 'Delaware Secretary of State + Form D', 'Product Hunt', 'App Store', 'PR Newswire + BusinessWire', 'Certificate Transparency Logs'],
     description: 'Full daily discovery across all stealth signal sources.',
   },
   trademark: {
@@ -26,7 +27,7 @@ const SCAN_SOURCE_INFO = {
   },
   delaware: {
     sources: ['OpenCorporates (Delaware filings)', 'SEC EDGAR (Form D)'],
-    description: 'Entity formation signals — new LLCs and corps registered in Delaware + fundraise filings.',
+    description: 'Entity formation + fundraise signals. Form D = a legal promise to an investor has been made.',
   },
   producthunt: {
     sources: ['Product Hunt (public launches API)'],
@@ -39,6 +40,10 @@ const SCAN_SOURCE_INFO = {
   newswire: {
     sources: ['PR Newswire (RSS)', 'BusinessWire — Consumer Products', 'BusinessWire — Food & Beverage', 'BusinessWire — Health'],
     description: 'Brands just breaking stealth via press release: seed announces, product launches, and funding rounds.',
+  },
+  ctlogs: {
+    sources: ['crt.sh (Certificate Transparency logs)', 'Let\'s Encrypt + DigiCert issuances'],
+    description: 'New SSL certs on consumer-brand domains. Catches brand registrations 6–24 months before press coverage (e.g. Board was catchable 22 months early).',
   },
 };
 
@@ -55,6 +60,7 @@ function formatSourcesRan(sources) {
     producthunt: 'Product Hunt',
     app_store:   'App Store',
     newswire:    'Newswire',
+    ctlogs:      'CT Logs',
   };
   return sources.split(',').map(s => map[s.trim()] || s.trim()).join(', ');
 }

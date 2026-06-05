@@ -176,6 +176,8 @@ export const scans = {
 
   newswire: (daysBack = 14, maxResults = 100) =>
     api.post('/scans/newswire', { days_back: daysBack, max_results: maxResults }),
+  ctlogs: (daysBack = 14, maxResults = 50) =>
+    api.post('/scans/ctlogs', { days_back: daysBack, max_results: maxResults }),
 };
 
 // ─── Scheduled Scans ──────────────────────────────────────────────────────────

@@ -29,8 +29,8 @@ export const BULLISH_THEMES = [
 ];
 
 const SCORE_BOOSTS = {
-  trademark: 15, delaware: 5, domain: 3, instagram: 8, shopify: 10, social: 2, manual: 5,
-  producthunt: 3, app_store: 3, newswire: 8,
+  trademark: 15, delaware: 10, domain: 3, instagram: 8, shopify: 10, social: 2, manual: 5,
+  producthunt: 3, app_store: 3, newswire: 8, domain_ct: 6,
 };
 
 // ─── Matching logic ────────────────────────────────────────────────────────────
@@ -69,25 +69,37 @@ function buildMatches(signals, filters) {
       const hasTrademark   = group.signals.some(s => s.signal_type === 'trademark');
       const hasDelaware    = group.signals.some(s => s.signal_type === 'delaware');
       const hasDomain      = group.signals.some(s => s.signal_type === 'domain');
+      const hasDomainCT    = group.signals.some(s => s.signal_type === 'domain_ct');
       const hasInstagram   = group.signals.some(s => s.signal_type === 'instagram');
       const hasShopify     = group.signals.some(s => s.signal_type === 'shopify');
       const hasSocial      = group.signals.some(s => s.signal_type === 'social');
       const hasProducthunt = group.signals.some(s => s.signal_type === 'producthunt');
       const hasAppStore    = group.signals.some(s => s.signal_type === 'app_store');
       const hasNewswire    = group.signals.some(s => s.signal_type === 'newswire');
-      const isStealth      = (hasTrademark || hasDelaware || hasDomain) && !hasNewswire;
+      const isStealth      = (hasTrademark || hasDelaware || hasDomain || hasDomainCT) && !hasNewswire;
       const hasPressHits   = group.signals.some(s => s.press_mentions?.length > 0);
+
+      // Conviction match — any signal in this group flagged a conviction founder
+      const convictionSig  = group.signals.find(s => s.conviction_match);
+      const hasConviction  = !!convictionSig;
 
       let score = group.signals.reduce((sum, s) => sum + (SCORE_BOOSTS[s.signal_type] || 5), 0);
       if (hasTrademark && (hasDelaware || hasDomain)) score += 20;
       if (hasDelaware && hasDomain && hasSocial)       score += 10;
       if (hasShopify && hasInstagram)                  score += 15;
 
+      // CT log + other signal combos — domain registered before press
+      if (hasDomainCT && (hasTrademark || hasDelaware)) score += 18;
+      if (hasDomainCT && hasNewswire)                   score += 10;
+
       // Just-out-of-stealth combo bonuses — highest-conviction 'just-before-VC' signals
       if ((hasTrademark || hasDelaware) && hasNewswire) score += 25;
       if (hasPressHits && (hasTrademark || hasDelaware)) score += 20;
       if (hasPressHits && hasNewswire)                   score += 12;
       if (hasPressHits && hasDomain)                     score += 8;
+
+      // Conviction founder match — auto-boost regardless of brand thesis
+      if (hasConviction) score += 20;
 
       // Domain status modifier — how real is the domain?
       const domainSig = group.signals.find(s => s.signal_type === 'domain');
@@ -105,8 +117,9 @@ function buildMatches(signals, filters) {
 
       return {
         ...group, score, enrichment,
-        hasTrademark, hasDelaware, hasDomain, hasInstagram, hasShopify, hasSocial,
+        hasTrademark, hasDelaware, hasDomain, hasDomainCT, hasInstagram, hasShopify, hasSocial,
         hasProducthunt, hasAppStore, hasNewswire, isStealth, hasPressHits,
+        hasConviction, convictionMatch: convictionSig?.conviction_match || null,
         latestSignal: new Date(Math.max(...group.signals.map(s => new Date(s.timestamp)))),
         primarySignalId: primarySignal?.id ?? null,
         team_notes: primarySignal?.team_notes || '',
@@ -140,11 +153,14 @@ function parseSignalsFromItems(allItems) {
           notes:       meta.notes || '',
           timestamp:      meta.timestamp || item.created_at,
           savedAt:        item.created_at,
-          enrichment:     meta.enrichment || null,
-          team_notes:     meta.team_notes || '',
-          fp:             meta.fp || '',
-          domain_status:  meta.domain_status || null,
-          press_mentions: meta.press_mentions || [],
+          enrichment:       meta.enrichment || null,
+          team_notes:       meta.team_notes || '',
+          fp:               meta.fp || '',
+          domain_status:    meta.domain_status || null,
+          press_mentions:   meta.press_mentions || [],
+          conviction_match: meta.conviction_match || null,
+          stealth_entity:   meta.stealth_entity || null,
+          resolved_owner:   meta.resolved_owner || null,
         }];
       }
     } catch (e) {}

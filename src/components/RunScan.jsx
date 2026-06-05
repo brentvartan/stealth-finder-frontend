@@ -164,25 +164,27 @@ function rawToSignals(results, type) {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const SCAN_TYPES = [
-  { value: 'full',         label: 'Full Scan — All Live Sources'   },
-  { value: 'trademark',    label: 'USPTO Trademarks Only'          },
-  { value: 'delaware',     label: 'Delaware + Form D Only'         },
-  { value: 'producthunt',  label: 'Product Hunt Launches Only'     },
-  { value: 'app_store',    label: 'App Store New Launches Only'    },
-  { value: 'newswire',     label: 'Newswire (PR + BusinessWire)'   },
-  { value: 'domain',       label: 'Domain Registrations Only'      },
+  { value: 'full',         label: 'Full Scan — All Live Sources'          },
+  { value: 'trademark',    label: 'USPTO Trademarks Only'                 },
+  { value: 'delaware',     label: 'Delaware + Form D Only'                },
+  { value: 'producthunt',  label: 'Product Hunt Launches Only'            },
+  { value: 'app_store',    label: 'App Store New Launches Only'           },
+  { value: 'newswire',     label: 'Newswire (PR + BusinessWire)'          },
+  { value: 'domain',       label: 'Domain Registrations Only'             },
+  { value: 'ctlogs',       label: 'CT Logs (New SSL Certs)'               },
 ];
 
 const SOURCES = [
-  { icon: Award,       label: 'USPTO Trademarks',    desc: 'Live — real filings from the last N days. Earliest brand signal before any public activity.',                                      live: true  },
-  { icon: Building2,   label: 'Delaware + Form D',   desc: 'Live — SEC Form D (Reg D exemption) + domain cross-reference. DE-incorporated and quietly raising.',                          live: true  },
-  { icon: Globe,       label: 'Domain Registration', desc: 'Live — auto cross-referenced for every Delaware hit. Matching .com registered recently = compound.',                          live: true  },
-  { icon: Rocket,      label: 'Product Hunt',        desc: 'Live — consumer product launches. Post-stealth but still early; use to validate or find new arrivals.',                       live: true  },
-  { icon: Smartphone,  label: 'App Store',           desc: 'Live — new consumer app launches via iTunes Search API. Traction validator + confluence signal.',                             live: true  },
-  { icon: Newspaper,   label: 'Newswire',            desc: 'Live — PR Newswire + BusinessWire RSS. Brands breaking stealth via press release: seed announces, launches, funding rounds.', live: true  },
-  { icon: Camera,      label: 'Instagram Handles',   desc: 'Consumer brands secure @handle before website',                                                                              live: false },
-  { icon: ShoppingBag, label: 'Shopify Stores',      desc: 'New DTC stores with 0 products = stealth',                                                                                  live: false },
-  { icon: Linkedin,    label: 'Social Media',        desc: 'Founders announcing stealth mode',                                                                                           live: false },
+  { icon: Award,       label: 'USPTO Trademarks',    desc: 'Live — real filings from the last N days. Earliest brand signal before any public activity.',                                                     live: true  },
+  { icon: Building2,   label: 'Delaware + Form D',   desc: 'Live — SEC Form D (Reg D exemption) + domain cross-reference. DE-incorporated and quietly raising. Form D = a legal promise to an investor.',    live: true  },
+  { icon: Globe,       label: 'Domain Registration', desc: 'Live — auto cross-referenced for every Delaware hit. Matching .com registered recently = compound.',                                              live: true  },
+  { icon: Globe,       label: 'CT Logs',             desc: 'Live — Certificate Transparency logs via crt.sh. New SSL certs on consumer-brand domains. Board (board.fun) was catchable 22 months early here.', live: true  },
+  { icon: Rocket,      label: 'Product Hunt',        desc: 'Live — consumer product launches. Post-stealth but still early; use to validate or find new arrivals.',                                           live: true  },
+  { icon: Smartphone,  label: 'App Store',           desc: 'Live — new consumer app launches via iTunes Search API. Traction validator + confluence signal.',                                                 live: true  },
+  { icon: Newspaper,   label: 'Newswire',            desc: 'Live — PR Newswire + BusinessWire RSS. Brands breaking stealth via press release: seed announces, launches, funding rounds.',                    live: true  },
+  { icon: Camera,      label: 'Instagram Handles',   desc: 'Consumer brands secure @handle before website',                                                                                                   live: false },
+  { icon: ShoppingBag, label: 'Shopify Stores',      desc: 'New DTC stores with 0 products = stealth',                                                                                                       live: false },
+  { icon: Linkedin,    label: 'Social Media',        desc: 'Founders announcing stealth mode',                                                                                                                live: false },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -290,7 +292,21 @@ export default function RunScan() {
         setStatus(s => ({
           ...s,
           message: `Newswire: ${nwFetched} press releases — ${nwNew} new, ${nwSkipped} already in database`,
-          progress: 90,
+          progress: 89,
+        }));
+      }
+
+      if (scanType === 'full' || scanType === 'ctlogs') {
+        setStatus(s => ({ ...s, message: 'Live: scanning Certificate Transparency logs for new consumer-brand domains...', progress: 91 }));
+        const ctResp = await scans.ctlogs(Math.min(daysBack, 14), 50);
+        const { fetched: ctFetched, new_saved: ctNew, skipped: ctSkipped, error: ctError } = ctResp.data;
+        if (ctError && !ctFetched) throw new Error(`CT Logs: ${ctError}`);
+        totalSaved   += ctNew;
+        totalSkipped += (ctSkipped || 0);
+        setStatus(s => ({
+          ...s,
+          message: `CT Logs: ${ctFetched} new domains — ${ctNew} new, ${ctSkipped} already in database`,
+          progress: 94,
         }));
       }
 

@@ -171,7 +171,8 @@ const SCAN_TYPES = [
   { value: 'app_store',    label: 'App Store New Launches Only'           },
   { value: 'newswire',     label: 'Newswire (PR + BusinessWire)'          },
   { value: 'domain',       label: 'Domain Registrations Only'             },
-  { value: 'ctlogs',       label: 'CT Logs (New SSL Certs)'               },
+  { value: 'ctlogs',        label: 'CT Logs (New SSL Certs)'               },
+  { value: 'press_stealth', label: 'Press Intel (Stealth Founder Articles)' },
 ];
 
 const SOURCES = [
@@ -182,6 +183,7 @@ const SOURCES = [
   { icon: Rocket,      label: 'Product Hunt',        desc: 'Live — consumer product launches. Post-stealth but still early; use to validate or find new arrivals.',                                           live: true  },
   { icon: Smartphone,  label: 'App Store',           desc: 'Live — new consumer app launches via iTunes Search API. Traction validator + confluence signal.',                                                 live: true  },
   { icon: Newspaper,   label: 'Newswire',            desc: 'Live — PR Newswire + BusinessWire RSS. Brands breaking stealth via press release: seed announces, launches, funding rounds.',                    live: true  },
+  { icon: Newspaper,   label: 'Press Intel',         desc: 'Live — TechCrunch, Modern Retail, Glossy, Beauty Independent + trade press. Journalist-written stealth coverage: "left BigCo to build," "quietly building" — catches founders 12-19 months before announcement.', live: true  },
   { icon: Camera,      label: 'Instagram Handles',   desc: 'Consumer brands secure @handle before website',                                                                                                   live: false },
   { icon: ShoppingBag, label: 'Shopify Stores',      desc: 'New DTC stores with 0 products = stealth',                                                                                                       live: false },
   { icon: Linkedin,    label: 'Social Media',        desc: 'Founders announcing stealth mode',                                                                                                                live: false },
@@ -306,7 +308,21 @@ export default function RunScan() {
         setStatus(s => ({
           ...s,
           message: `CT Logs: ${ctFetched} new domains — ${ctNew} new, ${ctSkipped} already in database`,
-          progress: 94,
+          progress: 93,
+        }));
+      }
+
+      if (scanType === 'full' || scanType === 'press_stealth') {
+        setStatus(s => ({ ...s, message: 'Live: scanning startup + trade press for stealth-founder articles...', progress: 95 }));
+        const psResp = await scans.pressStealth(Math.min(daysBack, 14), 50);
+        const { fetched: psFetched, new_saved: psNew, skipped: psSkipped, error: psError } = psResp.data;
+        if (psError && !psFetched) throw new Error(`Press Intel: ${psError}`);
+        totalSaved   += psNew;
+        totalSkipped += (psSkipped || 0);
+        setStatus(s => ({
+          ...s,
+          message: `Press Intel: ${psFetched} articles — ${psNew} new, ${psSkipped} already in database`,
+          progress: 97,
         }));
       }
 

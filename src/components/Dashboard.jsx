@@ -30,7 +30,7 @@ export const BULLISH_THEMES = [
 
 const SCORE_BOOSTS = {
   trademark: 15, delaware: 10, domain: 3, instagram: 8, shopify: 10, social: 2, manual: 5,
-  producthunt: 3, app_store: 3, newswire: 8, domain_ct: 6,
+  producthunt: 3, app_store: 3, newswire: 8, domain_ct: 6, press_stealth: 10,
 };
 
 // ─── Matching logic ────────────────────────────────────────────────────────────
@@ -75,8 +75,9 @@ function buildMatches(signals, filters) {
       const hasSocial      = group.signals.some(s => s.signal_type === 'social');
       const hasProducthunt = group.signals.some(s => s.signal_type === 'producthunt');
       const hasAppStore    = group.signals.some(s => s.signal_type === 'app_store');
-      const hasNewswire    = group.signals.some(s => s.signal_type === 'newswire');
-      const isStealth      = (hasTrademark || hasDelaware || hasDomain || hasDomainCT) && !hasNewswire;
+      const hasNewswire     = group.signals.some(s => s.signal_type === 'newswire');
+      const hasPressStealth = group.signals.some(s => s.signal_type === 'press_stealth');
+      const isStealth       = (hasTrademark || hasDelaware || hasDomain || hasDomainCT) && !hasNewswire && !hasPressStealth;
       const hasPressHits   = group.signals.some(s => s.press_mentions?.length > 0);
 
       // Conviction match — any signal in this group flagged a conviction founder
@@ -120,6 +121,7 @@ function buildMatches(signals, filters) {
         hasTrademark, hasDelaware, hasDomain, hasDomainCT, hasInstagram, hasShopify, hasSocial,
         hasProducthunt, hasAppStore, hasNewswire, isStealth, hasPressHits,
         hasConviction, convictionMatch: convictionSig?.conviction_match || null,
+        hasPressStealth,
         latestSignal: new Date(Math.max(...group.signals.map(s => new Date(s.timestamp)))),
         primarySignalId: primarySignal?.id ?? null,
         team_notes: primarySignal?.team_notes || '',

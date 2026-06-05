@@ -11,7 +11,8 @@ const SCAN_TYPES = [
   { value: 'producthunt', label: 'Product Hunt'      },
   { value: 'app_store',   label: 'App Store'         },
   { value: 'newswire',    label: 'Newswire'          },
-  { value: 'ctlogs',      label: 'CT Logs'           },
+  { value: 'ctlogs',        label: 'CT Logs'           },
+  { value: 'press_stealth', label: 'Press Intel'       },
 ];
 
 // ─── Source info ──────────────────────────────────────────────────────────────
@@ -45,6 +46,10 @@ const SCAN_SOURCE_INFO = {
     sources: ['crt.sh (Certificate Transparency logs)', 'Let\'s Encrypt + DigiCert issuances'],
     description: 'New SSL certs on consumer-brand domains. Catches brand registrations 6–24 months before press coverage (e.g. Board was catchable 22 months early).',
   },
+  press_stealth: {
+    sources: ['TechCrunch', 'Crunchbase News', 'Modern Retail', 'Glossy', 'Beauty Independent', 'Food Dive', 'VentureBeat'],
+    description: 'Journalist-written articles with stealth-founder language. Pattern-keyed: "quietly building," "left BigCo to build," "unannounced startup." Catches the Board/Brynn Putnam type 12-19 months before announcement.',
+  },
 };
 
 const inputClass  = 'w-full border border-neutral-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-black';
@@ -60,7 +65,8 @@ function formatSourcesRan(sources) {
     producthunt: 'Product Hunt',
     app_store:   'App Store',
     newswire:    'Newswire',
-    ctlogs:      'CT Logs',
+    ctlogs:        'CT Logs',
+    press_stealth: 'Press Intel',
   };
   return sources.split(',').map(s => map[s.trim()] || s.trim()).join(', ');
 }

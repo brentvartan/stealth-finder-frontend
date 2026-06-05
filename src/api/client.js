@@ -177,9 +177,9 @@ export const scans = {
   newswire: (daysBack = 14, maxResults = 100) =>
     api.post('/scans/newswire', { days_back: daysBack, max_results: maxResults }),
   ctlogs: (daysBack = 14, maxResults = 50) =>
-    api.post('/scans/ctlogs', { days_back: daysBack, max_results: maxResults }),
+    api.post('/scans/ctlogs', { days_back: daysBack, max_results: maxResults }, { timeout: 120000 }),
   pressStealth: (daysBack = 14, maxResults = 50) =>
-    api.post('/scans/press-stealth', { days_back: daysBack, max_results: maxResults }),
+    api.post('/scans/press-stealth', { days_back: daysBack, max_results: maxResults }, { timeout: 120000 }),
 };
 
 // ─── Scheduled Scans ──────────────────────────────────────────────────────────

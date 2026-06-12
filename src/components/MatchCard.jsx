@@ -568,6 +568,17 @@ export default function MatchCard({ match, onUpdate }) {
                     ⚡ CONVICTION
                   </span>
                 )}
+                {match.hasExitAlumni && !match.hasConviction && (
+                  <span
+                    className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[10px] text-white"
+                    style={{ backgroundColor: '#B45309' }}
+                    title={match.exitAlumniMatch
+                      ? `Exit alumni: ${match.exitAlumniMatch.name} — ${match.exitAlumniMatch.reason}`
+                      : 'Early operator from a notable consumer brand exit'}
+                  >
+                    🏆 ALUMNI
+                  </span>
+                )}
                 {match.hasPressStealth && (
                   <span
                     className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[10px] text-white"

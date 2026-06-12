@@ -84,6 +84,10 @@ function buildMatches(signals, filters) {
       const convictionSig  = group.signals.find(s => s.conviction_match);
       const hasConviction  = !!convictionSig;
 
+      // Exit alumni match — #2–4 operator from a notable acquired brand
+      const alumniSig     = group.signals.find(s => s.exit_alumni_match);
+      const hasExitAlumni = !!alumniSig;
+
       let score = group.signals.reduce((sum, s) => sum + (SCORE_BOOSTS[s.signal_type] || 5), 0);
       if (hasTrademark && (hasDelaware || hasDomain)) score += 20;
       if (hasDelaware && hasDomain && hasSocial)       score += 10;
@@ -101,6 +105,9 @@ function buildMatches(signals, filters) {
 
       // Conviction founder match — auto-boost regardless of brand thesis
       if (hasConviction) score += 20;
+
+      // Exit alumni match — lighter boost, worth surfacing
+      if (hasExitAlumni && !hasConviction) score += 8;
 
       // Domain status modifier — how real is the domain?
       const domainSig = group.signals.find(s => s.signal_type === 'domain');
@@ -121,6 +128,7 @@ function buildMatches(signals, filters) {
         hasTrademark, hasDelaware, hasDomain, hasDomainCT, hasInstagram, hasShopify, hasSocial,
         hasProducthunt, hasAppStore, hasNewswire, isStealth, hasPressHits,
         hasConviction, convictionMatch: convictionSig?.conviction_match || null,
+        hasExitAlumni, exitAlumniMatch: alumniSig?.exit_alumni_match || null,
         hasPressStealth,
         latestSignal: new Date(Math.max(...group.signals.map(s => new Date(s.timestamp)))),
         primarySignalId: primarySignal?.id ?? null,
@@ -160,9 +168,11 @@ function parseSignalsFromItems(allItems) {
           fp:               meta.fp || '',
           domain_status:    meta.domain_status || null,
           press_mentions:   meta.press_mentions || [],
-          conviction_match: meta.conviction_match || null,
-          stealth_entity:   meta.stealth_entity || null,
-          resolved_owner:   meta.resolved_owner || null,
+          conviction_match:  meta.conviction_match || null,
+          exit_alumni_match: meta.exit_alumni_match || null,
+          related_persons:   meta.related_persons || [],
+          stealth_entity:    meta.stealth_entity || null,
+          resolved_owner:    meta.resolved_owner || null,
         }];
       }
     } catch (e) {}

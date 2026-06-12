@@ -215,7 +215,7 @@ export default function Dashboard() {
   const [tierFilter, setTierFilter] = useState(null); // null | 'hot' | 'warm' | 'cold'
   const [filters,    setFilters]    = useState({
     minSignals: 1,
-    dateRange:  180,
+    dateRange:  365,
     categories: CONSUMER_CATEGORIES,
     search:     '',
     minScore:   0,
@@ -435,6 +435,7 @@ export default function Dashboard() {
                 <option value="60">Last 60 days</option>
                 <option value="90">Last 90 days</option>
                 <option value="180">Last 180 days</option>
+                <option value="365">Last 12 months</option>
               </select>
             </label>
           </div>

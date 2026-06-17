@@ -152,6 +152,15 @@ export const admin = {
 
   bulkImportWatchlist: (brands) =>
     api.post('/admin/watchlist/bulk-import', { brands }, { timeout: 30000 }),
+
+  importFounderProfiles: (profiles) =>
+    api.post('/admin/founder-profiles/import', { profiles }, { timeout: 60000 }),
+
+  getFounderProfiles: (params = {}) =>
+    api.get('/admin/founder-profiles', { params }),
+
+  getFounderProfilesSummary: () =>
+    api.get('/admin/founder-profiles/summary'),
 };
 
 // ─── Enrichment (Bullish AI analysis via Claude) ──────────────────────────────

@@ -14,6 +14,7 @@ import Navigation from './components/Navigation';
 import Chat from './components/Chat';
 import Settings from './components/Settings';
 import SignalDetail from './components/SignalDetail';
+import FounderRadar from './components/FounderRadar';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './App.css';
 
@@ -132,6 +133,15 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <SignalDetail />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/founder-radar"
+            element={
+              <ProtectedRoute>
+                <FounderRadar />
               </ProtectedRoute>
             }
           />

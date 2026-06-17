@@ -619,6 +619,194 @@ function SpendTab() {
   );
 }
 
+// ─── Inbox Audit section (inside ToolsTab) ───────────────────────────────────
+
+function InboxAuditSection() {
+  const [auditData,    setAuditData]    = useState(null);
+  const [loading,      setLoading]      = useState(false);
+  const [running,      setRunning]      = useState(false);
+  const [msg,          setMsg]          = useState('');
+  const [brandInput,   setBrandInput]   = useState('');
+  const [showInput,    setShowInput]    = useState(false);
+
+  const loadLatest = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await adminApi.getLatestInboxAudit();
+      setAuditData(res.data);
+    } catch (err) {
+      if (err.response?.status === 404) {
+        setAuditData(null);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadLatest(); }, [loadLatest]);
+
+  const handleRunAudit = async () => {
+    const lines = brandInput.split('\n').map(s => s.trim()).filter(Boolean);
+    if (!lines.length) {
+      setMsg('✗ Paste at least one brand name.');
+      return;
+    }
+    setRunning(true);
+    setMsg('');
+    try {
+      const res = await adminApi.runInboxAudit(lines);
+      setAuditData(res.data);
+      setShowInput(false);
+      setBrandInput('');
+      setMsg(`✓ Audit complete — ${res.data.total_checked} brands checked.`);
+    } catch (err) {
+      setMsg('✗ ' + (err.response?.data?.error || 'Audit failed'));
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const coverageColor = auditData
+    ? auditData.coverage_pct >= 80 ? '#16a34a'
+      : auditData.coverage_pct >= 50 ? '#d97706'
+      : '#dc2626'
+    : '#6b7280';
+
+  return (
+    <div className="bg-white rounded-lg p-6" style={{ border: '1px solid #E5E5E0' }}>
+      <SectionHeader
+        icon={Mail}
+        title="Deals Inbox Audit"
+        subtitle="Check which consumer brands from your Gmail Deals inbox are NOT in the signal database. Runs automatically on the 1st of each month via scheduled task."
+      />
+
+      {/* Latest result summary */}
+      {loading && <p className="text-sm text-neutral-400">Loading last audit…</p>}
+
+      {!loading && auditData && (
+        <div className="mb-5">
+          <div className="grid grid-cols-4 gap-3 mb-4">
+            <div className="rounded p-3 text-center" style={{ background: '#F7F7F5', border: '1px solid #E5E5E0' }}>
+              <div className="text-xl font-bold text-black">{auditData.total_checked}</div>
+              <div className="text-xs text-neutral-400 mt-0.5">Brands Checked</div>
+            </div>
+            <div className="rounded p-3 text-center" style={{ background: '#F7F7F5', border: '1px solid #E5E5E0' }}>
+              <div className="text-xl font-bold" style={{ color: '#16a34a' }}>{auditData.found_count}</div>
+              <div className="text-xs text-neutral-400 mt-0.5">Found in DB</div>
+            </div>
+            <div className="rounded p-3 text-center" style={{ background: '#F7F7F5', border: '1px solid #E5E5E0' }}>
+              <div className="text-xl font-bold" style={{ color: '#dc2626' }}>{auditData.missing_count}</div>
+              <div className="text-xs text-neutral-400 mt-0.5">Missed by Scanner</div>
+            </div>
+            <div className="rounded p-3 text-center" style={{ background: '#F7F7F5', border: '1px solid #E5E5E0' }}>
+              <div className="text-xl font-bold" style={{ color: coverageColor }}>{auditData.coverage_pct}%</div>
+              <div className="text-xs text-neutral-400 mt-0.5">Coverage</div>
+            </div>
+          </div>
+
+          {auditData.missing?.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-neutral-400 uppercase tracking-wider mb-2">Missed Brands</p>
+              <div className="rounded overflow-hidden" style={{ border: '1px solid #FEE2E2' }}>
+                {auditData.missing.map((b, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between px-3 py-2 text-sm"
+                    style={{ background: i % 2 === 0 ? '#FFF7F7' : '#FFFFFF', borderBottom: i < auditData.missing.length - 1 ? '1px solid #FEE2E2' : 'none' }}
+                  >
+                    <span className="font-medium text-black">{b.name}</span>
+                    <span className="text-xs text-neutral-400">not in signal DB</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {auditData.found?.length > 0 && (
+            <details className="mt-3">
+              <summary className="text-xs text-neutral-400 cursor-pointer hover:text-neutral-600">
+                Show {auditData.found.length} brand{auditData.found.length !== 1 ? 's' : ''} found in DB
+              </summary>
+              <div className="mt-2 rounded overflow-hidden" style={{ border: '1px solid #DCFCE7' }}>
+                {auditData.found.map((b, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center px-3 py-2 text-sm"
+                    style={{ background: i % 2 === 0 ? '#F0FDF4' : '#FFFFFF', borderBottom: i < auditData.found.length - 1 ? '1px solid #DCFCE7' : 'none' }}
+                  >
+                    <span className="text-green-700 mr-2">✓</span>
+                    <span className="text-black">{b.name}</span>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+
+          <p className="text-xs text-neutral-300 mt-3">
+            Last run: {new Date(auditData.run_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          </p>
+        </div>
+      )}
+
+      {!loading && !auditData && (
+        <p className="text-sm text-neutral-400 mb-4">No audit has been run yet. Paste brand names below to run your first check.</p>
+      )}
+
+      {/* Manual run controls */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <button
+          onClick={() => setShowInput(v => !v)}
+          className="flex items-center gap-2 px-4 py-2.5 text-sm font-display font-semibold uppercase tracking-wider text-white rounded transition-all"
+          style={{ backgroundColor: '#052EF0' }}
+        >
+          <Mail className="w-3.5 h-3.5" />
+          {showInput ? 'Cancel' : 'Run Manual Audit'}
+        </button>
+        {auditData && (
+          <button
+            onClick={loadLatest}
+            disabled={loading}
+            className="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-black transition-colors"
+          >
+            <RefreshCw className="w-3 h-3" /> Refresh
+          </button>
+        )}
+      </div>
+
+      {showInput && (
+        <div className="mt-4">
+          <label className={labelClass}>Brand Names (one per line)</label>
+          <textarea
+            value={brandInput}
+            onChange={e => setBrandInput(e.target.value)}
+            placeholder={"Filament\nStripes Beauty\nMosh\nCalifornia Naturals\nExperiment Beauty"}
+            rows={8}
+            className="w-full border border-neutral-200 rounded px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-[#052EF0] transition-colors resize-y"
+          />
+          <p className="text-xs text-neutral-400 mt-1.5 mb-3">
+            Paste brand names from your Deals inbox — one per line. The audit checks each against the signal database.
+          </p>
+          <button
+            onClick={handleRunAudit}
+            disabled={running || !brandInput.trim()}
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-display font-semibold uppercase tracking-wider text-white rounded transition-all disabled:opacity-50"
+            style={{ backgroundColor: running ? '#999' : '#020A52' }}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${running ? 'animate-spin' : ''}`} />
+            {running ? 'Running…' : 'Run Audit'}
+          </button>
+        </div>
+      )}
+
+      {msg && (
+        <p className={`text-sm font-medium mt-3 ${msg.startsWith('✓') ? 'text-green-600' : 'text-red-500'}`}>
+          {msg}
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ─── Tools tab ───────────────────────────────────────────────────────────────
 
 function ToolsTab() {
@@ -717,6 +905,9 @@ function ToolsTab() {
           badges on domain signal cards.
         </p>
       </div>
+
+      {/* Inbox Audit */}
+      <InboxAuditSection />
 
     </div>
   );

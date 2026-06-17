@@ -143,6 +143,12 @@ export const admin = {
 
   checkAllDomains: () =>
     api.post('/admin/check-all-domains', {}, { timeout: 10000 }),
+
+  runInboxAudit: (brandNames) =>
+    api.post('/admin/inbox-audit/run', { brand_names: brandNames }, { timeout: 30000 }),
+
+  getLatestInboxAudit: () =>
+    api.get('/admin/inbox-audit/latest'),
 };
 
 // ─── Enrichment (Bullish AI analysis via Claude) ──────────────────────────────

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { admin as adminApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { ExternalLink, Upload, Search, RefreshCw } from 'lucide-react';
+import { ExternalLink, Upload, Search, RefreshCw, Linkedin, ChevronDown, ChevronUp, Save, CheckCheck } from 'lucide-react';
 
 // ─── Tier badge config ────────────────────────────────────────────────────────
 
@@ -69,72 +69,197 @@ function StatusBadge({ status, knownBrand }) {
   );
 }
 
+// ─── Outreach stage config ────────────────────────────────────────────────────
+
+const OUTREACH_STAGES = [
+  { value: 'cold',            label: 'Cold',           color: '#9CA3AF', bg: '#F9FAFB' },
+  { value: 'email_sent',      label: 'Email Sent',     color: '#052EF0', bg: '#EFF6FF' },
+  { value: 'connected',       label: 'Connected',      color: '#7C3AED', bg: '#F5F3FF' },
+  { value: 'had_call',        label: 'Had a Call',     color: '#D97706', bg: '#FFFBEB' },
+  { value: 'in_their_corner', label: 'In Their Corner',color: '#16a34a', bg: '#F0FDF4' },
+];
+
 // ─── Profile card ─────────────────────────────────────────────────────────────
 
-function ProfileCard({ profile }) {
+function ProfileCard({ profile, onUpdate }) {
+  const [outreachStatus, setOutreachStatus] = useState(profile.outreach_status || 'cold');
+  const [notes,       setNotes]       = useState(profile.outreach_notes || '');
+  const [nextAction,  setNextAction]  = useState(profile.next_action || '');
+  const [lastContact, setLastContact] = useState(profile.last_contact || '');
+  const [saving,      setSaving]      = useState(false);
+  const [saved,       setSaved]       = useState(false);
+  const [crmOpen,     setCrmOpen]     = useState(false);
+
   const isBuilding = profile.status === 'building';
-  const bioSnippet = profile.bio ? profile.bio.slice(0, 80) + (profile.bio.length > 80 ? '…' : '') : '';
+  const currentStage = OUTREACH_STAGES.find(s => s.value === outreachStatus) || OUTREACH_STAGES[0];
+  const isDirty = notes !== (profile.outreach_notes || '') ||
+                  nextAction !== (profile.next_action || '') ||
+                  lastContact !== (profile.last_contact || '');
+
+  const linkedinSearch = `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(profile.name + (profile.known_brand ? ' ' + profile.known_brand : ''))}`;
+
+  const handleStatusChange = async (newStatus) => {
+    setOutreachStatus(newStatus);
+    try {
+      await adminApi.updateFounderProfile(profile.id, { outreach_status: newStatus });
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      console.error('Status update failed:', err);
+    }
+  };
+
+  const handleSaveCRM = async () => {
+    setSaving(true);
+    try {
+      await adminApi.updateFounderProfile(profile.id, {
+        outreach_notes: notes,
+        last_contact:   lastContact || null,
+        next_action:    nextAction,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      console.error('CRM save failed:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div
-      className="bg-white rounded-lg p-5 flex flex-col gap-2 border border-neutral-200 transition-shadow hover:shadow-md"
+      className="bg-white rounded-lg border border-neutral-200 transition-shadow hover:shadow-md overflow-hidden flex flex-col"
       style={isBuilding ? { borderLeftWidth: 3, borderLeftColor: '#052EF0' } : {}}
     >
-      {/* Name + tier */}
-      <div className="flex items-start justify-between gap-2">
-        <span className="font-bold text-base leading-tight" style={{ color: '#020A52' }}>
-          {profile.name}
-        </span>
-        <TierBadge tier={profile.tier} />
-      </div>
-
-      {/* Status */}
-      <StatusBadge status={profile.status} knownBrand={profile.known_brand} />
-
-      {/* Known brand */}
-      {profile.known_brand && (
-        <div className="text-xs text-neutral-400 font-medium">
-          formerly <span className="text-neutral-600">{profile.known_brand}</span>
+      {/* ── Profile section ── */}
+      <div className="p-4 flex flex-col gap-2 flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <span className="font-bold text-base leading-tight" style={{ color: '#020A52' }}>
+            {profile.name}
+          </span>
+          <TierBadge tier={profile.tier} />
         </div>
-      )}
 
-      {/* Current company (if building/advisory) */}
-      {profile.current_company && profile.status !== 'still_at_brand' && (
-        <div className="text-sm font-semibold" style={{ color: '#020A52' }}>
-          {profile.current_company}
-        </div>
-      )}
-
-      {/* Bio snippet */}
-      {bioSnippet && (
-        <div className="text-xs text-neutral-500 leading-relaxed">{bioSnippet}</div>
-      )}
-
-      {/* Footer */}
-      <div className="flex items-center justify-between mt-1 pt-2 border-t border-neutral-100">
-        <div className="flex items-center gap-2">
-          {profile.x_handle && (
-            <span className="text-[10px] text-neutral-400 font-mono">@{profile.x_handle}</span>
-          )}
-          {profile.follower_count != null && (
-            <span className="text-[10px] text-neutral-400">
-              {profile.follower_count >= 1000
-                ? `${(profile.follower_count / 1000).toFixed(1)}k`
-                : profile.follower_count}{' '}
-              followers
+        <div className="flex items-center gap-2 flex-wrap">
+          <StatusBadge status={profile.status} knownBrand={profile.known_brand} />
+          {profile.known_brand && (
+            <span className="text-xs text-neutral-400">
+              ex-<span className="text-neutral-600 font-medium">{profile.known_brand}</span>
             </span>
           )}
         </div>
-        {profile.profile_url && (
+
+        {profile.current_company && profile.status !== 'still_at_brand' && (
+          <div className="text-sm font-semibold" style={{ color: '#020A52' }}>
+            {profile.current_company}
+          </div>
+        )}
+
+        {profile.bio && (
+          <div className="text-xs text-neutral-500 leading-relaxed">
+            {profile.bio.slice(0, 90)}{profile.bio.length > 90 ? '…' : ''}
+          </div>
+        )}
+
+        <div className="flex items-center justify-between pt-1.5 mt-auto border-t border-neutral-100">
+          <div className="flex items-center gap-2">
+            {profile.follower_count != null && (
+              <span className="text-[10px] text-neutral-400">
+                {profile.follower_count >= 1000
+                  ? `${(profile.follower_count / 1000).toFixed(1)}k`
+                  : profile.follower_count} followers
+              </span>
+            )}
+          </div>
           <a
-            href={profile.profile_url}
+            href={linkedinSearch}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 text-[10px] text-neutral-400 hover:text-[#052EF0] transition-colors"
+            className="flex items-center gap-1 text-[10px] font-medium transition-colors"
+            style={{ color: '#0077B5' }}
           >
-            <ExternalLink className="w-3 h-3" />
-            NinjaPear
+            <Linkedin className="w-3 h-3" />
+            LinkedIn
           </a>
+        </div>
+      </div>
+
+      {/* ── Relationship CRM ── */}
+      <div className="border-t border-neutral-100" style={{ backgroundColor: '#FAFAF8' }}>
+
+        {/* Stage row — always visible */}
+        <div className="px-4 py-2.5 flex items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-1 flex-1">
+            {OUTREACH_STAGES.map(stage => (
+              <button
+                key={stage.value}
+                onClick={() => handleStatusChange(stage.value)}
+                className="px-2 py-0.5 rounded-full text-[9px] font-bold transition-all border leading-none"
+                style={outreachStatus === stage.value
+                  ? { backgroundColor: stage.color, color: '#fff', borderColor: stage.color }
+                  : { backgroundColor: '#fff', color: '#9CA3AF', borderColor: '#E5E7EB' }
+                }
+              >
+                {stage.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setCrmOpen(o => !o)}
+            className="text-neutral-400 hover:text-neutral-600 transition-colors shrink-0"
+            title={crmOpen ? 'Close notes' : 'Add notes / next action'}
+          >
+            {crmOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+
+        {/* Expandable notes + next action */}
+        {crmOpen && (
+          <div className="px-4 pb-3 space-y-2 border-t border-neutral-100 pt-2.5">
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Notes — intro via, context, last conversation..."
+              className="w-full text-xs text-neutral-600 bg-white border border-neutral-200 rounded px-2.5 py-2 resize-none focus:outline-none focus:border-[#052EF0] transition-colors placeholder-neutral-300 leading-relaxed"
+              rows={notes ? Math.max(2, notes.split('\n').length + 1) : 2}
+            />
+            <div className="flex gap-2">
+              <div className="flex flex-col gap-0.5 flex-1">
+                <label className="text-[9px] font-bold uppercase tracking-wider text-neutral-400">Last Contact</label>
+                <input
+                  type="date"
+                  value={lastContact}
+                  onChange={e => setLastContact(e.target.value)}
+                  className="text-xs border border-neutral-200 rounded px-2 py-1.5 focus:outline-none focus:border-[#052EF0] transition-colors text-neutral-600 w-full"
+                />
+              </div>
+              <div className="flex flex-col gap-0.5 flex-1">
+                <label className="text-[9px] font-bold uppercase tracking-wider text-neutral-400">Next Action</label>
+                <input
+                  type="text"
+                  value={nextAction}
+                  onChange={e => setNextAction(e.target.value)}
+                  placeholder="e.g. Check in Q3..."
+                  className="text-xs border border-neutral-200 rounded px-2 py-1.5 focus:outline-none focus:border-[#052EF0] transition-colors placeholder-neutral-300 text-neutral-600 w-full"
+                />
+              </div>
+            </div>
+            {isDirty && (
+              <button
+                onClick={handleSaveCRM}
+                disabled={saving}
+                className="w-full py-1.5 text-xs font-bold rounded flex items-center justify-center gap-1.5 transition-colors text-white"
+                style={{ backgroundColor: saving ? '#93C5FD' : '#052EF0' }}
+              >
+                {saved
+                  ? <><CheckCheck className="w-3 h-3" /> Saved</>
+                  : saving
+                    ? 'Saving...'
+                    : <><Save className="w-3 h-3" /> Save Notes</>
+                }
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -266,31 +391,42 @@ const TIER_OPTIONS = [
 ];
 
 const STATUS_OPTIONS = [
-  { value: null,          label: 'ALL' },
-  { value: 'building',    label: 'BUILDING' },
-  { value: 'advisory',    label: 'ADVISORY' },
-  { value: 'quiet',       label: 'QUIET' },
+  { value: null,             label: 'ALL' },
+  { value: 'building',       label: 'BUILDING' },
+  { value: 'advisory',       label: 'ADVISORY' },
+  { value: 'quiet',          label: 'QUIET' },
   { value: 'still_at_brand', label: 'MONITORING' },
+];
+
+const OUTREACH_OPTIONS = [
+  { value: null,              label: 'ALL' },
+  { value: 'cold',            label: 'COLD' },
+  { value: 'email_sent',      label: 'EMAIL SENT' },
+  { value: 'connected',       label: 'CONNECTED' },
+  { value: 'had_call',        label: 'HAD A CALL' },
+  { value: 'in_their_corner', label: 'IN THEIR CORNER' },
 ];
 
 export default function FounderRadar() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
-  const [profiles, setProfiles]         = useState([]);
-  const [summary, setSummary]           = useState(null);
-  const [loading, setLoading]           = useState(true);
-  const [tierFilter, setTierFilter]     = useState(null);
-  const [statusFilter, setStatusFilter] = useState(null);
-  const [searchQ, setSearchQ]           = useState('');
+  const [profiles,       setProfiles]       = useState([]);
+  const [summary,        setSummary]        = useState(null);
+  const [loading,        setLoading]        = useState(true);
+  const [tierFilter,     setTierFilter]     = useState(null);
+  const [statusFilter,   setStatusFilter]   = useState(null);
+  const [outreachFilter, setOutreachFilter] = useState(null);
+  const [searchQ,        setSearchQ]        = useState('');
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
       const params = {};
-      if (tierFilter)   params.tier   = tierFilter;
-      if (statusFilter) params.status = statusFilter;
-      if (searchQ.trim()) params.q    = searchQ.trim();
+      if (tierFilter)     params.tier             = tierFilter;
+      if (statusFilter)   params.status           = statusFilter;
+      if (outreachFilter) params.outreach_status  = outreachFilter;
+      if (searchQ.trim()) params.q                = searchQ.trim();
 
       const [profilesRes, summaryRes] = await Promise.all([
         adminApi.getFounderProfiles(params),
@@ -303,19 +439,15 @@ export default function FounderRadar() {
     } finally {
       setLoading(false);
     }
-  }, [tierFilter, statusFilter, searchQ]);
+  }, [tierFilter, statusFilter, outreachFilter, searchQ]);
 
-  // Initial load (no filters)
   useEffect(() => {
     fetchAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tierFilter, statusFilter]);
+  }, [tierFilter, statusFilter, outreachFilter]);
 
-  // Debounce search
   useEffect(() => {
-    const t = setTimeout(() => {
-      fetchAll();
-    }, 350);
+    const t = setTimeout(() => fetchAll(), 350);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQ]);
@@ -349,65 +481,55 @@ export default function FounderRadar() {
         </div>
       )}
 
-      {/* ── Stat cards ── */}
-      <div className="flex flex-wrap gap-3 mb-6">
-        <StatCard
-          icon="🔥"
-          label="Building"
-          count={summary?.building}
-          borderColor="#052EF0"
-          active={statusFilter === 'building'}
-          onClick={() => handleStatCardClick('building')}
-        />
-        <StatCard
-          icon="★"
-          label="Advisory"
-          count={summary?.advisory}
-          borderColor="#B45309"
-          active={statusFilter === 'advisory'}
-          onClick={() => handleStatCardClick('advisory')}
-        />
-        <StatCard
-          icon="○"
-          label="Quiet"
-          count={summary?.quiet}
-          borderColor="#9CA3AF"
-          active={statusFilter === 'quiet'}
-          onClick={() => handleStatCardClick('quiet')}
-        />
-        <StatCard
-          icon="👁"
-          label="Monitoring"
-          count={summary?.still_at_brand}
-          borderColor="#0F766E"
-          active={statusFilter === 'still_at_brand'}
-          onClick={() => handleStatCardClick('still_at_brand')}
-        />
+      {/* ── Signal stat cards ── */}
+      <div className="flex flex-wrap gap-3 mb-4">
+        <StatCard icon="🔥" label="Building"   count={summary?.building}      borderColor="#052EF0" active={statusFilter === 'building'}       onClick={() => handleStatCardClick('building')} />
+        <StatCard icon="★"  label="Advisory"   count={summary?.advisory}      borderColor="#B45309" active={statusFilter === 'advisory'}       onClick={() => handleStatCardClick('advisory')} />
+        <StatCard icon="○"  label="Quiet"      count={summary?.quiet}         borderColor="#9CA3AF" active={statusFilter === 'quiet'}          onClick={() => handleStatCardClick('quiet')} />
+        <StatCard icon="👁" label="Monitoring" count={summary?.still_at_brand} borderColor="#0F766E" active={statusFilter === 'still_at_brand'} onClick={() => handleStatCardClick('still_at_brand')} />
+      </div>
+
+      {/* ── Outreach pipeline stat cards ── */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {[
+          { value: 'cold',            label: 'Cold',            icon: '○', color: '#9CA3AF' },
+          { value: 'email_sent',      label: 'Email Sent',      icon: '✉', color: '#052EF0' },
+          { value: 'connected',       label: 'Connected',       icon: '⚡', color: '#7C3AED' },
+          { value: 'had_call',        label: 'Had a Call',      icon: '☎', color: '#D97706' },
+          { value: 'in_their_corner', label: 'In Their Corner', icon: '★', color: '#16a34a' },
+        ].map(s => {
+          const count = summary?.outreach?.[s.value] ?? '—';
+          const isActive = outreachFilter === s.value;
+          return (
+            <button
+              key={s.value}
+              onClick={() => setOutreachFilter(prev => prev === s.value ? null : s.value)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border transition-all text-left"
+              style={{
+                borderColor: isActive ? s.color : '#E5E7EB',
+                boxShadow: isActive ? `0 0 0 2px ${s.color}33` : 'none',
+              }}
+            >
+              <span className="text-sm">{s.icon}</span>
+              <div>
+                <div className="text-sm font-bold leading-none" style={{ color: isActive ? s.color : '#020A52' }}>{count}</div>
+                <div className="text-[9px] font-medium text-neutral-400 uppercase tracking-wide mt-0.5">{s.label}</div>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {/* ── Filter bar ── */}
       <div className="bg-white rounded-lg p-4 mb-6 border border-neutral-200 flex flex-col gap-3">
-        {/* Tier pills */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider shrink-0 w-14">Tier</span>
-          <Pills
-            options={TIER_OPTIONS}
-            active={tierFilter}
-            onChange={setTierFilter}
-          />
+          <Pills options={TIER_OPTIONS} active={tierFilter} onChange={setTierFilter} />
         </div>
-
-        {/* Status pills */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider shrink-0 w-14">Status</span>
-          <Pills
-            options={STATUS_OPTIONS}
-            active={statusFilter}
-            onChange={setStatusFilter}
-          />
+          <Pills options={STATUS_OPTIONS} active={statusFilter} onChange={setStatusFilter} />
         </div>
-
-        {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
           <input
@@ -453,7 +575,7 @@ export default function FounderRadar() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {profiles.map(fp => (
-              <ProfileCard key={fp.id} profile={fp} />
+              <ProfileCard key={fp.id} profile={fp} onUpdate={fetchAll} />
             ))}
           </div>
         </>

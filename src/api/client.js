@@ -161,6 +161,9 @@ export const admin = {
 
   getFounderProfilesSummary: () =>
     api.get('/admin/founder-profiles/summary'),
+
+  updateFounderProfile: (id, data) =>
+    api.patch(`/admin/founder-profiles/${id}`, data),
 };
 
 // ─── Enrichment (Bullish AI analysis via Claude) ──────────────────────────────

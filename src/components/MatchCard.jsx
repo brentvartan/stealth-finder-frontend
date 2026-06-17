@@ -54,7 +54,13 @@ function FounderPanel({ founder, brandName, founderScore }) {
     ? `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(founder.name + ' ' + brandName)}`
     : `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(brandName + ' founder')}`;
 
-  const MINI_SIGNAL_MAXES = { chip_on_shoulder: 30, category_proximity: 25, magnetic_signal: 20, pedigree: 15, thesis_clarity: 10 };
+  const SIGNAL_CRITERIA = [
+    { key: 'chip_on_shoulder',   max: 30, label: 'Chip on Shoulder'   },
+    { key: 'category_proximity', max: 25, label: 'Category Proximity' },
+    { key: 'magnetic_signal',    max: 20, label: 'Magnetic Signal'    },
+    { key: 'pedigree',           max: 15, label: 'Pedigree'           },
+    { key: 'thesis_clarity',     max: 10, label: 'Thesis Clarity'     },
+  ];
 
   return (
     <div className="rounded-lg p-4 space-y-2.5" style={{ backgroundColor: '#fff', border: '1px solid #E5E5E0' }}>
@@ -74,37 +80,57 @@ function FounderPanel({ founder, brandName, founderScore }) {
         </a>
       </div>
 
-      {/* Founder score block */}
+      {/* Founder score block + full criteria breakdown */}
       {tierCfg && founderScore?.breakdown && (
         <div
-          className="rounded-lg px-3 py-2.5 flex items-center justify-between gap-3"
+          className="rounded-lg p-3 space-y-3"
           style={{ backgroundColor: tierCfg.bg, border: `1px solid ${tierCfg.color}22` }}
         >
+          {/* Total score header */}
           <div className="flex items-center gap-2">
             <User className="w-4 h-4 shrink-0" style={{ color: tierCfg.color }} />
-            <div>
-              <span className="text-base font-display font-bold leading-none" style={{ color: tierCfg.color }}>
-                {founderScore.total}
-              </span>
-              <span className="text-[10px] font-medium ml-1 opacity-70" style={{ color: tierCfg.color }}>/100</span>
-              <p className="text-[10px] font-bold uppercase tracking-wide mt-0.5" style={{ color: tierCfg.color }}>
-                {tierCfg.label}
-              </p>
-            </div>
+            <span className="text-xl font-display font-bold leading-none" style={{ color: tierCfg.color }}>
+              {founderScore.total}
+            </span>
+            <span className="text-[10px] font-medium opacity-60" style={{ color: tierCfg.color }}>/100</span>
+            <span
+              className="ml-1 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded"
+              style={{ backgroundColor: tierCfg.color, color: tierCfg.bg }}
+            >
+              {tierCfg.label}
+            </span>
           </div>
-          {/* Mini 5-bar chart */}
-          <div className="flex items-end gap-0.5 h-8">
-            {Object.entries(MINI_SIGNAL_MAXES).map(([key, max]) => {
+
+          {/* Per-criterion breakdown */}
+          <div className="space-y-2">
+            {SIGNAL_CRITERIA.map(({ key, max, label }) => {
               const sig = founderScore.breakdown[key];
               if (!sig) return null;
-              const pct = Math.max(8, Math.round((sig.score / max) * 100));
+              const pct = Math.round((sig.score / max) * 100);
               return (
-                <div
-                  key={key}
-                  className="w-2 rounded-sm"
-                  style={{ height: `${pct}%`, backgroundColor: tierCfg.color, opacity: 0.5 }}
-                  title={`${key.replace(/_/g, ' ')}: ${sig.score}/${max}`}
-                />
+                <div key={key}>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: tierCfg.color }}>
+                      {label}
+                    </span>
+                    <span className="text-[10px] font-mono font-bold" style={{ color: tierCfg.color }}>
+                      {sig.score}<span className="opacity-40">/{max}</span>
+                    </span>
+                  </div>
+                  {/* Score bar */}
+                  <div className="h-1 rounded-full mb-1" style={{ backgroundColor: `${tierCfg.color}20` }}>
+                    <div
+                      className="h-1 rounded-full transition-all"
+                      style={{ width: `${pct}%`, backgroundColor: tierCfg.color }}
+                    />
+                  </div>
+                  {/* Rationale */}
+                  {sig.rationale && (
+                    <p className="text-[10px] leading-snug" style={{ color: `${tierCfg.color}99` }}>
+                      {sig.rationale}
+                    </p>
+                  )}
+                </div>
               );
             })}
           </div>

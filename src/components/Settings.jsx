@@ -619,6 +619,170 @@ function SpendTab() {
   );
 }
 
+// ─── Consumer Deals watchlist bulk import (inside ToolsTab) ─────────────────
+
+const CONSUMER_DEALS_BRANDS = [
+  { name: "On Running",        category: "Footwear",   deal_type: "IPO",         acquirer: "Public Markets",  year: 2021, valuation_m: 11000, what_they_do: "Performance running footwear" },
+  { name: "Alo Yoga",          category: "Apparel",    deal_type: "Private",     acquirer: "",                year: null, valuation_m: 10000, what_they_do: "Premium yoga and athleisure apparel" },
+  { name: "Celsius",           category: "Beverage",   deal_type: "Public",      acquirer: "Public Markets",  year: null, valuation_m: 10000, what_they_do: "Fitness-focused energy drinks" },
+  { name: "Chobani",           category: "Food",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 10000, what_they_do: "Greek yogurt and food products" },
+  { name: "Chewy",             category: "Pet",        deal_type: "IPO",         acquirer: "Public Markets",  year: 2019, valuation_m: 8700,  what_they_do: "Online pet products retailer" },
+  { name: "Peloton",           category: "Fitness",    deal_type: "Public",      acquirer: "Public Markets",  year: null, valuation_m: 8000,  what_they_do: "Connected fitness bikes and content" },
+  { name: "e.l.f. Beauty",     category: "Beauty",     deal_type: "Public",      acquirer: "Public Markets",  year: null, valuation_m: 7000,  what_they_do: "Accessible prestige beauty brand" },
+  { name: "Warby Parker",      category: "Eyewear",    deal_type: "IPO",         acquirer: "Public Markets",  year: 2021, valuation_m: 6000,  what_they_do: "DTC eyewear brand" },
+  { name: "BodyArmor",         category: "Beverage",   deal_type: "Acquisition", acquirer: "Coca-Cola",       year: 2021, valuation_m: 5600,  what_they_do: "Sports hydration drink" },
+  { name: "Vuori",             category: "Apparel",    deal_type: "Private",     acquirer: "",                year: null, valuation_m: 4000,  what_they_do: "Premium performance apparel" },
+  { name: "Oura",              category: "Wearables",  deal_type: "Private",     acquirer: "",                year: null, valuation_m: 5200,  what_they_do: "Smart health ring / wearable" },
+  { name: "Kind Snacks",       category: "Food",       deal_type: "Acquisition", acquirer: "Mars",            year: 2020, valuation_m: 5000,  what_they_do: "Nut and fruit-based snack bars" },
+  { name: "Fabletics",         category: "Apparel",    deal_type: "Private",     acquirer: "",                year: null, valuation_m: 3500,  what_they_do: "Activewear subscription brand" },
+  { name: "Figs",              category: "Apparel",    deal_type: "IPO",         acquirer: "Public Markets",  year: 2021, valuation_m: 3000,  what_they_do: "Premium medical scrubs brand" },
+  { name: "Allbirds",          category: "Footwear",   deal_type: "IPO",         acquirer: "Public Markets",  year: 2021, valuation_m: 2500,  what_they_do: "Sustainable wool and eucalyptus sneakers" },
+  { name: "Skims",             category: "Apparel",    deal_type: "Private",     acquirer: "",                year: null, valuation_m: 4000,  what_they_do: "Shapewear and loungewear (Kim Kardashian)" },
+  { name: "Whoop",             category: "Wearables",  deal_type: "Private",     acquirer: "",                year: null, valuation_m: 3600,  what_they_do: "Fitness wearable for athletes" },
+  { name: "Beats",             category: "Consumer Tech", deal_type: "Acquisition", acquirer: "Apple",        year: 2014, valuation_m: 3000,  what_they_do: "Headphones and audio products" },
+  { name: "Therabody",         category: "Wellness",   deal_type: "Private",     acquirer: "",                year: null, valuation_m: 1800,  what_they_do: "Percussive therapy / Theragun devices" },
+  { name: "Savage X Fenty",    category: "Apparel",    deal_type: "Private",     acquirer: "",                year: null, valuation_m: 1000,  what_they_do: "Inclusive lingerie brand (Rihanna)" },
+  { name: "HeyDude",           category: "Footwear",   deal_type: "Acquisition", acquirer: "Crocs",           year: 2022, valuation_m: 2500,  what_they_do: "Casual lightweight footwear" },
+  { name: "Rare Beauty",       category: "Beauty",     deal_type: "Private",     acquirer: "",                year: null, valuation_m: 2000,  what_they_do: "Inclusive makeup brand (Selena Gomez)" },
+  { name: "Bombas",            category: "Apparel",    deal_type: "Private",     acquirer: "",                year: null, valuation_m: 1000,  what_they_do: "Mission-driven premium socks and basics" },
+  { name: "Poppi",             category: "Beverage",   deal_type: "Acquisition", acquirer: "PepsiCo",         year: 2025, valuation_m: 1950,  what_they_do: "Prebiotic soda with apple cider vinegar" },
+  { name: "Olipop",            category: "Beverage",   deal_type: "Private",     acquirer: "",                year: null, valuation_m: 1850,  what_they_do: "Prebiotic and gut-health soda" },
+  { name: "Glossier",          category: "Beauty",     deal_type: "Private",     acquirer: "",                year: null, valuation_m: 1800,  what_they_do: "Gen Z DTC beauty brand" },
+  { name: "Bloom Nutrition",   category: "Wellness",   deal_type: "Private",     acquirer: "",                year: null, valuation_m: 700,   what_they_do: "Greens and women's nutrition supplements" },
+  { name: "Alani Nu",          category: "Beverage",   deal_type: "Acquisition", acquirer: "Celsius",         year: 2025, valuation_m: 1800,  what_they_do: "Women's fitness energy drinks and supplements" },
+  { name: "DECIEM",            category: "Beauty",     deal_type: "Acquisition", acquirer: "Estee Lauder",    year: 2021, valuation_m: 2200,  what_they_do: "Parent of The Ordinary skincare brand" },
+  { name: "BarkBox",           category: "Pet",        deal_type: "IPO",         acquirer: "Public Markets",  year: 2021, valuation_m: 1600,  what_they_do: "Monthly dog toy and treat subscription" },
+  { name: "NotCo",             category: "Food",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 1500,  what_they_do: "AI-driven plant-based food brand" },
+  { name: "Ruggable",          category: "Home",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 1500,  what_they_do: "Machine-washable DTC rugs" },
+  { name: "Magic Spoon",       category: "Food",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 700,   what_they_do: "Better-for-you high-protein cereal" },
+  { name: "Feastables",        category: "Food",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 600,   what_they_do: "Chocolate bars (MrBeast brand)" },
+  { name: "Athleta",           category: "Apparel",    deal_type: "Subsidiary",  acquirer: "Gap Inc",         year: null, valuation_m: 1200,  what_they_do: "Women's performance apparel (Gap subsidiary)" },
+  { name: "Honest Company",    category: "Baby/Home",  deal_type: "IPO",         acquirer: "Public Markets",  year: 2021, valuation_m: 1500,  what_they_do: "Clean baby and personal care products" },
+  { name: "Harry's",           category: "Grooming",   deal_type: "Private",     acquirer: "",                year: null, valuation_m: 1700,  what_they_do: "DTC men's shaving and grooming brand" },
+  { name: "Liquid Death",      category: "Beverage",   deal_type: "Private",     acquirer: "",                year: null, valuation_m: 1400,  what_they_do: "Mountain water in tallboy cans — anti-brand brand" },
+  { name: "The Farmer's Dog",  category: "Pet",        deal_type: "Private",     acquirer: "",                year: null, valuation_m: 1800,  what_they_do: "Fresh human-grade dog food subscription" },
+  { name: "Gymshark",          category: "Apparel",    deal_type: "Private",     acquirer: "",                year: null, valuation_m: 1300,  what_they_do: "Fitness apparel built through influencer community" },
+  { name: "Chomps",            category: "Food",       deal_type: "Acquisition", acquirer: "Keurig Dr Pepper", year: 2024, valuation_m: 800,  what_they_do: "Clean-label meat sticks / beef jerky" },
+  { name: "Athletic Brewing",  category: "Beverage",   deal_type: "Acquisition", acquirer: "Keurig Dr Pepper", year: 2024, valuation_m: 800,  what_they_do: "Non-alcoholic craft beer" },
+  { name: "Daily Harvest",     category: "Food",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 1200,  what_they_do: "Plant-based meal delivery subscription" },
+  { name: "Dollar Shave Club", category: "Grooming",   deal_type: "Acquisition", acquirer: "Unilever",        year: 2016, valuation_m: 1000,  what_they_do: "Razor and grooming subscription" },
+  { name: "Quest Nutrition",   category: "Food",       deal_type: "Acquisition", acquirer: "Simply Good Foods", year: 2019, valuation_m: 1000, what_they_do: "High-protein bars, chips, and nutrition" },
+  { name: "Rhode",             category: "Beauty",     deal_type: "Private",     acquirer: "",                year: null, valuation_m: 1000,  what_they_do: "Skincare brand (Hailey Bieber)" },
+  { name: "AG1",               category: "Wellness",   deal_type: "Private",     acquirer: "",                year: null, valuation_m: 1200,  what_they_do: "Comprehensive daily nutritional drink" },
+  { name: "Cirkul",            category: "Beverage",   deal_type: "Private",     acquirer: "",                year: null, valuation_m: 1000,  what_they_do: "Flavor-cartridge water bottle subscription" },
+  { name: "Rothy's",           category: "Footwear",   deal_type: "Private",     acquirer: "",                year: null, valuation_m: 700,   what_they_do: "Sustainable flats made from recycled plastic" },
+  { name: "Manscaped",         category: "Grooming",   deal_type: "SPAC",        acquirer: "Nasdaq",          year: 2023, valuation_m: 1000,  what_they_do: "Men's below-the-waist grooming brand" },
+  { name: "Eight Sleep",       category: "Wellness",   deal_type: "Private",     acquirer: "",                year: null, valuation_m: 500,   what_they_do: "Smart mattress cover for sleep optimization" },
+  { name: "Article",           category: "Home",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 600,   what_they_do: "DTC modern furniture brand" },
+  { name: "Nom Nom",           category: "Pet",        deal_type: "Acquisition", acquirer: "Mars Petcare",    year: 2022, valuation_m: 500,   what_they_do: "Fresh human-grade dog and cat food" },
+  { name: "True Classic",      category: "Apparel",    deal_type: "Private",     acquirer: "",                year: null, valuation_m: 500,   what_they_do: "Premium basics for men — DTC" },
+  { name: "HexClad",           category: "Home",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 500,   what_they_do: "Hybrid stainless and non-stick cookware" },
+  { name: "Ritual",            category: "Wellness",   deal_type: "Private",     acquirer: "",                year: null, valuation_m: 400,   what_they_do: "Transparent traceable vitamin supplements" },
+  { name: "Nutrafol",          category: "Wellness",   deal_type: "Acquisition", acquirer: "Unilever",        year: 2022, valuation_m: 1000,  what_they_do: "Hair wellness supplements" },
+  { name: "Kodiak Cakes",      category: "Food",       deal_type: "Acquisition", acquirer: "L Catterton",     year: 2021, valuation_m: 500,   what_they_do: "High-protein whole grain pancake and waffle mixes" },
+  { name: "Reformation",       category: "Apparel",    deal_type: "Acquisition", acquirer: "Permira",         year: 2020, valuation_m: 1000,  what_they_do: "Sustainable women's fashion brand" },
+  { name: "Brooklinen",        category: "Home",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 500,   what_they_do: "DTC luxury sheets and bedding" },
+  { name: "Quip",              category: "Wellness",   deal_type: "Private",     acquirer: "",                year: null, valuation_m: 400,   what_they_do: "DTC electric toothbrush subscription" },
+  { name: "Lovevery",          category: "Kids",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 800,   what_they_do: "Science-based children's toy subscription" },
+  { name: "Simple Mills",      category: "Food",       deal_type: "Acquisition", acquirer: "Flowers Foods",   year: 2025, valuation_m: 900,   what_they_do: "Clean-label almond flour snacks and baking mixes" },
+  { name: "Huel",              category: "Food",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 500,   what_they_do: "Nutritionally complete meal replacement (UK)" },
+  { name: "Banza",             category: "Food",       deal_type: "Acquisition", acquirer: "Sovos Brands",    year: 2020, valuation_m: 300,   what_they_do: "Chickpea-based pasta and rice" },
+  { name: "Liquid I.V.",       category: "Beverage",   deal_type: "Acquisition", acquirer: "Unilever",        year: 2020, valuation_m: 700,   what_they_do: "Electrolyte hydration multiplier" },
+  { name: "Beis",              category: "Accessories", deal_type: "Private",    acquirer: "",                year: null, valuation_m: 400,   what_they_do: "Travel accessories (Shay Mitchell brand)" },
+  { name: "Once Upon a Farm",  category: "Food",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 300,   what_they_do: "Organic cold-pressed baby and kids food" },
+  { name: "Our Place",         category: "Home",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 300,   what_they_do: "Always Pan — multicultural cookware brand" },
+  { name: "Catalina Crunch",   category: "Food",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 200,   what_they_do: "Keto-friendly cereal and snacks" },
+  { name: "David Protein",     category: "Food",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 150,   what_they_do: "Premium protein bar (Peter Rahal)" },
+  { name: "MeUndies",          category: "Apparel",    deal_type: "Private",     acquirer: "",                year: null, valuation_m: 200,   what_they_do: "Fabric-obsessed underwear subscription" },
+  { name: "Parachute",         category: "Home",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 400,   what_they_do: "DTC luxury home textiles and bedding" },
+  { name: "Cuts Clothing",     category: "Apparel",    deal_type: "Private",     acquirer: "",                year: null, valuation_m: 200,   what_they_do: "Premium men's T-shirts and basics" },
+  { name: "Seed",              category: "Wellness",   deal_type: "Private",     acquirer: "",                year: null, valuation_m: 300,   what_they_do: "Daily synbiotic probiotic supplement" },
+  { name: "Super Coffee",      category: "Beverage",   deal_type: "Private",     acquirer: "",                year: null, valuation_m: 400,   what_they_do: "Protein-enhanced coffee drinks" },
+  { name: "SmartSweets",       category: "Food",       deal_type: "Acquisition", acquirer: "TPG Growth",      year: 2021, valuation_m: 360,   what_they_do: "Low-sugar candy that tastes like the real thing" },
+  { name: "Caraway",           category: "Home",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 300,   what_they_do: "Ceramic non-stick cookware — DTC" },
+  { name: "Hello Products",    category: "Beauty",     deal_type: "Acquisition", acquirer: "Colgate-Palmolive", year: 2020, valuation_m: 300, what_they_do: "Natural oral care — toothpaste and mouthwash" },
+  { name: "Chamberlain Coffee", category: "Beverage",  deal_type: "Private",     acquirer: "",                year: null, valuation_m: 200,   what_they_do: "Coffee brand (Emma Chamberlain)" },
+  { name: "Wild",              category: "Beauty",     deal_type: "Private",     acquirer: "",                year: null, valuation_m: 200,   what_they_do: "Refillable natural deodorant (UK)" },
+  { name: "Graza",             category: "Food",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 100,   what_they_do: "Single-origin olive oil in squeeze bottle" },
+  { name: "Outdoor Voices",    category: "Apparel",    deal_type: "Private",     acquirer: "",                year: null, valuation_m: 200,   what_they_do: "Activity-focused casual activewear brand" },
+  { name: "Magic Mind",        category: "Beverage",   deal_type: "Private",     acquirer: "",                year: null, valuation_m: 50,    what_they_do: "Productivity matcha shot with adaptogens" },
+  { name: "Perfect Bar",       category: "Food",       deal_type: "Acquisition", acquirer: "Nestle",          year: 2019, valuation_m: 300,   what_they_do: "Refrigerated whole-food protein bar" },
+  { name: "Fly By Jing",       category: "Food",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 100,   what_they_do: "Authentic Sichuan chili crisp and sauces" },
+  { name: "Burrow",            category: "Home",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 200,   what_they_do: "Modular furniture DTC — build-anywhere sofa" },
+  { name: "Ollie",             category: "Pet",        deal_type: "Private",     acquirer: "",                year: null, valuation_m: 400,   what_they_do: "Fresh human-grade dog food subscription" },
+  { name: "Marine Layer",      category: "Apparel",    deal_type: "Acquisition", acquirer: "Freestyle Solutions", year: 2020, valuation_m: 100, what_they_do: "Ultra-soft basics — California casual lifestyle" },
+  { name: "Moon Juice",        category: "Wellness",   deal_type: "Private",     acquirer: "",                year: null, valuation_m: 150,   what_they_do: "Adaptogenic supplements and beauty food" },
+  { name: "Lalo",              category: "Kids",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 100,   what_they_do: "Modern baby gear for millennial parents" },
+  { name: "Mid-Day Squares",   category: "Food",       deal_type: "Private",     acquirer: "",                year: null, valuation_m: 80,    what_they_do: "Functional chocolate protein bars (Canada)" },
+  { name: "Stasher",           category: "Home",       deal_type: "Acquisition", acquirer: "SC Johnson",      year: 2023, valuation_m: 150,   what_they_do: "Platinum silicone reusable food storage bags" },
+  { name: "Care/of",           category: "Wellness",   deal_type: "Acquisition", acquirer: "Bayer",           year: 2019, valuation_m: 225,   what_they_do: "Personalized vitamin packs — shut down 2024" },
+  { name: "Primal Kitchen",    category: "Food",       deal_type: "Acquisition", acquirer: "Kraft Heinz",     year: 2019, valuation_m: 200,   what_they_do: "Paleo/keto condiments and sauces" },
+  { name: "Cocofloss",         category: "Beauty",     deal_type: "Private",     acquirer: "",                year: null, valuation_m: 50,    what_they_do: "Premium coconut-oil infused dental floss" },
+  { name: "Native",            category: "Beauty",     deal_type: "Acquisition", acquirer: "P&G",             year: 2017, valuation_m: 100,   what_they_do: "Natural deodorant — clean personal care" },
+];
+
+function WatchlistBulkImportSection() {
+  const [status,  setStatus]  = useState(null); // null | { added, skipped }
+  const [loading, setLoading] = useState(false);
+  const [msg,     setMsg]     = useState('');
+
+  const handleImport = async () => {
+    setLoading(true);
+    setMsg('');
+    try {
+      const res = await adminApi.bulkImportWatchlist(CONSUMER_DEALS_BRANDS);
+      setStatus(res.data);
+      setMsg(`✓ Done — ${res.data.added.length} brands added, ${res.data.skipped.length} already on watchlist.`);
+    } catch (err) {
+      setMsg('✗ ' + (err.response?.data?.error || 'Import failed'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const alreadyDone = status && status.added.length === 0 && status.skipped.length > 0;
+
+  return (
+    <div className="bg-white rounded-lg p-6" style={{ border: '1px solid #E5E5E0' }}>
+      <SectionHeader
+        icon={Database}
+        title="Consumer Deals Watchlist"
+        subtitle={`Bulk-add all ${CONSUMER_DEALS_BRANDS.length} brands from the Recent Consumer Deals list to your Watchlist`}
+      />
+      <div className="mt-4">
+        {status && (
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="rounded-lg p-3 text-center" style={{ background: '#f0fdf4' }}>
+              <div className="text-2xl font-bold" style={{ color: '#16a34a' }}>{status.added.length}</div>
+              <div className="text-xs text-neutral-500 mt-0.5">Added</div>
+            </div>
+            <div className="rounded-lg p-3 text-center" style={{ background: '#f8f8f6' }}>
+              <div className="text-2xl font-bold text-neutral-400">{status.skipped.length}</div>
+              <div className="text-xs text-neutral-500 mt-0.5">Already on watchlist</div>
+            </div>
+          </div>
+        )}
+        <button
+          onClick={handleImport}
+          disabled={loading || alreadyDone}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-50 transition-opacity"
+          style={{ background: alreadyDone ? '#6b7280' : '#052EF0' }}
+        >
+          <Database size={14} />
+          {loading ? 'Importing…' : alreadyDone ? 'All brands already imported' : `Import ${CONSUMER_DEALS_BRANDS.length} brands to Watchlist`}
+        </button>
+        {msg && (
+          <p className={`text-xs mt-2 ${msg.startsWith('✓') ? 'text-green-600' : 'text-red-500'}`}>{msg}</p>
+        )}
+        <p className="text-xs text-neutral-400 mt-3">
+          Imports On Running, Poppi, Gymshark, Eight Sleep, Vuori, Olipop, and 91 more notable consumer brands
+          from the Recent Consumer Deals spreadsheet. Skips brands already on the watchlist.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ─── Inbox Audit section (inside ToolsTab) ───────────────────────────────────
 
 function InboxAuditSection() {
@@ -905,6 +1069,9 @@ function ToolsTab() {
           badges on domain signal cards.
         </p>
       </div>
+
+      {/* Consumer Deals Watchlist */}
+      <WatchlistBulkImportSection />
 
       {/* Inbox Audit */}
       <InboxAuditSection />

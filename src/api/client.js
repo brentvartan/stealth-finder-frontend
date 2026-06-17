@@ -149,6 +149,9 @@ export const admin = {
 
   getLatestInboxAudit: () =>
     api.get('/admin/inbox-audit/latest'),
+
+  bulkImportWatchlist: (brands) =>
+    api.post('/admin/watchlist/bulk-import', { brands }, { timeout: 30000 }),
 };
 
 // ─── Enrichment (Bullish AI analysis via Claude) ──────────────────────────────

@@ -289,6 +289,7 @@ export default function Dashboard() {
   useEffect(() => { setMatches(buildMatches(signals, filters)); }, [signals, filters]);
 
   const displayMatches = matches
+    .filter(m => m.enrichment?.gate_passed !== false)
     .filter(m => !tierFilter || (m.enrichment?.watch_level === tierFilter))
     .filter(m => {
       const q = filters.search.trim().toLowerCase();

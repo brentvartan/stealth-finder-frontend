@@ -2,63 +2,12 @@ import React, { useState } from 'react';
 import { items, scans } from '../api/client';
 
 import { Play, RefreshCw, CheckCircle, AlertCircle, Award, Camera, ShoppingBag, Building2, Globe, Linkedin, Rocket, Smartphone, Newspaper } from 'lucide-react';
-import { CONSUMER_CATEGORIES } from './Dashboard';
-
 // ─── Score boosts ──────────────────────────────────────────────────────────────
 const SCORE_BOOSTS = {
   trademark: 15, delaware: 5, domain: 3, instagram: 8, shopify: 10, social: 2,
 };
 
-// ─── Simulated data generators ────────────────────────────────────────────────
-
-function getDelawareData(daysBack) {
-  const companies = [
-    { name: 'GetHealthy Inc',           category: 'Health/Wellness'  },
-    { name: 'TryFit Labs',              category: 'Fitness'          },
-    { name: 'FoodHub Corporation',      category: 'CPG/Food/Drink'   },
-    { name: 'FinFlow Inc',              category: 'Finance'          },
-    { name: 'LearnAI Inc',              category: 'Education'        },
-    { name: 'StyleMatch Inc',           category: 'Apparel'          },
-    { name: 'HomeDash LLC',             category: 'Home/Lifestyle'   },
-    { name: 'BeautyBoss Inc',           category: 'Beauty'           },
-    { name: 'GlowAI Labs',              category: 'Consumer AI'      },
-    { name: 'ActiveWear Corporation',   category: 'Apparel'          },
-    { name: 'PlayTime Inc',             category: 'Sports'           },
-    { name: 'WellnessPath Corporation', category: 'Health/Wellness'  },
-  ];
-  const count = Math.min(8 + Math.floor(daysBack / 10), companies.length);
-  const today = new Date();
-  return companies.slice(0, count).map((c, i) => {
-    const daysAgo = Math.floor(Math.random() * daysBack);
-    const date = new Date(today);
-    date.setDate(date.getDate() - daysAgo);
-    return { ...c, filing_date: date.toISOString(), entity_type: i % 2 === 0 ? 'Corporation' : 'LLC' };
-  });
-}
-
-function getDomainData(daysBack) {
-  const domains = [
-    { name: 'gethealthy.com',  category: 'Health/Wellness' },
-    { name: 'tryfit.io',       category: 'Fitness'         },
-    { name: 'foodhub.com',     category: 'CPG/Food/Drink'  },
-    { name: 'finflow.app',     category: 'Finance'         },
-    { name: 'learnai.com',     category: 'Education'       },
-    { name: 'stylematch.io',   category: 'Apparel'         },
-    { name: 'homedash.app',    category: 'Home/Lifestyle'  },
-    { name: 'beautyboss.com',  category: 'Beauty'          },
-    { name: 'glowai.ai',       category: 'Consumer AI'     },
-    { name: 'activeware.shop', category: 'Apparel'         },
-    { name: 'playtime.com',    category: 'Sports'          },
-    { name: 'wellnesshq.com',  category: 'Health/Wellness' },
-  ];
-  const today = new Date();
-  return domains.map(d => {
-    const daysAgo = Math.floor(Math.random() * daysBack);
-    const date = new Date(today);
-    date.setDate(date.getDate() - daysAgo);
-    return { ...d, registered_date: date.toISOString() };
-  });
-}
+// ─── Simulated data generators (Instagram / Shopify / Social — coming soon) ───
 
 function getInstagramData() {
   const handles = [

@@ -338,7 +338,7 @@ export default function FounderRadar() {
           Founder Radar
         </h1>
         <p className="text-sm text-neutral-500 mt-1">
-          Track where the best consumer operators go next.
+          The operator universe — everyone who built the 97 Bullish-tracked brands. This is your pattern-recognition database: who they are, where they came from, and what they're doing now. When someone shows up 🔥 Building, that's the signal. Add them to Watchlist to actively track.
         </p>
       </div>
 

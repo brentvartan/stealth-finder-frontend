@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Award, Building2, Globe, Camera, ShoppingBag, Linkedin, Rocket,
   ChevronDown, ChevronUp, ExternalLink, Pencil, Flame, TrendingUp, Minus, User,
-  Sparkles, Bookmark, BookmarkCheck, StickyNote, Save, Copy, CheckCheck, Newspaper, EyeOff,
+  Sparkles, Bookmark, BookmarkCheck, StickyNote, Save, Copy, CheckCheck, Newspaper,
 } from 'lucide-react';
 import { enrich, items as itemsApi } from '../api/client';
 
@@ -579,50 +579,6 @@ export default function MatchCard({ match, onUpdate }) {
                     🏆 ALUMNI
                   </span>
                 )}
-                {match.hasPressStealth && (
-                  <span
-                    className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[10px] text-white"
-                    style={{ backgroundColor: '#0F766E' }}
-                    title="Journalist-written stealth coverage — founder building before naming brand"
-                  >
-                    <Newspaper className="w-3 h-3" />
-                    PRESS INTEL
-                  </span>
-                )}
-                {match.isStealth && (
-                  <span
-                    className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[10px] text-white"
-                    style={{ backgroundColor: '#020A52' }}
-                    title="Stealth — detected via pre-launch signals only"
-                  >
-                    <EyeOff className="w-3 h-3" />
-                    STEALTH
-                  </span>
-                )}
-                {match.hasPressHits && (
-                  <span
-                    className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[10px] text-white"
-                    style={{ backgroundColor: '#0A5C36' }}
-                    title="Mentioned in consumer trade press"
-                  >
-                    <Newspaper className="w-3 h-3" />
-                    PRESS
-                  </span>
-                )}
-                {(() => {
-                  const fs = enrichment?.founder_score;
-                  if (!fs?.gate_passed || !fs?.total || fs.total < 50) return null;
-                  return (
-                    <span
-                      className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[10px] text-white"
-                      style={{ backgroundColor: '#052EF0' }}
-                      title={`Founder: ${fs.tier?.replace(/_/g, ' ')} · ${fs.total}/100`}
-                    >
-                      <User className="w-3 h-3" />
-                      FOUNDER {fs.total}
-                    </span>
-                  );
-                })()}
               </div>
             </div>
 
@@ -650,6 +606,33 @@ export default function MatchCard({ match, onUpdate }) {
                 {new Date(match.latestSignal).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </span>
             </div>
+
+            {/* Founder score — always visible when computed */}
+            {(() => {
+              const fs = enrichment?.founder_score;
+              if (!fs?.gate_passed || !fs?.total) return null;
+              const tierColors = {
+                HIGH_PRIORITY: '#16a34a',
+                WATCH_LIST:    '#052EF0',
+                WEAK_SIGNAL:   '#87B4F8',
+                PASS:          '#DC2626',
+              };
+              const color = tierColors[fs.tier] || '#9CA3AF';
+              const tierLabel = {
+                HIGH_PRIORITY: 'High Priority',
+                WATCH_LIST:    'Watch List',
+                WEAK_SIGNAL:   'Weak Signal',
+                PASS:          'Pass',
+              }[fs.tier] || fs.tier;
+              return (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <User className="w-3 h-3 shrink-0" style={{ color }} />
+                  <span className="text-[11px] font-bold" style={{ color }}>{fs.total}/100</span>
+                  <span className="text-[10px] text-neutral-300">·</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color }}>{tierLabel}</span>
+                </div>
+              );
+            })()}
 
             {isEnriched && enrichment.one_line_thesis && (
               <p className="text-sm font-editorial italic text-neutral-600 mt-2 leading-snug">

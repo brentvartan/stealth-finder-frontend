@@ -124,7 +124,7 @@ export default function Watchlist() {
           Watchlist
         </h1>
         <p className="text-neutral-400 text-sm mt-1">
-          Track specific founders, operators and talent - in a role or in stealth - that you think have a high probability of building a remarkable brand one day.
+          Your active pipeline — founders and operators you're personally tracking or already in conversation with. Different from Founder Radar (which is the full universe of known operators): this is who you've decided to act on.
         </p>
       </div>
 

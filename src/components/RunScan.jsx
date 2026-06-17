@@ -286,44 +286,55 @@ export default function RunScan() {
       // ── Live: Newswire — PR Newswire + BusinessWire press releases ──
       if (scanType === 'full' || scanType === 'newswire') {
         setStatus(s => ({ ...s, message: 'Live: scanning PR Newswire + BusinessWire for consumer brand releases...', progress: 86 }));
-        const nwResp = await scans.newswire(Math.min(daysBack, 14), 100);
-        const { fetched: nwFetched, new_saved: nwNew, skipped: nwSkipped, error: nwError } = nwResp.data;
-        if (nwError && !nwFetched) throw new Error(`Newswire: ${nwError}`);
-        totalSaved   += nwNew;
-        totalSkipped += (nwSkipped || 0);
-        setStatus(s => ({
-          ...s,
-          message: `Newswire: ${nwFetched} press releases — ${nwNew} new, ${nwSkipped} already in database`,
-          progress: 89,
-        }));
+        try {
+          const nwResp = await scans.newswire(Math.min(daysBack, 14), 100);
+          const { fetched: nwFetched, new_saved: nwNew, skipped: nwSkipped, error: nwError } = nwResp.data;
+          totalSaved   += (nwNew || 0);
+          totalSkipped += (nwSkipped || 0);
+          setStatus(s => ({
+            ...s,
+            message: nwError && !nwFetched
+              ? `Newswire: feed unavailable (continuing scan)`
+              : `Newswire: ${nwFetched} press releases — ${nwNew} new, ${nwSkipped} already in database`,
+            progress: 89,
+          }));
+        } catch (nwErr) {
+          setStatus(s => ({ ...s, message: 'Newswire: unavailable — continuing scan', progress: 89 }));
+        }
       }
 
       if (scanType === 'full' || scanType === 'ctlogs') {
         setStatus(s => ({ ...s, message: 'Live: scanning Certificate Transparency logs for new consumer-brand domains...', progress: 91 }));
-        const ctResp = await scans.ctlogs(Math.min(daysBack, 14), 50);
-        const { fetched: ctFetched, new_saved: ctNew, skipped: ctSkipped, error: ctError } = ctResp.data;
-        if (ctError && !ctFetched) throw new Error(`CT Logs: ${ctError}`);
-        totalSaved   += ctNew;
-        totalSkipped += (ctSkipped || 0);
-        setStatus(s => ({
-          ...s,
-          message: `CT Logs: ${ctFetched} new domains — ${ctNew} new, ${ctSkipped} already in database`,
-          progress: 93,
-        }));
+        try {
+          const ctResp = await scans.ctlogs(Math.min(daysBack, 14), 50);
+          const { fetched: ctFetched, new_saved: ctNew, skipped: ctSkipped } = ctResp.data;
+          totalSaved   += (ctNew || 0);
+          totalSkipped += (ctSkipped || 0);
+          setStatus(s => ({
+            ...s,
+            message: `CT Logs: ${ctFetched} new domains — ${ctNew} new, ${ctSkipped} already in database`,
+            progress: 93,
+          }));
+        } catch (ctErr) {
+          setStatus(s => ({ ...s, message: 'CT Logs: unavailable — continuing scan', progress: 93 }));
+        }
       }
 
       if (scanType === 'full' || scanType === 'press_stealth') {
         setStatus(s => ({ ...s, message: 'Live: scanning startup + trade press for stealth-founder articles...', progress: 95 }));
-        const psResp = await scans.pressStealth(Math.min(daysBack, 14), 50);
-        const { fetched: psFetched, new_saved: psNew, skipped: psSkipped, error: psError } = psResp.data;
-        if (psError && !psFetched) throw new Error(`Press Intel: ${psError}`);
-        totalSaved   += psNew;
-        totalSkipped += (psSkipped || 0);
-        setStatus(s => ({
-          ...s,
-          message: `Press Intel: ${psFetched} articles — ${psNew} new, ${psSkipped} already in database`,
-          progress: 97,
-        }));
+        try {
+          const psResp = await scans.pressStealth(Math.min(daysBack, 14), 50);
+          const { fetched: psFetched, new_saved: psNew, skipped: psSkipped } = psResp.data;
+          totalSaved   += (psNew || 0);
+          totalSkipped += (psSkipped || 0);
+          setStatus(s => ({
+            ...s,
+            message: `Press Intel: ${psFetched} articles — ${psNew} new, ${psSkipped} already in database`,
+            progress: 97,
+          }));
+        } catch (psErr) {
+          setStatus(s => ({ ...s, message: 'Press Intel: unavailable — continuing scan', progress: 97 }));
+        }
       }
 
       const simSteps = [];

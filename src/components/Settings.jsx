@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { settings as settingsApi, admin as adminApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { Plus, X, CheckCircle, Save, Bell, Slack, BarChart2, Clock, Users, CreditCard, RefreshCw, Linkedin, Zap, Search, Database, Mail, Globe } from 'lucide-react';
+import { Plus, X, CheckCircle, Save, Bell, Slack, BarChart2, Clock, Users, CreditCard, RefreshCw, Linkedin, Zap, Search, Database, Mail, Globe, Trash2 } from 'lucide-react';
 import ScheduledScans from './ScheduledScans';
 import Team from './Team';
 
@@ -318,8 +318,45 @@ function SpendTab() {
 
   useEffect(() => { load(); }, [load]);
 
+  const [addingManual,  setAddingManual]  = useState(false);
+  const [manualForm,    setManualForm]    = useState({ description: '', category: 'anthropic', date: '', amount: '' });
+  const [savingManual,  setSavingManual]  = useState(false);
+  const [deletingId,    setDeletingId]    = useState(null);
+
   const fmt  = (n) => n == null ? '—' : `$${n.toFixed(2)}`;
   const fmtN = (n) => n == null ? '—' : n.toLocaleString();
+
+  const handleAddManual = async (e) => {
+    e.preventDefault();
+    setSavingManual(true);
+    try {
+      await adminApi.addManualSpend({
+        description: manualForm.description,
+        category:    manualForm.category,
+        date:        manualForm.date || new Date().toISOString().slice(0, 10),
+        amount:      parseFloat(manualForm.amount),
+      });
+      setManualForm({ description: '', category: 'anthropic', date: '', amount: '' });
+      setAddingManual(false);
+      await load();
+    } catch (err) {
+      console.error('Manual spend add failed:', err);
+    } finally {
+      setSavingManual(false);
+    }
+  };
+
+  const handleDeleteManual = async (entryId) => {
+    setDeletingId(entryId);
+    try {
+      await adminApi.deleteManualSpend(entryId);
+      await load();
+    } catch (err) {
+      console.error('Manual spend delete failed:', err);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   if (loading) return <div className="py-12 text-center text-sm text-neutral-400">Loading spend data…</div>;
   if (error)   return <div className="py-12 text-center text-sm text-red-400">{error}</div>;
@@ -517,6 +554,125 @@ function SpendTab() {
           <a href="https://resend.com/overview" target="_blank" rel="noreferrer"
              className="underline hover:text-neutral-500">resend.com</a>
         </p>
+      </div>
+
+      {/* Manual spend log */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <SectionHeader icon={CreditCard} title="Manual Spend Log" subtitle="One-time costs not tracked automatically — LinkedIn scrapes, Anthropic top-ups, etc." />
+          <button
+            onClick={() => setAddingManual(v => !v)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded border transition-colors"
+            style={{ borderColor: '#052EF0', color: '#052EF0' }}
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Log Expense
+          </button>
+        </div>
+
+        {addingManual && (
+          <form onSubmit={handleAddManual} className="bg-white border border-neutral-200 rounded-lg p-4 mb-4 grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">Description</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. LinkedIn founder scrape for FounderRadar initial import"
+                value={manualForm.description}
+                onChange={e => setManualForm(f => ({ ...f, description: e.target.value }))}
+                className="w-full border border-neutral-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#052EF0]"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">Category</label>
+              <select
+                value={manualForm.category}
+                onChange={e => setManualForm(f => ({ ...f, category: e.target.value }))}
+                className="w-full border border-neutral-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#052EF0]"
+              >
+                <option value="anthropic">Anthropic (Claude)</option>
+                <option value="linkedin">LinkedIn / Proxycurl</option>
+                <option value="serpapi">SerpAPI</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">Date</label>
+              <input
+                type="date"
+                value={manualForm.date}
+                onChange={e => setManualForm(f => ({ ...f, date: e.target.value }))}
+                className="w-full border border-neutral-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#052EF0]"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">Amount (USD)</label>
+              <input
+                type="number"
+                required
+                step="0.01"
+                min="0"
+                placeholder="75.00"
+                value={manualForm.amount}
+                onChange={e => setManualForm(f => ({ ...f, amount: e.target.value }))}
+                className="w-full border border-neutral-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#052EF0]"
+              />
+            </div>
+            <div className="col-span-2 flex gap-2 justify-end">
+              <button type="button" onClick={() => setAddingManual(false)} className="px-4 py-2 text-xs font-medium text-neutral-400 hover:text-black transition-colors">Cancel</button>
+              <button
+                type="submit"
+                disabled={savingManual}
+                className="px-4 py-2 text-xs font-semibold rounded text-white transition-colors"
+                style={{ backgroundColor: savingManual ? '#93C5FD' : '#052EF0' }}
+              >
+                {savingManual ? 'Saving…' : 'Save Entry'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {data.manual_spend?.entries?.length > 0 ? (
+          <div className="bg-white rounded-lg overflow-hidden" style={{ border: '1px solid #E5E5E0' }}>
+            <table className="w-full text-xs">
+              <thead>
+                <tr style={{ backgroundColor: '#F9F9F8' }}>
+                  {['Date', 'Description', 'Category', 'Amount', ''].map(h => (
+                    <th key={h} className="text-left px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 border-b border-neutral-100">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-50">
+                {data.manual_spend.entries.map(entry => (
+                  <tr key={entry.id} className="hover:bg-neutral-50">
+                    <td className="px-4 py-3 text-neutral-400 font-mono">{entry.date}</td>
+                    <td className="px-4 py-3 text-neutral-700">{entry.description}</td>
+                    <td className="px-4 py-3 text-neutral-400 capitalize">{entry.category}</td>
+                    <td className="px-4 py-3 font-mono font-semibold text-black">${entry.amount.toFixed(2)}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => handleDeleteManual(entry.id)}
+                        disabled={deletingId === entry.id}
+                        className="text-neutral-300 hover:text-red-400 transition-colors disabled:opacity-40"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                <tr className="bg-neutral-50">
+                  <td colSpan={3} className="px-4 py-2.5 text-xs font-semibold text-neutral-500 text-right">Total logged</td>
+                  <td className="px-4 py-2.5 font-mono font-bold text-black">${data.manual_spend.total.toFixed(2)}</td>
+                  <td />
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          !addingManual && (
+            <p className="text-xs text-neutral-300 italic">No manual entries yet. Use "Log Expense" to record one-time costs.</p>
+          )
+        )}
       </div>
 
       {/* Rate card */}

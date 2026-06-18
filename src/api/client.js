@@ -135,6 +135,12 @@ export const admin = {
   getSpend: () =>
     api.get('/admin/spend'),
 
+  addManualSpend: (entry) =>
+    api.post('/admin/spend/manual', entry),
+
+  deleteManualSpend: (entryId) =>
+    api.delete(`/admin/spend/manual/${entryId}`),
+
   deleteUser: (id) =>
     api.delete(`/admin/users/${id}`),
 

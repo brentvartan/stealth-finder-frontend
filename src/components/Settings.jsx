@@ -334,36 +334,63 @@ function SpendTab() {
   return (
     <div className="space-y-8">
 
-      {/* Total this month */}
+      {/* All-time summary */}
+      <div>
+        <SectionHeader icon={CreditCard} title="All Time" subtitle="Cumulative estimated spend since launch" />
+        <div className="grid grid-cols-4 gap-3">
+          <SpendStat
+            label="Founder APIs"
+            value={fmt((pc.estimated_cost_all_time || 0) + (sa.estimated_cost_all_time || 0) + (cb.estimated_cost_all_time || 0))}
+            sub={`${fmtN((pc.lookups_all_time || 0) + (sa.searches_all_time || 0) + (cb.lookups_all_time || 0))} lookups & searches total`}
+          />
+          <SpendStat
+            label="Claude (Anthropic)"
+            value={fmt(an.estimated_cost_all_time)}
+            sub={`${fmtN(an.enrichments_all_time)} enrichments · ~${fmt(an.cost_per_enrichment)}/ea`}
+          />
+          <SpendStat
+            label="Email Alerts"
+            value={`${fmtN(rs.emails_all_time)} sent`}
+            sub={`Free plan · ${rs.plan || '3,000/mo'}`}
+          />
+          <SpendStat
+            label="Total Estimated"
+            value={fmt(tot.estimated_cost_all_time)}
+            sub="All paid API services combined"
+          />
+        </div>
+      </div>
+
+      {/* This month summary */}
       <div>
         <SectionHeader icon={CreditCard} title="This Month" subtitle="Estimated API spend since the 1st" />
         <div className="grid grid-cols-4 gap-3">
           <SpendStat
             label="Founder APIs"
-            value={fmt((pc.estimated_cost_this_month || 0) + (sa.estimated_cost_this_month || 0))}
-            sub={`${fmtN((pc.lookups_this_month || 0) + (sa.searches_this_month || 0))} Proxycurl + SerpAPI + Crunchbase lookups & searches`}
+            value={fmt((pc.estimated_cost_this_month || 0) + (sa.estimated_cost_this_month || 0) + (cb.estimated_cost_this_month || 0))}
+            sub={`${fmtN((pc.lookups_this_month || 0) + (sa.searches_this_month || 0) + (cb.lookups_this_month || 0))} lookups & searches`}
           />
           <SpendStat
             label="Claude (Anthropic)"
             value={fmt(an.estimated_cost_this_month)}
-            sub={`${fmtN(an.enrichments_this_month)} enrichments · ~${fmt(an.cost_per_enrichment)}/ea`}
+            sub={`${fmtN(an.enrichments_this_month)} enrichments this month`}
           />
           <SpendStat
             label="Email Alerts"
-            value={rs.emails_this_month != null ? fmtN(rs.emails_this_month) : '—'}
-            sub={`${fmtN(rs.emails_all_time)} all-time HOT alerts sent`}
+            value={`${rs.emails_this_month != null ? fmtN(rs.emails_this_month) : '—'} sent`}
+            sub="This month"
           />
           <SpendStat
-            label="Total Estimated"
+            label="Total This Month"
             value={fmt(tot.estimated_cost_this_month)}
-            sub="All API services combined"
+            sub="All paid API services"
           />
         </div>
       </div>
 
       {/* Proxycurl detail */}
       <div>
-        <SectionHeader icon={Linkedin} title="Proxycurl (LinkedIn)" subtitle="Founder LinkedIn profile lookups via NinjaPear" />
+        <SectionHeader icon={Linkedin} title="Proxycurl (LinkedIn)" subtitle="Founder LinkedIn profile lookups — fires on HOT signals with a discovered founder" />
         <div className="grid grid-cols-2 gap-3 mb-3">
           <SpendStat
             label="Credits Remaining"

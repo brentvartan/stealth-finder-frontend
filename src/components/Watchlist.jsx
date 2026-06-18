@@ -128,15 +128,15 @@ export default function Watchlist() {
         <p className="text-neutral-400 text-sm mt-1">
           Your active pipeline and the full operator universe — brands you're tracking and the founders who built them.
         </p>
-        <div className="flex border-b border-neutral-200 mt-5">
+        <div className="flex mt-5 p-1 rounded-lg bg-neutral-100 w-fit gap-1">
           {[['brands', 'Brands'], ['founders', 'Founder Radar']].map(([id, label]) => (
             <button
               key={id}
               onClick={() => setTab(id)}
-              className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              className={`px-5 py-2 text-sm font-display font-semibold tracking-wide rounded-md transition-all ${
                 tab === id
-                  ? 'text-black border-[#052EF0]'
-                  : 'text-neutral-400 border-transparent hover:text-black'
+                  ? 'bg-white text-black shadow-sm'
+                  : 'text-neutral-400 hover:text-neutral-600'
               }`}
             >
               {label}

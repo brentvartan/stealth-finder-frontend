@@ -737,7 +737,7 @@ export default function SignalDetail() {
       )}
 
       {/* ── Founder Score ── */}
-      {isEnriched && e.founder_score && (
+      {isEnriched && e.founder_score && !isUnknownFounder && (
         <FounderScoreCard founderScore={e.founder_score} />
       )}
 

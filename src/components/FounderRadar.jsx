@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { admin as adminApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { ExternalLink, Upload, Search, RefreshCw, Linkedin, ChevronDown, ChevronUp, Save, CheckCheck } from 'lucide-react';
+import { ExternalLink, Search, Linkedin, ChevronDown, ChevronUp, Save, CheckCheck } from 'lucide-react';
 
 // ─── Tier badge config ────────────────────────────────────────────────────────
 
@@ -291,94 +291,6 @@ function Pills({ options, active, onChange }) {
   );
 }
 
-// ─── Import banner ────────────────────────────────────────────────────────────
-
-function ImportBanner({ onImported }) {
-  const fileRef = useRef(null);
-  const [importing, setImporting] = useState(false);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
-
-  const handleFile = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImporting(true);
-    setError(null);
-    setResult(null);
-
-    try {
-      const text = await file.text();
-      const json = JSON.parse(text);
-      // Accept either { profiles: [...] } or a raw array
-      const profiles = Array.isArray(json) ? json : (json.profiles || json.results || []);
-      if (!profiles.length) {
-        setError('No profiles found in file. Expected a JSON array or { profiles: [...] }.');
-        setImporting(false);
-        return;
-      }
-
-      const res = await adminApi.importFounderProfiles(profiles);
-      const { imported, updated } = res.data;
-      setResult({ imported, updated, total: profiles.length });
-      onImported();
-    } catch (err) {
-      setError(err.response?.data?.error || err.message || 'Import failed');
-    } finally {
-      setImporting(false);
-      // Reset file input so same file can be re-imported
-      if (fileRef.current) fileRef.current.value = '';
-    }
-  };
-
-  return (
-    <div
-      className="rounded-lg p-4 border-2 border-dashed flex flex-col sm:flex-row items-start sm:items-center gap-4"
-      style={{ borderColor: '#052EF0', backgroundColor: '#EFF6FF' }}
-    >
-      <div className="flex-1">
-        <div className="text-sm font-bold" style={{ color: '#020A52' }}>
-          Import Founder Pull
-        </div>
-        <div className="text-xs text-neutral-500 mt-0.5">
-          Upload a <code className="font-mono bg-white px-1 rounded">founder_pull_results.json</code> file to populate Founder Radar.
-          Supports raw arrays or <code className="font-mono bg-white px-1 rounded">{"{ profiles: [...] }"}</code>.
-        </div>
-        {error && (
-          <div className="text-xs text-red-600 mt-1 font-medium">{error}</div>
-        )}
-        {result && (
-          <div className="text-xs text-green-700 mt-1 font-medium">
-            Done — {result.imported} imported, {result.updated} updated ({result.total} total)
-          </div>
-        )}
-      </div>
-      <label
-        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer transition-colors shrink-0"
-        style={{ backgroundColor: importing ? '#93C5FD' : '#052EF0', color: 'white' }}
-      >
-        {importing ? (
-          <>
-            <RefreshCw className="w-4 h-4 animate-spin" />
-            Importing…
-          </>
-        ) : (
-          <>
-            <Upload className="w-4 h-4" />
-            Upload JSON
-          </>
-        )}
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".json,application/json"
-          className="hidden"
-          disabled={importing}
-          onChange={handleFile}
-        />
-      </label>
-    </div>
-  );
-}
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -475,13 +387,6 @@ export default function FounderRadar({ mode = 'page' }) {
         </div>
       )}
 
-      {/* ── Import banner (admin only) ── */}
-      {isAdmin && (
-        <div className="mb-6">
-          <ImportBanner onImported={fetchAll} />
-        </div>
-      )}
-
       {/* ── Signal stat cards ── */}
       <div className="flex flex-wrap gap-3 mb-4">
         <StatCard icon="🔥" label="Building"   count={summary?.building}      borderColor="#052EF0" active={statusFilter === 'building'}       onClick={() => handleStatCardClick('building')} />
@@ -556,11 +461,7 @@ export default function FounderRadar({ mode = 'page' }) {
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="text-4xl mb-3">📡</div>
           <div className="text-base font-semibold text-neutral-600 mb-1">No profiles imported yet</div>
-          <div className="text-sm text-neutral-400">
-            {isAdmin
-              ? 'Import from the pull JSON above to populate Founder Radar.'
-              : 'Ask an admin to import the founder pull.'}
-          </div>
+          <div className="text-sm text-neutral-400">No profiles in the database yet.</div>
         </div>
       ) : profiles.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">

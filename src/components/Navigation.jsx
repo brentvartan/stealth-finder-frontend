@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Play, Users, PlusCircle, LogOut, Download, Clock, UsersRound, MessageCircle, Settings as SettingsIcon, Menu, X, Radar } from 'lucide-react';
+import { LayoutDashboard, Play, Users, LogOut, Download, Clock, UsersRound, MessageCircle, Settings as SettingsIcon, Menu, X } from 'lucide-react';
 import { items } from '../api/client';
 
 // Bullish logo mark — square border + two parallelogram bars
@@ -19,13 +19,11 @@ export default function Navigation() {
   const { newHotCount } = useAuth();
 
   const navItems = [
-    { path: '/',               icon: LayoutDashboard, label: 'Dashboard'      },
-    { path: '/ask',            icon: MessageCircle,   label: 'Ask Finder'     },
-    { path: '/scan',           icon: Play,            label: 'Run Scan'       },
-    { path: '/add-signal',     icon: PlusCircle,      label: 'Add Signal'     },
-    { path: '/watchlist',      icon: Users,           label: 'Watchlist'      },
-    { path: '/founder-radar',  icon: Radar,           label: 'Founder Radar'  },
-    { path: '/settings',       icon: SettingsIcon,    label: 'Settings'       },
+    { path: '/',          icon: LayoutDashboard, label: 'Dashboard'  },
+    { path: '/ask',       icon: MessageCircle,   label: 'Ask Finder' },
+    { path: '/scan',      icon: Play,            label: 'Run Scan'   },
+    { path: '/watchlist', icon: Users,           label: 'Watchlist'  },
+    { path: '/settings',  icon: SettingsIcon,    label: 'Settings'   },
   ];
 
   const isActive = (path) => location.pathname === path;

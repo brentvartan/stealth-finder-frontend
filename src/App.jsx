@@ -14,7 +14,6 @@ import Navigation from './components/Navigation';
 import Chat from './components/Chat';
 import Settings from './components/Settings';
 import SignalDetail from './components/SignalDetail';
-import FounderRadar from './components/FounderRadar';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './App.css';
 
@@ -83,14 +82,7 @@ function AppContent() {
             }
           />
 
-          <Route
-            path="/add-signal"
-            element={
-              <ProtectedRoute>
-                <AddSignal />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/add-signal" element={<Navigate to="/scan" replace />} />
 
           <Route
             path="/team"
@@ -137,14 +129,7 @@ function AppContent() {
             }
           />
 
-          <Route
-            path="/founder-radar"
-            element={
-              <ProtectedRoute>
-                <FounderRadar />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/founder-radar" element={<Navigate to="/watchlist" replace />} />
 
           {/* Redirect all unknown routes to dashboard */}
           <Route path="*" element={<Navigate to="/" replace />} />

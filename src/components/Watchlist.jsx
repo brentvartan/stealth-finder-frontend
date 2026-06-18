@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { items } from '../api/client';
 import { Linkedin, Trash2, PlusCircle, Users, ExternalLink, Newspaper, TrendingUp } from 'lucide-react';
+import FounderRadar from './FounderRadar';
 
 export default function Watchlist() {
+  const [tab,         setTab]         = useState('brands');
   const [watchlist,   setWatchlist]   = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [adding,      setAdding]      = useState(false);
@@ -118,14 +120,29 @@ export default function Watchlist() {
   return (
     <div className="max-w-7xl mx-auto px-6 py-7 space-y-6">
 
-      {/* ── Page header ── */}
+      {/* ── Page header + tabs ── */}
       <div>
         <h1 className="font-display font-bold text-3xl uppercase tracking-wide text-black">
           Watchlist
         </h1>
         <p className="text-neutral-400 text-sm mt-1">
-          Your active pipeline — founders and operators you're personally tracking or already in conversation with. Different from Founder Radar (which is the full universe of known operators): this is who you've decided to act on.
+          Your active pipeline and the full operator universe — brands you're tracking and the founders who built them.
         </p>
+        <div className="flex border-b border-neutral-200 mt-5">
+          {[['brands', 'Brands'], ['founders', 'Founder Radar']].map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                tab === id
+                  ? 'text-black border-[#052EF0]'
+                  : 'text-neutral-400 border-transparent hover:text-black'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Alerts */}
@@ -136,6 +153,9 @@ export default function Watchlist() {
         <div className="p-3 rounded text-xs text-green-700 bg-green-50 border border-green-200">{successMsg}</div>
       )}
 
+      {tab === 'founders' && <FounderRadar mode="tab" />}
+
+      {tab === 'brands' && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
         {/* ── Add Form ── */}
@@ -226,6 +246,7 @@ export default function Watchlist() {
         </div>
 
       </div>
+      )}
     </div>
   );
 }

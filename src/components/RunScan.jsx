@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { items, scans } from '../api/client';
+import AddSignal from './AddSignal';
 
 import { Play, RefreshCw, CheckCircle, AlertCircle, Award, Camera, ShoppingBag, Building2, Globe, Linkedin, Rocket, Smartphone, Newspaper } from 'lucide-react';
 // ─── Score boosts ──────────────────────────────────────────────────────────────
@@ -141,6 +142,7 @@ const SOURCES = [
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function RunScan() {
+  const [tab,      setTab]      = useState('scan');
   const [scanType, setScanType] = useState('full');
   const [daysBack, setDaysBack] = useState(30);
   const [status,   setStatus]   = useState(null);
@@ -325,15 +327,26 @@ export default function RunScan() {
     <div className="max-w-7xl mx-auto px-6 py-7">
       <div className="max-w-xl">
 
-        {/* ── Page header ── */}
-        <div className="mb-7">
-          <h1 className="font-display font-bold text-3xl uppercase tracking-wide text-black">
-            Run Scan
-          </h1>
-          <p className="text-neutral-400 text-sm mt-1">
-            USPTO trademarks, Delaware/Form D, domain cross-references, Product Hunt, App Store, and Newswire (PR + BusinessWire) are all live.
-          </p>
+        {/* ── Tabs ── */}
+        <div className="flex border-b border-neutral-200 mb-7">
+          {[['scan', 'Run Scan'], ['add', 'Add Signal']].map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                tab === id
+                  ? 'text-black border-[#052EF0]'
+                  : 'text-neutral-400 border-transparent hover:text-black'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
+
+        {tab === 'add' && <AddSignal mode="tab" />}
+
+        {tab === 'scan' && (<>
 
         {/* ── Config card ── */}
         <div className="bg-white rounded-lg p-6 space-y-5" style={{ border: '1px solid #E5E5E0' }}>
@@ -457,6 +470,8 @@ export default function RunScan() {
             })}
           </div>
         </div>
+
+        </>)}
 
       </div>
     </div>

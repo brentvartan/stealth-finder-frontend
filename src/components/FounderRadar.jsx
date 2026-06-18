@@ -407,7 +407,7 @@ const OUTREACH_OPTIONS = [
   { value: 'in_their_corner', label: 'IN THEIR CORNER' },
 ];
 
-export default function FounderRadar() {
+export default function FounderRadar({ mode = 'page' }) {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
@@ -459,20 +459,21 @@ export default function FounderRadar() {
   const isEmpty = !loading && profiles.length === 0 && !summary?.total;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8" style={{ color: '#020A52' }}>
+    <div className={mode === 'page' ? 'max-w-7xl mx-auto px-4 sm:px-6 py-8' : ''} style={{ color: '#020A52' }}>
 
-      {/* ── Header ── */}
-      <div className="mb-6">
-        <h1
-          className="font-display font-bold tracking-tight text-3xl sm:text-4xl uppercase"
-          style={{ color: '#020A52' }}
-        >
-          Founder Radar
-        </h1>
-        <p className="text-sm text-neutral-500 mt-1">
-          The operator universe — everyone who built the 97 Bullish-tracked brands. This is your pattern-recognition database: who they are, where they came from, and what they're doing now. When someone shows up 🔥 Building, that's the signal. Add them to Watchlist to actively track.
-        </p>
-      </div>
+      {mode === 'page' && (
+        <div className="mb-6">
+          <h1
+            className="font-display font-bold tracking-tight text-3xl sm:text-4xl uppercase"
+            style={{ color: '#020A52' }}
+          >
+            Founder Radar
+          </h1>
+          <p className="text-sm text-neutral-500 mt-1">
+            The operator universe — everyone who built the 97 Bullish-tracked brands. This is your pattern-recognition database: who they are, where they came from, and what they're doing now. When someone shows up 🔥 Building, that's the signal. Add them to Watchlist to actively track.
+          </p>
+        </div>
+      )}
 
       {/* ── Import banner (admin only) ── */}
       {isAdmin && (

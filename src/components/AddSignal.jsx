@@ -13,7 +13,7 @@ const SIGNAL_TYPES = [
   { value: 'manual',    label: 'Manual / Other',        boost: 5  },
 ];
 
-export default function AddSignal() {
+export default function AddSignal({ mode = 'page' }) {
   const [formData, setFormData] = useState({
     signal_type:  'trademark',
     company_name: '',
@@ -62,18 +62,19 @@ export default function AddSignal() {
   const labelClass = 'block text-xs font-medium text-neutral-400 mb-1.5 uppercase tracking-wider';
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-7">
-      <div className="max-w-xl">
+    <div className={mode === 'page' ? 'max-w-7xl mx-auto px-6 py-7' : ''}>
+      <div className={mode === 'page' ? 'max-w-xl' : ''}>
 
-        {/* ── Page header ── */}
-        <div className="mb-7">
-          <h1 className="font-display font-bold text-3xl uppercase tracking-wide text-black">
-            Add Signal
-          </h1>
-          <p className="text-neutral-400 text-sm mt-1">
-            Manually log a stealth startup signal. It will appear on the Dashboard and be grouped with signals from the same company.
-          </p>
-        </div>
+        {mode === 'page' && (
+          <div className="mb-7">
+            <h1 className="font-display font-bold text-3xl uppercase tracking-wide text-black">
+              Add Signal
+            </h1>
+            <p className="text-neutral-400 text-sm mt-1">
+              Manually log a stealth startup signal. It will appear on the Dashboard and be grouped with signals from the same company.
+            </p>
+          </div>
+        )}
 
         {/* ── Form card ── */}
         <div className="bg-white rounded-lg p-6" style={{ border: '1px solid #E5E5E0' }}>

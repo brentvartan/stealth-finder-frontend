@@ -29,6 +29,57 @@ export const SIGNAL_CONFIG = {
 
 const SIGNAL_TYPE_ORDER = ['trademark', 'delaware', 'domain', 'domain_ct', 'instagram', 'shopify', 'social', 'producthunt', 'app_store', 'newswire', 'press_stealth'];
 
+// Semantic badge colors — visual weight reflects signal conviction
+const SIGNAL_BADGE_STYLE = {
+  trademark:    { bg: '#000',    text: '#fff' },
+  delaware:     { bg: '#020A52', text: '#fff' },
+  domain:       { bg: '#E8E8E8', text: '#555' },
+  domain_ct:    { bg: '#E8E8E8', text: '#555' },
+  press_stealth:{ bg: '#0A5C36', text: '#fff' },
+  producthunt:  { bg: '#F0F0F0', text: '#999' },
+  app_store:    { bg: '#F0F0F0', text: '#999' },
+  newswire:     { bg: '#F0F0F0', text: '#999' },
+  instagram:    { bg: '#F0F0F0', text: '#999' },
+  shopify:      { bg: '#F0F0F0', text: '#999' },
+  social:       { bg: '#F0F0F0', text: '#999' },
+  manual:       { bg: '#F0F0F0', text: '#999' },
+};
+
+const TIER_FLOOR_LABELS_SHORT = {
+  conviction_match: 'Conviction floor',
+  tm_plus_form_d:   'TM + Form D',
+  trademark:        'TM floor',
+  form_d:           'Form D floor',
+};
+
+function SignalBadges({ match, size = 'normal' }) {
+  const floorReason = match.enrichment?.tier_floor_reason;
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {SIGNAL_TYPE_ORDER.map(type => {
+        const key = 'has' + type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+        if (!match[key]) return null;
+        const config = SIGNAL_CONFIG[type];
+        const style  = SIGNAL_BADGE_STYLE[type] || { bg: '#F0F0F0', text: '#999' };
+        return (
+          <span
+            key={type}
+            className={`font-bold rounded-full uppercase tracking-wide ${size === 'sm' ? 'text-[9px] px-1.5 py-0.5' : 'text-[10px] px-2 py-0.5'}`}
+            style={{ backgroundColor: style.bg, color: style.text }}
+          >
+            {config.badge}
+          </span>
+        );
+      })}
+      {floorReason && (
+        <span className="text-[9px] text-neutral-400 font-medium ml-0.5">
+          ↑ {TIER_FLOOR_LABELS_SHORT[floorReason] || floorReason}
+        </span>
+      )}
+    </div>
+  );
+}
+
 // ─── Watch-level helpers ─────────────────────────────────────────────────────
 
 const WATCH_CONFIG = {
@@ -500,13 +551,16 @@ export default function MatchCard({ match, onUpdate }) {
           >
             <span className="font-display font-bold text-sm leading-none">{slimScore}</span>
           </div>
-          <div className="flex-1 min-w-0 flex items-baseline gap-2">
-            <h3 className="font-display font-bold text-sm uppercase tracking-wide text-neutral-400 leading-none truncate">
-              {match.name}
-            </h3>
-            <span className="text-[10px] font-medium text-neutral-300 uppercase tracking-wider shrink-0">
-              {match.category}
-            </span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline gap-2 mb-1">
+              <h3 className="font-display font-bold text-sm uppercase tracking-wide text-neutral-400 leading-none truncate">
+                {match.name}
+              </h3>
+              <span className="text-[10px] font-medium text-neutral-300 uppercase tracking-wider shrink-0">
+                {match.category}
+              </span>
+            </div>
+            <SignalBadges match={match} size="sm" />
           </div>
           <span className="text-[10px] font-medium text-neutral-300 uppercase tracking-wider shrink-0">{slimLabel}</span>
           <div className="text-neutral-200">
@@ -609,20 +663,7 @@ export default function MatchCard({ match, onUpdate }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              {SIGNAL_TYPE_ORDER.map(type => {
-                const key = 'has' + type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
-                if (!match[key]) return null;
-                const config = SIGNAL_CONFIG[type];
-                return (
-                  <span
-                    key={type}
-                    className="text-[10px] font-medium px-2 py-0.5 rounded-full"
-                    style={{ backgroundColor: pillBg, color: pillText }}
-                  >
-                    {config.badge}
-                  </span>
-                );
-              })}
+              <SignalBadges match={match} />
               <span className="text-xs text-neutral-300">·</span>
               <span className="text-xs text-neutral-400">
                 {match.signals.length} signal{match.signals.length !== 1 ? 's' : ''}

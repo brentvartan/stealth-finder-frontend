@@ -30,6 +30,21 @@ function DomainStatusBadge({ domainStatus }) {
 import { enrich, items as itemsApi, admin } from '../api/client';
 import { stripYearPrefix } from '../utils/formatting';
 
+const SIGNAL_BADGE_STYLE = {
+  trademark:    { bg: '#000',    text: '#fff' },
+  delaware:     { bg: '#020A52', text: '#fff' },
+  domain:       { bg: '#E8E8E8', text: '#555' },
+  domain_ct:    { bg: '#E8E8E8', text: '#555' },
+  press_stealth:{ bg: '#0A5C36', text: '#fff' },
+  producthunt:  { bg: '#F0F0F0', text: '#999' },
+  app_store:    { bg: '#F0F0F0', text: '#999' },
+  newswire:     { bg: '#F0F0F0', text: '#999' },
+  instagram:    { bg: '#F0F0F0', text: '#999' },
+  shopify:      { bg: '#F0F0F0', text: '#999' },
+  social:       { bg: '#F0F0F0', text: '#999' },
+  manual:       { bg: '#F0F0F0', text: '#999' },
+};
+
 const TIER_FLOOR_LABELS = {
   conviction_match: 'Conviction founder floor',
   tm_plus_form_d:   'TM + Form D floor',
@@ -624,9 +639,10 @@ export default function SignalDetail() {
               {Object.entries(SIGNAL_CONFIG).map(([type, config]) => {
                 const key = 'has' + type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
                 if (!currentMatch[key]) return null;
+                const badgeStyle = SIGNAL_BADGE_STYLE[type] || { bg: '#F0F0F0', text: '#999' };
                 return (
                   <span key={type} className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                    style={{ backgroundColor: cfg?.bg || '#000', color: cfg?.text || '#fff' }}>
+                    style={{ backgroundColor: badgeStyle.bg, color: badgeStyle.text }}>
                     {config.badge}
                   </span>
                 );

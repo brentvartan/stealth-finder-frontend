@@ -27,8 +27,72 @@ function DomainStatusBadge({ domainStatus }) {
     </span>
   );
 }
-import { enrich, items as itemsApi } from '../api/client';
+import { enrich, items as itemsApi, admin } from '../api/client';
 import { stripYearPrefix } from '../utils/formatting';
+
+const TIER_FLOOR_LABELS = {
+  conviction_match: 'Conviction founder floor',
+  tm_plus_form_d:   'TM + Form D floor',
+  trademark:        'Trademark floor',
+  form_d:           'Form D floor',
+};
+
+function RelatedPersonRow({ person, brandName }) {
+  const [added, setAdded]   = useState(false);
+  const [adding, setAdding] = useState(false);
+
+  const handleAddToRadar = async () => {
+    setAdding(true);
+    try {
+      const tier = person.conviction_match ? 'CONVICTION' : person.exit_alumni_match ? 'ALUMNI' : 'EXEC';
+      await admin.importFounderProfiles([{
+        name:        person.name,
+        known_brand: brandName,
+        tier,
+        status:      'building',
+        bio:         `Filed Form D for ${brandName}. Relationships: ${(person.relationships || []).join(', ')}.`,
+      }]);
+      setAdded(true);
+    } catch (e) {
+      console.error('Add to radar failed:', e);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center flex-wrap gap-1.5 min-w-0">
+        <span className="text-sm font-medium text-black">{person.name}</span>
+        {(person.relationships || []).map(r => (
+          <span key={r} className="text-[9px] px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-500 font-bold uppercase tracking-wide">
+            {r}
+          </span>
+        ))}
+        {person.conviction_match && (
+          <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide"
+            style={{ backgroundColor: '#7C3AED', color: '#fff' }}>
+            ⚡ Conviction
+          </span>
+        )}
+        {person.exit_alumni_match && (
+          <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide"
+            style={{ backgroundColor: '#D97706', color: '#fff' }}>
+            🏆 Alumni
+          </span>
+        )}
+      </div>
+      <button
+        onClick={handleAddToRadar}
+        disabled={adding || added}
+        className="shrink-0 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded transition-all"
+        style={{ backgroundColor: added ? '#F0F0F0' : '#000', color: added ? '#999' : '#fff' }}
+      >
+        {added ? 'Added' : adding ? '…' : 'Add to Radar'}
+      </button>
+    </div>
+  );
+}
 
 const WATCH_CONFIG = {
   hot:  { label: 'HOT',  bg: '#052EF0', text: '#fff', Icon: Flame      },
@@ -612,6 +676,11 @@ export default function SignalDetail() {
                     >
                       {e.bullish_score} · {cfg.label}
                     </span>
+                    {e.tier_floor_reason && (
+                      <span className="text-[9px] text-neutral-400 font-medium">
+                        ↑ {TIER_FLOOR_LABELS[e.tier_floor_reason] || e.tier_floor_reason}
+                      </span>
+                    )}
                   </div>
                 )}
                 {e.one_line_thesis && (
@@ -788,6 +857,14 @@ export default function SignalDetail() {
                         Email capture detected
                       </span>
                     )}
+                  </div>
+                )}
+                {signal.signal_type === 'delaware' && (signal.related_persons ?? signal.meta?.related_persons)?.length > 0 && (
+                  <div className="mt-3 pt-3 space-y-2" style={{ borderTop: '1px solid #F0F0F0' }}>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Officers & Directors</p>
+                    {(signal.related_persons ?? signal.meta?.related_persons).map((person, pi) => (
+                      <RelatedPersonRow key={pi} person={person} brandName={name} />
+                    ))}
                   </div>
                 )}
               </div>

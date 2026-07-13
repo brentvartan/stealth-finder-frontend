@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
@@ -103,22 +103,50 @@ function isConfluence(brandSignals) {
 // ── Custom tooltip ─────────────────────────────────────────────────────────────
 
 function BrandTooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null;
+  const [open, setOpen] = useState(false);
+  const [cachedPayload, setCachedPayload] = useState(null);
+  const [cachedLabel, setCachedLabel] = useState(null);
+  const hideTimer = useRef(null);
 
-  // Gather brand lists from the data point
-  const point = payload[0]?.payload || {};
+  useEffect(() => {
+    if (active && payload?.length) {
+      // New data point hovered — cancel any pending close and update cache
+      clearTimeout(hideTimer.current);
+      setCachedPayload(payload);
+      setCachedLabel(label);
+      setOpen(true);
+    } else {
+      // Mouse left chart — give 120ms for pointer to reach the tooltip div
+      hideTimer.current = setTimeout(() => setOpen(false), 120);
+    }
+    return () => clearTimeout(hideTimer.current);
+  }, [active, payload, label]);
+
+  if (!open || !cachedPayload?.length) return null;
+
+  const point = cachedPayload[0]?.payload || {};
 
   return (
-    <div style={{
-      backgroundColor: '#fff',
-      border: '1px solid #E5E5E0',
-      borderRadius: 8,
-      padding: '10px 14px',
-      fontSize: 12,
-      maxWidth: 260,
-      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-    }}>
-      <div style={{ fontWeight: 700, marginBottom: 8, color: '#000' }}>{label}</div>
+    <div
+      onMouseEnter={() => clearTimeout(hideTimer.current)}
+      onMouseLeave={() => setOpen(false)}
+      style={{
+        backgroundColor: '#fff',
+        border: '1px solid #E5E5E0',
+        borderRadius: 8,
+        padding: '10px 14px',
+        fontSize: 12,
+        maxWidth: 260,
+        maxHeight: 320,
+        overflowY: 'auto',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+        // Ensure the tooltip is above the chart and scrollable without
+        // the pointer leaving the div when using the scrollbar
+        position: 'relative',
+        zIndex: 10,
+      }}
+    >
+      <div style={{ fontWeight: 700, marginBottom: 8, color: '#000' }}>{cachedLabel}</div>
 
       {Object.values(THEMES).map(({ label: themeLabel, color }) => {
         const brands = point[`_brands_${themeLabel}`] || [];

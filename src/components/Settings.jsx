@@ -1,9 +1,51 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { settings as settingsApi, admin as adminApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { Plus, X, CheckCircle, Save, Bell, Slack, BarChart2, Clock, Users, CreditCard, RefreshCw, Linkedin, Zap, Search, Database, Mail, Globe, Trash2 } from 'lucide-react';
 import ScheduledScans from './ScheduledScans';
 import Team from './Team';
+
+// ─── Scheduler health banner ─────────────────────────────────────────────────
+
+function SchedulerHealthBanner() {
+  const [status, setStatus] = useState(null);
+  const fetchedRef = useRef(false);
+
+  useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+    adminApi.getSchedulerStatus()
+      .then(r => setStatus(r.data))
+      .catch(() => setStatus(null));
+  }, []);
+
+  if (!status) return null;
+
+  const healthy = status.is_healthy;
+  const bg    = healthy ? 'bg-green-50 border-green-200'   : 'bg-amber-50 border-amber-300';
+  const dot   = healthy ? 'bg-green-500'                   : 'bg-amber-500';
+  const text  = healthy ? 'text-green-800'                 : 'text-amber-800';
+  const sub   = healthy ? 'text-green-600'                 : 'text-amber-600';
+
+  const lastRun = status.last_run
+    ? new Date(status.last_run).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : 'Never';
+
+  return (
+    <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border mb-4 ${bg}`}>
+      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`} />
+      <div className="flex-1 min-w-0">
+        <span className={`text-xs font-semibold uppercase tracking-wider ${text}`}>
+          {healthy ? 'Scheduler healthy' : 'Scheduler may be lagging'}
+        </span>
+        <span className={`ml-2 text-xs ${sub}`}>
+          Last run: {lastRun}
+          {status.hours_since != null && ` · ${status.hours_since}h ago`}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
@@ -1316,7 +1358,12 @@ export default function Settings() {
 
       {/* Tab content */}
       {activeTab === 'alerts'    && <AlertsTab isAdmin={isAdmin} />}
-      {activeTab === 'schedules' && <ScheduledScans embedded />}
+      {activeTab === 'schedules' && (
+        <>
+          <SchedulerHealthBanner />
+          <ScheduledScans embedded />
+        </>
+      )}
       {activeTab === 'team'      && <Team embedded />}
       {activeTab === 'spend'     && isAdmin && <SpendTab />}
       {activeTab === 'tools'     && isAdmin && <ToolsTab />}

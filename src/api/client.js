@@ -170,6 +170,9 @@ export const admin = {
 
   updateFounderProfile: (id, data) =>
     api.patch(`/admin/founder-profiles/${id}`, data),
+
+  getSchedulerStatus: () =>
+    api.get('/admin/scheduler/status'),
 };
 
 // ─── Enrichment (Bullish AI analysis via Claude) ──────────────────────────────

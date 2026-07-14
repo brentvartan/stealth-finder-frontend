@@ -10,7 +10,7 @@ import { useAuth } from '../context/AuthContext';
 
 export const CONSUMER_CATEGORIES = [
   'Consumer AI', 'Home/Lifestyle', 'CPG/Food/Drink', 'Apparel', 'Beauty',
-  'Health/Wellness', 'Fitness', 'Education', 'Finance', 'Entertainment', 'Sports',
+  'Health/Wellness', 'Fitness', 'Education', 'Finance', 'Entertainment', 'Sports', 'Pet',
 ];
 
 export const BULLISH_THEMES = [
@@ -289,7 +289,7 @@ export default function Dashboard() {
   useEffect(() => { setMatches(buildMatches(signals, filters)); }, [signals, filters]);
 
   const displayMatches = matches
-    .filter(m => m.enrichment?.gate_passed !== false)
+    .filter(m => m.enrichment?.founder_score?.gate_passed !== false)
     .filter(m => !tierFilter || (m.enrichment?.watch_level === tierFilter))
     .filter(m => {
       const q = filters.search.trim().toLowerCase();

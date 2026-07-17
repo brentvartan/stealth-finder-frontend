@@ -3,6 +3,58 @@ import { items } from '../api/client';
 import { Linkedin, Trash2, PlusCircle, Users, ExternalLink, Newspaper, TrendingUp, Bell, BellOff } from 'lucide-react';
 import FounderRadar from './FounderRadar';
 
+function parseCsvLine(line) {
+  const result = [];
+  let cur = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (ch === ',' && !inQuotes) {
+      result.push(cur);
+      cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+  result.push(cur);
+  return result;
+}
+
+function parseLinkedInCsv(text) {
+  const lines = text.split(/\r?\n/);
+  let headerIdx = -1;
+  let headers = [];
+  for (let i = 0; i < lines.length; i++) {
+    const cols = parseCsvLine(lines[i]);
+    if (cols[0] && cols[0].trim() === 'First Name') {
+      headerIdx = i;
+      headers = cols.map(h => h.trim());
+      break;
+    }
+  }
+  if (headerIdx === -1) return [];
+  const contacts = [];
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+    const cols = parseCsvLine(line);
+    const row = {};
+    headers.forEach((h, idx) => { row[h] = (cols[idx] || '').trim(); });
+    const name = `${row['First Name'] || ''} ${row['Last Name'] || ''}`.trim();
+    if (!name) continue;
+    contacts.push({
+      name,
+      company: row['Company'] || '',
+      role:    row['Position'] || '',
+      connectedDate: row['Connected On'] || '',
+    });
+  }
+  return contacts;
+}
+
 export default function Watchlist() {
   const [tab,         setTab]         = useState('brands');
   const [watchlist,   setWatchlist]   = useState([]);
@@ -16,6 +68,10 @@ export default function Watchlist() {
   const [formData, setFormData] = useState({
     name: '', company: '', linkedin: '', notes: '',
   });
+
+  const [csvContacts,  setCsvContacts]  = useState([]);
+  const [csvImporting, setCsvImporting] = useState(false);
+  const [csvFileName,  setCsvFileName]  = useState('');
 
   const loadWatchlist = useCallback(async () => {
     try {
@@ -135,6 +191,54 @@ export default function Watchlist() {
     }
   };
 
+  const handleCsvSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setCsvFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const contacts = parseLinkedInCsv(evt.target.result);
+      setCsvContacts(contacts);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleCsvImport = async () => {
+    if (!csvContacts.length) return;
+    setCsvImporting(true);
+    try {
+      const now = new Date().toISOString();
+      const itemsList = csvContacts.map(c => ({
+        title: c.name,
+        description: JSON.stringify({
+          _type:          'watchlist',
+          name:           c.name,
+          company:        c.company,
+          role:           c.role,
+          linkedin:       '',
+          notes:          '',
+          added_at:       now,
+          auto_added:     false,
+          muted:          false,
+          source:         'linkedin_import',
+          connected_date: c.connectedDate,
+          signal_types:   [],
+          news_results:   [],
+        }),
+      }));
+      await items.bulkCreate(itemsList);
+      await loadWatchlist();
+      setSuccessMsg(`Imported ${csvContacts.length} contacts from LinkedIn.`);
+      setCsvContacts([]);
+      setCsvFileName('');
+      setTimeout(() => setSuccessMsg(''), 5000);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Import failed.');
+    } finally {
+      setCsvImporting(false);
+    }
+  };
+
   const update = (field, value) => setFormData(f => ({ ...f, [field]: value }));
 
   const inputClass = 'w-full border border-neutral-200 rounded px-3 py-2.5 text-sm focus:outline-none focus:border-[#052EF0] transition-colors';
@@ -231,6 +335,61 @@ export default function Watchlist() {
               )}
             </button>
           </form>
+
+          {/* ── LinkedIn CSV Import ── */}
+          <div className="mt-4 pt-4" style={{ borderTop: '1px solid #E5E5E0' }}>
+            <p className="text-xs font-medium uppercase tracking-widest text-neutral-400 mb-2">
+              Import LinkedIn Connections
+            </p>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <span className="px-3 py-1.5 text-xs font-semibold rounded border border-neutral-200 text-neutral-600 hover:border-[#052EF0] hover:text-[#052EF0] transition-colors select-none">
+                Choose .csv file
+              </span>
+              {csvFileName && (
+                <span className="text-xs text-neutral-400 truncate max-w-[140px]">{csvFileName}</span>
+              )}
+              <input
+                type="file"
+                accept=".csv"
+                className="hidden"
+                onChange={handleCsvSelect}
+              />
+            </label>
+
+            {csvContacts.length > 0 && (
+              <div className="mt-3 space-y-1">
+                <p className="text-xs text-neutral-500">
+                  <span className="font-semibold text-black">{csvContacts.length}</span> contacts found
+                </p>
+                {csvContacts.slice(0, 3).map((c, i) => (
+                  <div key={i} className="text-xs text-neutral-400">
+                    {c.name}{c.company ? ` · ${c.company}` : ''}
+                  </div>
+                ))}
+                {csvContacts.length > 3 && (
+                  <div className="text-xs text-neutral-300">+{csvContacts.length - 3} more</div>
+                )}
+                <div className="flex gap-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={handleCsvImport}
+                    disabled={csvImporting}
+                    className="px-3 py-1.5 text-xs font-semibold rounded text-white transition-colors"
+                    style={{ backgroundColor: csvImporting ? '#CCC' : '#052EF0' }}
+                  >
+                    {csvImporting ? 'Importing…' : `Import ${csvContacts.length} contacts`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setCsvContacts([]); setCsvFileName(''); }}
+                    className="px-3 py-1.5 text-xs font-semibold rounded border border-neutral-200 text-neutral-500 hover:text-neutral-700 transition-colors"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ── Watchlist entries ── */}

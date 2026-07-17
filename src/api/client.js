@@ -230,6 +230,9 @@ export const items = {
   create: (title, description) =>
     api.post('/items', { title, description }),
 
+  bulkCreate: (itemsList) =>
+    api.post('/items/bulk', { items: itemsList }, { timeout: 60000 }),
+
   update: (id, data) =>
     api.put(`/items/${id}`, data),
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { items } from '../api/client';
-import { Linkedin, Trash2, PlusCircle, Users, ExternalLink, Newspaper, TrendingUp } from 'lucide-react';
+import { Linkedin, Trash2, PlusCircle, Users, ExternalLink, Newspaper, TrendingUp, Bell, BellOff } from 'lucide-react';
 import FounderRadar from './FounderRadar';
 
 export default function Watchlist() {
@@ -9,6 +9,7 @@ export default function Watchlist() {
   const [loading,     setLoading]     = useState(true);
   const [adding,      setAdding]      = useState(false);
   const [removingId,  setRemovingId]  = useState(null);
+  const [mutingId,    setMutingId]    = useState(null);
   const [error,       setError]       = useState('');
   const [successMsg,  setSuccessMsg]  = useState('');
 
@@ -35,6 +36,7 @@ export default function Watchlist() {
               notes:          meta.notes || '',
               addedAt:        meta.added_at || item.created_at,
               autoAdded:      meta.auto_added || false,
+              muted:          meta.muted || false,
               bullishScore:   meta.bullish_score || null,
               founderScore:   meta.founder_score || null,
               signalTypes:    meta.signal_types || [],
@@ -43,6 +45,8 @@ export default function Watchlist() {
               signalItemId:   meta.signal_item_id || null,
               newsResults:    meta.news_results || [],
               rescoreHistory: meta.rescore_history || [],
+              _rawMeta:       meta,
+              _itemTitle:     item.title,
             }];
           }
         } catch (e) {}
@@ -97,6 +101,25 @@ export default function Watchlist() {
       setError(err.response?.data?.error || 'Failed to add to watchlist.');
     } finally {
       setAdding(false);
+    }
+  };
+
+  const handleMute = async (founder) => {
+    setMutingId(founder.id);
+    try {
+      const newMuted = !founder.muted;
+      const updatedMeta = { ...founder._rawMeta, muted: newMuted };
+      await items.update(founder.id, {
+        title:       founder._itemTitle,
+        description: JSON.stringify(updatedMeta),
+      });
+      setWatchlist(prev => prev.map(f =>
+        f.id === founder.id ? { ...f, muted: newMuted, _rawMeta: updatedMeta } : f
+      ));
+    } catch (err) {
+      setError('Failed to update founder news setting.');
+    } finally {
+      setMutingId(null);
     }
   };
 
@@ -238,7 +261,9 @@ export default function Watchlist() {
                   key={founder.id}
                   founder={founder}
                   removingId={removingId}
+                  mutingId={mutingId}
                   onRemove={handleRemove}
+                  onMute={handleMute}
                 />
               ))}
             </div>
@@ -252,7 +277,7 @@ export default function Watchlist() {
 }
 
 
-function WatchlistCard({ founder, removingId, onRemove }) {
+function WatchlistCard({ founder, removingId, mutingId, onRemove, onMute }) {
   const isAuto = founder.autoAdded;
   const borderStyle = isAuto
     ? { border: '1px solid #E5E5E0', borderLeft: '3px solid #052EF0' }
@@ -406,17 +431,36 @@ function WatchlistCard({ founder, removingId, onRemove }) {
           </div>
         </div>
 
-        <button
-          onClick={() => onRemove(founder.id)}
-          disabled={removingId === founder.id}
-          className="text-neutral-200 hover:text-red-400 disabled:opacity-40 transition-colors p-1 shrink-0"
-          title="Remove from watchlist"
-        >
-          {removingId === founder.id
-            ? <div className="animate-spin rounded-full h-4 w-4 border-b border-red-400" />
-            : <Trash2 className="w-3.5 h-3.5" />
-          }
-        </button>
+        <div className="flex flex-col gap-1 shrink-0">
+          {/* Mute / unmute founder news */}
+          <button
+            onClick={() => onMute(founder)}
+            disabled={mutingId === founder.id}
+            className="transition-colors p-1 disabled:opacity-40"
+            title={founder.muted ? 'Founder news muted — click to unmute' : 'Mute founder news'}
+            style={{ color: founder.muted ? '#EF4444' : '#D4D4D4' }}
+          >
+            {mutingId === founder.id
+              ? <div className="animate-spin rounded-full h-3.5 w-3.5 border-b border-neutral-400" />
+              : founder.muted
+                ? <BellOff className="w-3.5 h-3.5" />
+                : <Bell className="w-3.5 h-3.5 hover:text-neutral-400" />
+            }
+          </button>
+
+          {/* Remove */}
+          <button
+            onClick={() => onRemove(founder.id)}
+            disabled={removingId === founder.id}
+            className="text-neutral-200 hover:text-red-400 disabled:opacity-40 transition-colors p-1"
+            title="Remove from watchlist"
+          >
+            {removingId === founder.id
+              ? <div className="animate-spin rounded-full h-4 w-4 border-b border-red-400" />
+              : <Trash2 className="w-3.5 h-3.5" />
+            }
+          </button>
+        </div>
       </div>
     </div>
   );

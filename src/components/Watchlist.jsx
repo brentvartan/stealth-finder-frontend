@@ -47,9 +47,10 @@ function parseLinkedInCsv(text) {
     if (!name) continue;
     contacts.push({
       name,
-      company: row['Company'] || '',
-      role:    row['Position'] || '',
+      company:      row['Company'] || '',
+      role:         row['Position'] || '',
       connectedDate: row['Connected On'] || '',
+      linkedinUrl:  row['URL'] || '',
     });
   }
   return contacts;
@@ -215,7 +216,7 @@ export default function Watchlist() {
           name:           c.name,
           company:        c.company,
           role:           c.role,
-          linkedin:       '',
+          linkedin:       c.linkedinUrl || '',
           notes:          '',
           added_at:       now,
           auto_added:     false,

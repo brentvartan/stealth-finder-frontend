@@ -162,6 +162,12 @@ export const admin = {
   linkedinPollRun: () =>
     api.post('/admin/linkedin-poll/run', {}, { timeout: 30000 }),
 
+  founderRadarPollEstimate: () =>
+    api.get('/admin/founder-radar-poll/estimate'),
+
+  founderRadarPollRun: () =>
+    api.post('/admin/founder-radar-poll/run', {}, { timeout: 30000 }),
+
   bulkImportWatchlist: (brands) =>
     api.post('/admin/watchlist/bulk-import', { brands }, { timeout: 30000 }),
 

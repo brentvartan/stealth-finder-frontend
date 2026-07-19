@@ -1301,6 +1301,140 @@ function ToolsTab() {
       {/* Inbox Audit */}
       <InboxAuditSection />
 
+      {/* LinkedIn Network Poll */}
+      <LinkedInPollSection />
+
+    </div>
+  );
+}
+
+function LinkedInPollSection() {
+  const [estimate,  setEstimate]  = useState(null);
+  const [loading,   setLoading]   = useState(false);
+  const [running,   setRunning]   = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+  const [msg,       setMsg]       = useState('');
+
+  const fetchEstimate = useCallback(async () => {
+    setLoading(true);
+    setMsg('');
+    try {
+      const res = await adminApi.linkedinPollEstimate();
+      setEstimate(res.data);
+    } catch (err) {
+      setMsg('✗ ' + (err.response?.data?.error || 'Failed to load estimate'));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchEstimate(); }, [fetchEstimate]);
+
+  const handleRun = async () => {
+    if (!confirmed) { setConfirmed(true); return; }
+    setRunning(true);
+    setMsg('');
+    try {
+      const res = await adminApi.linkedinPollRun();
+      setMsg('✓ ' + res.data.message);
+      setConfirmed(false);
+    } catch (err) {
+      setMsg('✗ ' + (err.response?.data?.error || 'Failed to start poll'));
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const canAfford = estimate?.credits_available != null
+    && estimate.credits_available >= (estimate.credits_needed || 0);
+
+  return (
+    <div className="bg-white rounded-lg p-6" style={{ border: '1px solid #E5E5E0' }}>
+      <SectionHeader
+        icon={Linkedin}
+        title="LinkedIn Network Poll"
+        subtitle="Scan imported connections for headline changes to stealth / founder language. Runs quarterly — admin approval required before any Proxycurl credits are spent."
+      />
+
+      {loading ? (
+        <div className="flex items-center gap-2 text-xs text-neutral-400">
+          <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2" style={{ borderColor: '#052EF0' }} />
+          Loading estimate…
+        </div>
+      ) : estimate ? (
+        <div className="space-y-4">
+
+          {/* Cost estimate card */}
+          <div className="rounded-lg p-4 space-y-2" style={{ backgroundColor: '#F5F0EB' }}>
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-medium uppercase tracking-wider text-neutral-400">Eligible contacts</span>
+              <span className="text-sm font-bold" style={{ color: '#052EF0' }}>{estimate.eligible_contacts.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-medium uppercase tracking-wider text-neutral-400">Credits needed</span>
+              <span className="text-sm font-bold text-neutral-700">{estimate.credits_needed.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-medium uppercase tracking-wider text-neutral-400">Credits available</span>
+              <span className={`text-sm font-bold ${
+                estimate.credits_available == null ? 'text-neutral-400' :
+                canAfford ? 'text-green-600' : 'text-red-500'
+              }`}>
+                {estimate.credits_available != null ? estimate.credits_available.toLocaleString() : 'Unknown'}
+              </span>
+            </div>
+            <div className="flex justify-between items-center pt-2" style={{ borderTop: '1px solid #E5E5E0' }}>
+              <span className="text-xs font-medium uppercase tracking-wider text-neutral-400">Estimated cost</span>
+              <span className="text-base font-bold text-neutral-900">${estimate.estimated_cost_usd.toFixed(2)}</span>
+            </div>
+          </div>
+
+          <p className="text-xs text-neutral-400">
+            Contacts connected in the last {estimate.cutoff_years} years with a stored LinkedIn URL. 3 credits per profile.
+            Runs in the background — you'll receive an email summary with any stealth signals detected.
+          </p>
+
+          {confirmed && !running && (
+            <div className="p-3 rounded text-xs text-amber-700 bg-amber-50 border border-amber-200">
+              This will spend <strong>${estimate.estimated_cost_usd.toFixed(2)}</strong> in Proxycurl credits
+              scanning {estimate.eligible_contacts.toLocaleString()} profiles. Click again to confirm.
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={handleRun}
+              disabled={running || estimate.eligible_contacts === 0}
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-display font-semibold uppercase tracking-wider text-white rounded transition-all disabled:opacity-50"
+              style={{ backgroundColor: running ? '#999' : confirmed ? '#B45309' : '#052EF0' }}
+            >
+              <Linkedin className={`w-3.5 h-3.5 ${running ? 'animate-pulse' : ''}`} />
+              {running ? 'Starting poll…' : confirmed ? 'Confirm & Spend Credits' : 'Approve & Run Poll'}
+            </button>
+            {confirmed && !running && (
+              <button
+                onClick={() => setConfirmed(false)}
+                className="text-xs text-neutral-400 hover:text-neutral-600 transition-colors"
+              >
+                Cancel
+              </button>
+            )}
+            <button
+              onClick={fetchEstimate}
+              disabled={loading}
+              className="text-xs text-neutral-400 hover:text-neutral-700 transition-colors"
+            >
+              Refresh estimate
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {msg && (
+        <p className={`text-sm font-medium mt-3 ${msg.startsWith('✓') ? 'text-green-600' : 'text-red-500'}`}>
+          {msg}
+        </p>
+      )}
     </div>
   );
 }

@@ -156,6 +156,12 @@ export const admin = {
   getLatestInboxAudit: () =>
     api.get('/admin/inbox-audit/latest'),
 
+  linkedinPollEstimate: () =>
+    api.get('/admin/linkedin-poll/estimate'),
+
+  linkedinPollRun: () =>
+    api.post('/admin/linkedin-poll/run', {}, { timeout: 30000 }),
+
   bulkImportWatchlist: (brands) =>
     api.post('/admin/watchlist/bulk-import', { brands }, { timeout: 30000 }),
 

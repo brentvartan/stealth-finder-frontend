@@ -94,7 +94,8 @@ function HotVelocityChart({ signals }) {
       <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-3">
         Signal Velocity — Last 8 Weeks
       </p>
-      <ResponsiveContainer width="100%" height={120}>
+      <div className="flex-1 min-h-0">
+      <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 2, right: 4, left: -20, bottom: 0 }}>
           <XAxis
             dataKey="label"
@@ -114,6 +115,7 @@ function HotVelocityChart({ signals }) {
           <Bar dataKey="warm" stackId="a" fill="#000"    radius={[3, 3, 0, 0]} maxBarSize={28} fillOpacity={0.18} />
         </BarChart>
       </ResponsiveContainer>
+      </div>
       {/* Legend + totals */}
       <div className="flex items-center gap-4 mt-3">
         <div className="flex items-center gap-1.5">
@@ -342,7 +344,7 @@ export default function PipelineChart({ signals = [] }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
       {/* HOT velocity */}
-      <div className="bg-white rounded-lg p-5 md:col-span-1" style={{ border: '1px solid #E5E5E0' }}>
+      <div className="bg-white rounded-lg p-5 md:col-span-1 flex flex-col" style={{ border: '1px solid #E5E5E0' }}>
         <HotVelocityChart signals={signals} />
       </div>
 

@@ -1,18 +1,20 @@
 import React, { useMemo } from 'react';
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts';
 
 const TOP_CATEGORIES = 8;
 const VELOCITY_WEEKS = 8;
 
-// ─── HOT Velocity ─────────────────────────────────────────────────────────────
-// Weekly HOT signal count over the last 8 weeks.
+// ─── Signal Velocity ──────────────────────────────────────────────────────────
+// Weekly HOT + WARM signal count over the last 8 weeks, stacked.
 
 function VelocityTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
-  const count = payload[0]?.value || 0;
-  const brands = payload[0]?.payload?._brands || [];
+  const hot  = payload.find(p => p.dataKey === 'hot')?.value  || 0;
+  const warm = payload.find(p => p.dataKey === 'warm')?.value || 0;
+  const hotBrands  = payload[0]?.payload?._hotBrands  || [];
+  const warmBrands = payload[0]?.payload?._warmBrands || [];
   return (
     <div style={{
       background: '#fff', border: '1px solid #E5E5E0', borderRadius: 8,
@@ -20,14 +22,25 @@ function VelocityTooltip({ active, payload, label }) {
       boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
     }}>
       <div style={{ fontWeight: 700, marginBottom: 6, color: '#000' }}>{label}</div>
-      <div style={{ color: '#052EF0', fontWeight: 600, marginBottom: 4 }}>
-        {count} HOT signal{count !== 1 ? 's' : ''}
-      </div>
-      {brands.slice(0, 6).map(b => (
-        <div key={b} style={{ color: '#374151', paddingLeft: 8, fontSize: 11 }}>{b}</div>
-      ))}
-      {brands.length > 6 && (
-        <div style={{ color: '#9CA3AF', paddingLeft: 8, fontSize: 10 }}>+{brands.length - 6} more</div>
+      {hot > 0 && (
+        <>
+          <div style={{ color: '#052EF0', fontWeight: 600, marginBottom: 2 }}>
+            {hot} HOT
+          </div>
+          {hotBrands.slice(0, 4).map(b => (
+            <div key={b} style={{ color: '#374151', paddingLeft: 8, fontSize: 11 }}>{b}</div>
+          ))}
+        </>
+      )}
+      {warm > 0 && (
+        <>
+          <div style={{ color: '#555', fontWeight: 600, marginTop: hot > 0 ? 4 : 0, marginBottom: 2 }}>
+            {warm} WARM
+          </div>
+          {warmBrands.slice(0, 4).map(b => (
+            <div key={b} style={{ color: '#374151', paddingLeft: 8, fontSize: 11 }}>{b}</div>
+          ))}
+        </>
       )}
     </div>
   );
@@ -43,33 +56,43 @@ function HotVelocityChart({ signals }) {
       const end = new Date(now);
       end.setDate(now.getDate() - i * 7);
       const label = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      weeks.push({ label, start, end, brands: [] });
+      weeks.push({ label, start, end, hotBrands: new Set(), warmBrands: new Set() });
     }
 
     signals.forEach(s => {
-      if (s.enrichment?.watch_level !== 'hot') return;
+      const level = s.enrichment?.watch_level;
+      if (level !== 'hot' && level !== 'warm') return;
       const d = new Date(s.savedAt || s.timestamp);
       if (isNaN(d.getTime())) return;
       const bucket = weeks.find(w => d >= w.start && d < w.end);
       if (bucket) {
         const name = s.companyName || s.name || 'Unknown';
-        if (!bucket.brands.includes(name)) bucket.brands.push(name);
+        bucket[level === 'hot' ? 'hotBrands' : 'warmBrands'].add(name);
       }
     });
 
     return weeks.map(w => ({
-      label: w.label,
-      count: w.brands.length,
-      _brands: w.brands,
+      label:       w.label,
+      hot:         w.hotBrands.size,
+      warm:        w.warmBrands.size,
+      _hotBrands:  [...w.hotBrands],
+      _warmBrands: [...w.warmBrands],
     }));
   }, [signals]);
 
-  const maxVal = Math.max(...data.map(d => d.count), 1);
+  const maxVal = Math.max(...data.map(d => d.hot + d.warm), 1);
+
+  // Summary stats
+  const totals = useMemo(() => {
+    const hot  = signals.filter(s => s.enrichment?.watch_level === 'hot').length;
+    const warm = signals.filter(s => s.enrichment?.watch_level === 'warm').length;
+    return { hot, warm };
+  }, [signals]);
 
   return (
-    <div>
+    <div className="flex flex-col h-full">
       <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-3">
-        HOT Signal Velocity — Last 8 Weeks
+        Signal Velocity — Last 8 Weeks
       </p>
       <ResponsiveContainer width="100%" height={120}>
         <BarChart data={data} margin={{ top: 2, right: 4, left: -20, bottom: 0 }}>
@@ -87,17 +110,23 @@ function HotVelocityChart({ signals }) {
             domain={[0, maxVal + 1]}
           />
           <Tooltip content={<VelocityTooltip />} cursor={{ fill: 'rgba(5,46,240,0.04)' }} />
-          <Bar dataKey="count" radius={[3, 3, 0, 0]} maxBarSize={28}>
-            {data.map((entry, i) => (
-              <Cell
-                key={i}
-                fill={entry.count > 0 ? '#052EF0' : '#E5E5E0'}
-                fillOpacity={entry.count > 0 ? (0.4 + (entry.count / maxVal) * 0.6) : 1}
-              />
-            ))}
-          </Bar>
+          <Bar dataKey="hot"  stackId="a" fill="#052EF0" radius={[0, 0, 0, 0]} maxBarSize={28} />
+          <Bar dataKey="warm" stackId="a" fill="#000"    radius={[3, 3, 0, 0]} maxBarSize={28} fillOpacity={0.18} />
         </BarChart>
       </ResponsiveContainer>
+      {/* Legend + totals */}
+      <div className="flex items-center gap-4 mt-3">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#052EF0' }} />
+          <span className="text-[10px] text-neutral-400">HOT</span>
+          <span className="text-[10px] font-bold text-neutral-600">{totals.hot}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#000', opacity: 0.35 }} />
+          <span className="text-[10px] text-neutral-400">WARM</span>
+          <span className="text-[10px] font-bold text-neutral-600">{totals.warm}</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -183,12 +212,15 @@ function CategoryChart({ signals }) {
 // How many HOT/WARM signals came from each source.
 
 const SOURCE_LABELS = {
-  trademark:   { label: 'Trademark', color: '#052EF0' },
-  delaware:    { label: 'SEC Form D', color: '#020A52' },
-  producthunt: { label: 'Product Hunt', color: '#87B4F8' },
-  app_store:   { label: 'App Store', color: '#3B82F6' },
-  domain:      { label: 'Domain', color: '#6B7280' },
-  manual:      { label: 'Manual', color: '#D1D5DB' },
+  trademark:    { label: 'Trademark', color: '#052EF0' },
+  delaware:     { label: 'SEC Form D', color: '#020A52' },
+  press_stealth:{ label: 'Press Intel', color: '#0E7490' },
+  ctlogs:       { label: 'CT Log', color: '#6B7280' },
+  newswire:     { label: 'Newswire', color: '#87B4F8' },
+  producthunt:  { label: 'Product Hunt', color: '#3B82F6' },
+  app_store:    { label: 'App Store', color: '#3B82F6' },
+  domain:       { label: 'Domain', color: '#6B7280' },
+  manual:       { label: 'Manual', color: '#D1D5DB' },
 };
 
 function SourceMixChart({ signals }) {
@@ -218,10 +250,33 @@ function SourceMixChart({ signals }) {
       }));
   }, [signals]);
 
+  // Avg Bullish score per source (all scored signals)
+  const scoreBySource = useMemo(() => {
+    const acc = {};
+    signals.forEach(s => {
+      const score = s.enrichment?.bullish_score;
+      if (score == null) return;
+      const type = s.signal_type || 'manual';
+      if (!acc[type]) acc[type] = { total: 0, count: 0 };
+      acc[type].total += score;
+      acc[type].count++;
+    });
+    return Object.entries(acc)
+      .filter(([, v]) => v.count >= 2)
+      .map(([type, { total, count }]) => ({
+        type,
+        avg: Math.round(total / count),
+        ...(SOURCE_LABELS[type] || { label: type, color: '#D1D5DB' }),
+      }))
+      .sort((a, b) => b.avg - a.avg);
+  }, [signals]);
+
   if (!data.length) return null;
 
+  const maxAvg = Math.max(...scoreBySource.map(d => d.avg), 100);
+
   return (
-    <div>
+    <div className="flex flex-col h-full">
       <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-3">
         Signal Source Mix
       </p>
@@ -230,7 +285,7 @@ function SourceMixChart({ signals }) {
           <div key={type} style={{ width: `${pct}%`, backgroundColor: color, minWidth: pct > 3 ? undefined : 4 }} />
         ))}
       </div>
-      <div className="flex flex-wrap gap-x-4 gap-y-1">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 mb-5">
         {data.map(({ type, label, count, pct, color }) => (
           <div key={type} className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
@@ -240,6 +295,38 @@ function SourceMixChart({ signals }) {
           </div>
         ))}
       </div>
+
+      {scoreBySource.length >= 2 && (
+        <>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-3">
+            Avg Bullish Score by Source
+          </p>
+          <div className="space-y-2 flex-1">
+            {scoreBySource.map(({ type, label, avg, color }) => (
+              <div key={type}>
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="text-[11px] text-neutral-600">{label}</span>
+                  <span
+                    className="text-[11px] font-bold"
+                    style={{ color: avg >= 70 ? '#052EF0' : avg >= 50 ? '#374151' : '#9CA3AF' }}
+                  >
+                    {avg}
+                  </span>
+                </div>
+                <div className="h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${(avg / maxAvg) * 100}%`,
+                      backgroundColor: avg >= 70 ? '#052EF0' : avg >= 50 ? '#374151' : '#D1D5DB',
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

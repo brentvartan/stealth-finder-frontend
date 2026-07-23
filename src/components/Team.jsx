@@ -495,6 +495,14 @@ export default function Team({ embedded = false }) {
             </div>
           </div>
 
+          {/* ── Post-invite success banner (lives outside the form so it shows after form closes) */}
+          {sentTo && (
+            <div className="flex items-start gap-2 p-3 rounded text-xs text-green-700 bg-green-50 border border-green-200">
+              <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>Invite sent to <strong>{sentTo}</strong>. They'll get an email to set their name and password.</span>
+            </div>
+          )}
+
           {/* ── Invite form (collapsible) ────────────────────────────────────── */}
           {showInvite && (
             <div className="bg-white rounded-lg p-5" style={{ border: '1px solid #052EF0' }}>
@@ -502,12 +510,6 @@ export default function Team({ embedded = false }) {
                 Invite a Team Member
               </h4>
 
-              {sentTo && (
-                <div className="mb-3 flex items-start gap-2 p-3 rounded text-xs text-green-700 bg-green-50 border border-green-200">
-                  <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span>Invite sent to <strong>{sentTo}</strong>. They'll get an email to set their name and password.</span>
-                </div>
-              )}
               {inviteError && (
                 <div className="mb-3 p-3 rounded text-xs text-red-700 bg-red-50 border border-red-200">
                   {inviteError}
